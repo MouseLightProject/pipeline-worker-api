@@ -1,0 +1,47 @@
+# Logs
+*.log
+npm-debug.log*
+
+
+# node-waf configuration
+.lock-wscript
+
+# Compiled binary addons (http://nodejs.org/api/addons.html)
+build/Release
+
+# Dependency directory
+node_modules
+
+bower_components
+
+# Optional npm cache directory
+.npm
+
+# Optional REPL history
+.node_repl_history
+
+# JetBrains IDE 
+.idea
+
+# From Skipper defaults (file upload), possibly others
+.tmp
+
+typings
+
+*.js.map
+
+# Build directories
+dist
+
+# Temporary directories
+tmp
+
+.editorconfig
+
+# js in ts folders
+config/**/*.js
+src/**/*.js
+graphql/**/.js
+
+# Development databases
+*.sqlite3
