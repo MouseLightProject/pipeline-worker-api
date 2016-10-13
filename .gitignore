@@ -2,6 +2,7 @@
 *.log
 npm-debug.log*
 
+.DS_Store
 
 # node-waf configuration
 .lock-wscript
@@ -12,8 +13,6 @@ build/Release
 # Dependency directory
 node_modules
 
-bower_components
-
 # Optional npm cache directory
 .npm
 
@@ -22,11 +21,6 @@ bower_components
 
 # JetBrains IDE 
 .idea
-
-# From Skipper defaults (file upload), possibly others
-.tmp
-
-typings
 
 *.js.map
 
