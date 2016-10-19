@@ -26,7 +26,7 @@ export class TaskManager implements ITaskManager {
 
         setInterval(() => {
             this.refreshTasksFromProcessManager();
-        }, 30000);
+        }, 3000);
     }
 
     private _taskDefinitions = new TaskDefinitions();
