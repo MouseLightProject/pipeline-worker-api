@@ -1,7 +1,7 @@
 const DataLoader = require("dataloader");
 import * as uuid from "node-uuid";
 
-import {knex} from "../data-access/knexConnector"
+import {knex} from "../data-access/knexConnector";
 import {ITaskDefinition} from "./taskDefinition";
 import {IProcessInfo, ExecutionStatus} from "../task-management/pm2-async";
 import serverConfiguration from "../../config/server.config";
@@ -33,7 +33,7 @@ export interface ITaskExecution {
     execution_status_code: ExecutionStatusCode;
     completion_status_code: CompletionStatusCode;
     machine_id: string;
-    started_at: Date
+    started_at: Date;
     completed_at: Date;
     script_args: string;
     last_process_status_code: number;
@@ -49,26 +49,26 @@ export interface ITaskExecution {
 export class TaskExecutions {
     private static _tableName = "TaskExecutions";
     private static _idKey = "id";
-
-    private static readonly _persistentProperties: string[] = [
-        "id",
-        "resolved_script",
-        "resolved_interpreter",
-        "execution_status_code",
-        "completion_status_code",
-        "machine_id",
-        "started_at",
-        "completed_at",
-        "script_args",
-        "last_process_status_code",
-        "last_memory",
-        "last_cpu",
-        "task_id",
-        "created_at",
-        "updated_at",
-        "deleted_at"
-    ];
-
+    /*
+     private static readonly _persistentProperties: string[] = [
+     "id",
+     "resolved_script",
+     "resolved_interpreter",
+     "execution_status_code",
+     "completion_status_code",
+     "machine_id",
+     "started_at",
+     "completed_at",
+     "script_args",
+     "last_process_status_code",
+     "last_memory",
+     "last_cpu",
+     "task_id",
+     "created_at",
+     "updated_at",
+     "deleted_at"
+     ];
+     */
     private _dataLoader: any;
 
     public constructor() {
@@ -99,9 +99,7 @@ export class TaskExecutions {
 
         let ids = await TaskExecutions._getIdList();
 
-        let tasks: ITaskExecution[] = this._dataLoader.loadMany(ids);
-
-        return tasks;
+        return this._dataLoader.loadMany(ids);
     }
 
     public async getRunningTasks() {
@@ -109,9 +107,7 @@ export class TaskExecutions {
 
         let ids = await TaskExecutions._getRunningIdList();
 
-        let tasks: ITaskExecution[] = this._dataLoader.loadMany(ids);
-
-        return tasks;
+        return this._dataLoader.loadMany(ids);
     }
 
     public async save(taskExecution: ITaskExecution) {
@@ -188,7 +184,7 @@ export class TaskExecutions {
         return <string[]>objList.map(obj => obj.id);
     }
 
-    private static async _getRunningIdList(){
+    private static async _getRunningIdList() {
         let objList = await knex(TaskExecutions._tableName).where("execution_status_code", ExecutionStatusCode.Running).select(TaskExecutions._idKey);
 
         return <string[]>objList.map(obj => obj.id);
@@ -204,8 +200,8 @@ export class TaskExecutions {
                     return task.length > 0 ? task[0] : null;
                 });
                 resolve(result);
-            })
-        })
+            });
+        });
     }
 }
 

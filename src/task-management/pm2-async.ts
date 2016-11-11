@@ -25,11 +25,11 @@ export enum ExecutionStatus {
 export interface IProcessInfo {
     name: string;
     managerId: number;
-    processId: number,
-    mode: ExecutionMode,
-    status: ExecutionStatus,
-    memory: number,
-    cpu: number,
+    processId: number;
+    mode: ExecutionMode;
+    status: ExecutionStatus;
+    memory: number;
+    cpu: number;
     interpreter: string;
     scriptPath: string;
     exitCode: number;
@@ -92,14 +92,14 @@ export function start(options): Promise<IProcessInfo> {
                 debug(err);
                 reject(err);
             } else {
-                debug(`start() returned ${processList.length} process description`)
+                debug(`start() returned ${processList.length} process description`);
                 if (processList.length > 0) {
                     resolve(_mapProcessInfo(processList[0].pm2_env));
                 } else {
                     reject("start() returned empty process array");
                 }
             }
-        })
+        });
     });
 }
 
@@ -114,7 +114,7 @@ export function stop(options): Promise<IProcessInfo> {
                 let result = _mapProcessInfo(processInfo);
                 resolve(result);
             }
-        })
+        });
     });
 }
 
@@ -132,7 +132,7 @@ export function list(): Promise<IProcessInfo[]> {
                 });
                 resolve(result);
             }
-        })
+        });
     });
 }
 
@@ -226,7 +226,7 @@ function _lookupExecMode(str: string): ExecutionMode {
 
 function _lookupExecStatus(str: string): ExecutionStatus {
     if (str === "start") {
-        return ExecutionStatus.Started
+        return ExecutionStatus.Started;
     } else if (str === "online") {
         return ExecutionStatus.Online;
     } else if (str === "restart") {

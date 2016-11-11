@@ -181,6 +181,6 @@ export class TaskManager implements ITaskManager {
             }
         }
 
-        return taskExecution
+        return taskExecution;
     }
 }

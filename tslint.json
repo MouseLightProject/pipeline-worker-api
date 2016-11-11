@@ -1,5 +1,9 @@
 {
   "rules": {
+    "only-arrow-functions": [
+      true,
+      "allow-declarations"
+    ],
     "class-name": true,
     "comment-format": [
       true,
@@ -24,7 +28,10 @@
       "double"
     ],
     "semicolon": [
-      "always",
+      true,
+      "always"
+    ],
+    "no-unused-variable": [
       true
     ],
     "triple-equals": [

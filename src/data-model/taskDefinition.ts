@@ -1,6 +1,6 @@
 const DataLoader = require("dataloader");
 
-import {knex} from "../data-access/knexConnector"
+import {knex} from "../data-access/knexConnector";
 
 export interface ITaskDefinition {
     id: string;
@@ -41,7 +41,7 @@ export class TaskDefinitions {
         return new Promise<ITaskDefinition[]>((resolve) => {
             knex(TaskDefinitions._tableName).whereIn(TaskDefinitions._idKey, keys).then((tasks) => {
                 resolve(tasks);
-            })
-        })
+            });
+        });
     }
 }
