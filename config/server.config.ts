@@ -15,7 +15,7 @@ const configurations: IConfiguration<IServerConfig> = {
         port: 3001,
         graphQlEndpoint: "/graphql",
         graphiQlEndpoint: "/graphiql",
-        machineId: "1BCC812D-97CE-4B14-AD48-5C3C9B9B416E",
+        machineId: "1BCC812D-97CE-4B14-AD48-5C3C9B9B416E".toLocaleLowerCase(),
         serverHost: "localhost",
         serverPort: 3000,
         serverGraphQlEndpoint: "/graphql"
@@ -24,7 +24,7 @@ const configurations: IConfiguration<IServerConfig> = {
         port: 3001,
         graphQlEndpoint: "/graphql",
         graphiQlEndpoint: "/graphiql",
-        machineId: "1BCC812D-97CE-4B14-AD48-5C3C9B9B416E",
+        machineId: "1BCC812D-97CE-4B14-AD48-5C3C9B9B416E".toLocaleLowerCase(),
         serverHost: "localhost",
         serverPort: 3000,
         serverGraphQlEndpoint: "/graphql"
@@ -33,7 +33,7 @@ const configurations: IConfiguration<IServerConfig> = {
         port: 3001,
         graphQlEndpoint: "/graphql",
         graphiQlEndpoint: "/graphiql",
-        machineId: "1BCC812D-97CE-4B14-AD48-5C3C9B9B416E",
+        machineId: "1BCC812D-97CE-4B14-AD48-5C3C9B9B416E".toLocaleLowerCase(),
         serverHost: "pipelineServer",
         serverPort: 3000,
         serverGraphQlEndpoint: "/graphql"
