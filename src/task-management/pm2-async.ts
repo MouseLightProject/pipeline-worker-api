@@ -138,20 +138,26 @@ export function list(): Promise<IProcessInfo[]> {
 
 export function describe(pid: number): Promise<IProcessInfo> {
     return new Promise<IProcessInfo>((resolve, reject) => {
-        pm2.describe(pid, (err, processList) => {
-            if (err) {
-                debug(err);
-                reject(err);
-            } else {
-                debug(`describe returned ${processList.length} process descriptions`);
-                if (processList.length > 0) {
-                    let result = _mapProcessInfo(processList[0].pm2_env, processList[0].monit, processList[0].pid);
-                    console.log(result);
+        try {
+            pm2.describe(pid, (err, processList) => {
+                if (err) {
+                    debug(err);
+                    reject(err);
                 } else {
-                    reject(`PM2 describe(${pid}) returned process info of length 0.`);
+                    debug(`describe returned ${processList.length} process descriptions`);
+                    if (processList.length > 0) {
+                        let result = _mapProcessInfo(processList[0].pm2_env, processList[0].monit, processList[0].pid);
+                        console.log(result);
+                    } else {
+                        reject(`PM2 describe(${pid}) returned process info of length 0.`);
+                    }
                 }
-            }
-        });
+            });
+        } catch (err) {
+            debug(err);
+            console.log(err);
+            reject(err);
+        }
     });
 }
 
@@ -216,11 +222,11 @@ function _lookupExecMode(str: string): ExecutionMode {
         return ExecutionMode.Fork;
     } else if (str === "cluster_mode") {
         return ExecutionMode.Cluster;
-    } else if (str === "undefined") {
+    } else if (str === "undefined" || !str) {
         return ExecutionMode.Undefined;
     } else {
         console.log(`Unexpected PM2 execution mode string (${str}).`);
-        return null;
+        return ExecutionMode.Undefined;
     }
 }
 

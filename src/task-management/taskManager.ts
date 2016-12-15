@@ -15,7 +15,7 @@ export interface ITaskManager extends ProcessManager.IPM2MonitorDelegate {
     startTask(taskDefinitionId: string, scriptArgs: Array<string>): Promise<ITaskExecution>;
     refreshTasksFromProcessManager();
     refreshTaskFromProcessManager(taskExecutionId: string);
-    // deleteTask(taskExecutionId: string);
+    clearAllCompleteExecutions();
 }
 
 export class TaskManager implements ITaskManager {
@@ -57,6 +57,10 @@ export class TaskManager implements ITaskManager {
         return this._taskExecutions.getRunningTasks();
     }
 
+    public clearAllCompleteExecutions() {
+        return this._taskExecutions.clearAllComplete();
+    }
+
     // TODO Need a function to refresh what the database thinks are running tasks (find orphans, update stats, etc).
     // Should it be merged with refreshing the list from the process manager?  If we are only going to start through
     // this interface than the only ones that should exist that we'd care about should be known to us, unless there is
@@ -65,9 +69,17 @@ export class TaskManager implements ITaskManager {
     public async startTask(taskDefinitionId: string, scriptArgs: Array<string>) {
         let taskDefinition = await this._taskDefinitions.get(taskDefinitionId);
 
-        let taskExecution = await this._taskExecutions.createTask(taskDefinition, scriptArgs);
+        let customArgs = [];
 
-        return this._startTask(taskExecution, taskDefinition, scriptArgs);
+        if (taskDefinition.args) {
+            customArgs = taskDefinition.args.split(/[\s+]/).filter(Boolean);
+        }
+
+        let combinedArgs = scriptArgs.concat(customArgs);
+
+        let taskExecution = await this._taskExecutions.createTask(taskDefinition, combinedArgs);
+
+        return this._startTask(taskExecution, taskDefinition, combinedArgs);
     }
 
     public async refreshTasksFromProcessManager() {

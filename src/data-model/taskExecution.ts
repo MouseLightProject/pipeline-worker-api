@@ -99,7 +99,14 @@ export class TaskExecutions {
 
         let ids = await TaskExecutions._getIdList();
 
-        return this._dataLoader.loadMany(ids);
+        let tasks = await this._dataLoader.loadMany(ids);
+
+        tasks.sort((a, b) => {
+            // Descending
+            return b.updated_at - a.updated_at;
+        });
+
+        return tasks;
     }
 
     public async getRunningTasks() {
@@ -131,6 +138,14 @@ export class TaskExecutions {
 
         // Reload for caller.
         return this.getTask(taskExecution.id);
+    }
+
+    public async clearAllComplete() {
+        let count = await knex(TaskExecutions._tableName).where("execution_status_code", ExecutionStatusCode.Completed).del();
+
+        this._dataLoader.clear();
+
+        return count;
     }
 
     public async update(taskExecution: ITaskExecution, processInfo: IProcessInfo) {
@@ -212,7 +227,7 @@ function _createTaskFromDefinition(taskDefinition: ITaskDefinition, scriptArgs: 
         resolved_interpreter: null,
         execution_status_code: ExecutionStatusCode.Initializing,
         completion_status_code: CompletionStatusCode.Incomplete,
-        machine_id: configuration.machineId,
+        machine_id: configuration.hostInformation.machineId,
         started_at: null,
         completed_at: null,
         script_args: scriptArgs ? scriptArgs.join(", ") : "",

@@ -8,6 +8,7 @@ export interface ITaskDefinition {
     description: string;
     script: string;
     interpreter: string;
+    args: string;
     created_at: Date;
     updated_at: Date;
     deleted_at: Date;

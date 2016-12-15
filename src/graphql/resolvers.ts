@@ -4,6 +4,10 @@ import {ITaskDefinition} from "../data-model/taskDefinition";
 
 const debug = require("debug")("mouselight:worker-api:resolvers");
 
+interface IIdOnlyArguments {
+    id: string;
+}
+
 interface IDebugMessageArguments {
     msg: string;
 }
@@ -23,6 +27,10 @@ let resolvers = {
         taskDefinitions(_, __, context: IGraphQLAppContext): Promise<ITaskDefinition[]> {
             debug("get all task definitions");
             return context.taskManager.getTaskDefinitions();
+        },
+        taskExecution(_, args: IIdOnlyArguments, context: IGraphQLAppContext): Promise<ITaskExecution[]> {
+            debug(`get all task ${args.id}`);
+            return context.taskManager.getTask(args.id);
         },
         taskExecutions(_, __, context: IGraphQLAppContext): Promise<ITaskExecution[]> {
             debug("get all tasks");
@@ -53,11 +61,10 @@ let resolvers = {
         refreshTaskFromProcessManager(_, {taskExecutionId}, context: IGraphQLAppContext) {
             debug(`refresh task ${taskExecutionId}`);
             return context.taskManager.refreshTaskFromProcessManager(taskExecutionId);
-        }/*,
-        deleteTask(_, {taskExecutionId}, context: IGraphQLAppContext) {
-            debug(`delete task ${taskExecutionId}`);
-            return context.taskManager.deleteTask(taskExecutionId);
-        }*/
+        },
+        clearAllCompleteExecutions(_, __, context: IGraphQLAppContext) {
+            return context.taskManager.clearAllCompleteExecutions();
+        }
     }
 };
 

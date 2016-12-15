@@ -38,6 +38,7 @@ type TaskExecution implements ITimestamps {
 type Query {
   taskDefinitions: [TaskDefinition!]!
   taskExecutions: [TaskExecution!]!
+  taskExecution(id: String!): TaskExecution
   runningTasks: [TaskExecution!]!
 }
 
@@ -47,6 +48,7 @@ type Mutation {
   stopTask(taskExecutionId: String!, forceIfNeeded: Boolean = false): TaskExecution
   refreshTasksFromProcessManager: [TaskExecution!]
   refreshTaskFromProcessManager(taskExecutionId: String!): TaskExecution
+  clearAllCompleteExecutions: Int
 }
 
 schema {

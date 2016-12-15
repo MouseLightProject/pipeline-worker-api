@@ -6,6 +6,7 @@ exports.up = function (knex, Promise) {
             table.string('description');
             table.string('script');
             table.string('interpreter');
+            table.string('args');
             table.timestamp('deleted_at');
             table.timestamps();
         }).createTable('TaskExecutions', (table) => {

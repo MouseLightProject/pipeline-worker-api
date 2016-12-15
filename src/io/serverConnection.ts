@@ -1,8 +1,9 @@
 import * as socket_io from "socket.io-client";
 
+const os = require("os");
 const debug = require("debug")("mouselight:worker-api:socket.io");
 
-import {IServerConfig} from "../../config/server.config";
+import {IServerConfig, IHostInformation} from "../../config/server.config";
 import {TaskExecutions} from "../data-model/taskExecution";
 
 export enum ServerConnectionStatus {
@@ -16,7 +17,7 @@ export enum ServerConnectionStatus {
 }
 
 export class SocketIoClient {
-    private static _HEARTBEAT_INTERVAL_SECONDS = 120;
+    private static _HEARTBEAT_INTERVAL_SECONDS = 10;
 
     private static _ioClient: SocketIoClient = null;
 
@@ -34,7 +35,7 @@ export class SocketIoClient {
 
     private _socket;
 
-    private _machineId = "";
+    private _hostInformation: IHostInformation = null;
 
     private _heartBeatInterval = null;
 
@@ -46,10 +47,20 @@ export class SocketIoClient {
         return this._connectionStatus;
     }
 
-    private constructor(config) {
-        this._socket = socket_io(`http://${config.serverHost}:${config.serverPort}`);
+    private constructor(config: IServerConfig) {
+        this._socket = socket_io(`http://${config.managementService.host}:${config.managementService.port}`);
 
-        this._machineId = config.machineId;
+        this._hostInformation = config.hostInformation;
+
+        this._hostInformation.name = os.hostname();
+        this._hostInformation.osType = os.type();
+        this._hostInformation.platform =  os.platform();
+        this._hostInformation.arch =  os.arch();
+        this._hostInformation.release =  os.release();
+        this._hostInformation.cpuCount =  os.cpus().length;
+        this._hostInformation.freeMemory = os.freemem();
+        this._hostInformation.totalMemory = os.totalmem();
+        this._hostInformation.loadAverage = os.loadavg();
 
         debug("interface available");
 
@@ -57,6 +68,8 @@ export class SocketIoClient {
             debug("connected to server");
 
             this._connectionStatus = ServerConnectionStatus.Connected;
+
+            this.emitHostInformation();
 
             this.emitHeartBeat();
 
@@ -67,7 +80,6 @@ export class SocketIoClient {
 
         this._socket.on("error", reason => {
             debug("connection error");
-            // debug(reason);
 
             this._connectionStatus = ServerConnectionStatus.ConnectionError;
         });
@@ -97,19 +109,24 @@ export class SocketIoClient {
         });
     }
 
+    private async emitHostInformation() {
+        this._socket.emit("hostInformation", this._hostInformation);
+    }
+
     private async emitHeartBeat() {
-        debug("heartbeat");
 
         let taskCount = -1;
 
         let tasks = await this._taskExecutions.getRunningTasks();
 
-        if (tasks) {
+        if (tasks != null) {
             taskCount = tasks.length;
         }
 
+        debug(`heartbeat (${taskCount} tasks)`);
+
         this._socket.emit("heartBeat", {
-            machineId: this._machineId,
+            machineId: this._hostInformation.machineId,
             runningTaskCount: taskCount
         });
     }
