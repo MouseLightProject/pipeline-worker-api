@@ -4,7 +4,7 @@ const os = require("os");
 const debug = require("debug")("mouselight:worker-api:socket.io");
 
 import {IServerConfig, IHostInformation} from "../../config/server.config";
-import {TaskExecutions} from "../data-model/taskExecution";
+import {TaskExecutions, ITaskExecution} from "../data-model/taskExecution";
 
 export enum ServerConnectionStatus {
     Uninitialized,
@@ -105,19 +105,21 @@ export class SocketIoClient {
 
     private async emitHeartBeat() {
 
-        let taskCount = -1;
+        let taskLoad = -1;
 
-        let tasks = await this._taskExecutions.getRunningTasks();
+        let tasks: ITaskExecution[] = await this._taskExecutions.getRunningTasks();
 
         if (tasks != null) {
-            taskCount = tasks.length;
+            taskLoad = tasks.reduce((total: number, task) => {
+                return task.work_units + total;
+            }, 0);
         }
 
-        debug(`heartbeat (${taskCount} tasks)`);
+        debug(`heartbeat (${taskLoad} task load)`);
 
         this._socket.emit("heartBeat", {
             machineId: this._hostInformation.machineId,
-            runningTaskCount: taskCount
+            taskLoad: taskLoad
         });
     }
 }
