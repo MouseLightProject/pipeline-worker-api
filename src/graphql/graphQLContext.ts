@@ -1,17 +1,22 @@
-import {TaskManager, ITaskManager} from "../task-management/taskManager";
+import {taskManager, ITaskManager} from "../task-management/taskManager";
+import readServerConfiguration from "../../config/server.config";
+import {IServerConfig} from "../../config/server.config";
 
-const taskManager = new TaskManager();
+const debug = require("debug")("mouselight:worker-api:graphql-context");
 
-taskManager.connect();
+const serverConfiguration = readServerConfiguration();
 
 export interface IGraphQLAppContext {
     taskManager: ITaskManager;
+    serverConfiguration: IServerConfig;
 }
 
 export class GraphQLAppContext implements IGraphQLAppContext {
     readonly taskManager: ITaskManager;
+    readonly serverConfiguration: IServerConfig;
 
     constructor() {
         this.taskManager = taskManager;
+        this.serverConfiguration = serverConfiguration;
     }
 }

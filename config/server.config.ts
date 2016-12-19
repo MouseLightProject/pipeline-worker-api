@@ -1,3 +1,5 @@
+const os = require("os");
+
 import {IConfiguration} from "./configuration";
 
 export interface IHostInformation {
@@ -11,6 +13,7 @@ export interface IHostInformation {
     totalMemory: number;
     freeMemory: number;
     loadAverage: number;
+    workUnitCapacity: number;
 }
 
 // To establish socket.io, graphql, and any other connections.  In place of having a general discovery service.
@@ -43,7 +46,8 @@ const configurations: IConfiguration<IServerConfig> = {
             cpuCount: 0,
             totalMemory: 0,
             freeMemory: 0,
-            loadAverage: 0
+            loadAverage: 0,
+            workUnitCapacity: 4
         },
         managementService: {
             host: "localhost",
@@ -65,7 +69,8 @@ const configurations: IConfiguration<IServerConfig> = {
             cpuCount: 0,
             totalMemory: 0,
             freeMemory: 0,
-            loadAverage: 0
+            loadAverage: 0,
+            workUnitCapacity: 4
         },
         managementService: {
             host: "localhost",
@@ -87,7 +92,8 @@ const configurations: IConfiguration<IServerConfig> = {
             cpuCount: 0,
             totalMemory: 0,
             freeMemory: 0,
-            loadAverage: 0
+            loadAverage: 0,
+            workUnitCapacity: 4
         },
         managementService: {
             host: "pipelineServer",
@@ -103,13 +109,37 @@ function overrideDefaults(config: IServerConfig): IServerConfig {
     config.managementService.host = process.env.SERVER_HOST || config.managementService.host;
     config.managementService.port = process.env.SERVER_PORT || config.managementService.port;
 
+    config.hostInformation = loadHostInformation(config.hostInformation);
+
     config.hostInformation.machineId = process.env.MACHINE_ID || config.hostInformation.machineId;
+    config.hostInformation.workUnitCapacity = process.env.WORK_UNIT_CAPACITY || config.hostInformation.workUnitCapacity;
 
     return config;
 }
 
-export default function (): IServerConfig {
-    let env = process.env.NODE_ENV || "development";
+let localServerConfiguration = null;
 
-    return overrideDefaults(configurations[env]);
+export default function readServerConfiguration(): IServerConfig {
+    if (localServerConfiguration === null) {
+        let env = process.env.NODE_ENV || "development";
+
+        localServerConfiguration = overrideDefaults(configurations[env]);
+    }
+
+    return localServerConfiguration;
 }
+
+function loadHostInformation(hostInformation) {
+    hostInformation.name = os.hostname();
+    hostInformation.osType = os.type();
+    hostInformation.platform = os.platform();
+    hostInformation.arch = os.arch();
+    hostInformation.release = os.release();
+    hostInformation.cpuCount = os.cpus().length;
+    hostInformation.freeMemory = os.freemem();
+    hostInformation.totalMemory = os.totalmem();
+    hostInformation.loadAverage = os.loadavg();
+
+    return hostInformation;
+}
+

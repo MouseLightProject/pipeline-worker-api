@@ -1,4 +1,13 @@
+const path = require("path");
+const fs = require("fs-extra");
+
 import {IConfiguration} from "./configuration";
+
+export const internalDataPath = path.join(process.cwd(), "internal-data");
+
+if (!fs.existsSync(internalDataPath)) {
+    fs.mkdirSync(internalDataPath);
+}
 
 interface IDatabaseConfig {
     client: string;
@@ -11,7 +20,7 @@ const configurations: IConfiguration<IDatabaseConfig> = {
     development: {
         client: "sqlite3",
         connection: {
-            filename: "./dev.sqlite3"
+            filename: path.join(internalDataPath, "system-data-dev.sqlite3")
         },
         useNullAsDefault: true,
         migrations: {
@@ -21,7 +30,7 @@ const configurations: IConfiguration<IDatabaseConfig> = {
     test: {
         client: "sqlite3",
         connection: {
-            filename: "./test.sqlite3"
+            filename: path.join(internalDataPath, "system-data-test.sqlite3")
         },
         useNullAsDefault: true,
         migrations: {
@@ -31,7 +40,7 @@ const configurations: IConfiguration<IDatabaseConfig> = {
     production: {
         client: "sqlite3",
         connection: {
-            filename: "./production.sqlite3"
+            filename: path.join(internalDataPath, "system-data-production.sqlite3")
         },
         useNullAsDefault: true,
         migrations: {

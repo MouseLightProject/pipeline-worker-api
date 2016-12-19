@@ -52,26 +52,16 @@ export class SocketIoClient {
 
         this._hostInformation = config.hostInformation;
 
-        this._hostInformation.name = os.hostname();
-        this._hostInformation.osType = os.type();
-        this._hostInformation.platform =  os.platform();
-        this._hostInformation.arch =  os.arch();
-        this._hostInformation.release =  os.release();
-        this._hostInformation.cpuCount =  os.cpus().length;
-        this._hostInformation.freeMemory = os.freemem();
-        this._hostInformation.totalMemory = os.totalmem();
-        this._hostInformation.loadAverage = os.loadavg();
-
         debug("interface available");
 
-        this._socket.on("connect", () => {
+        this._socket.on("connect", async () => {
             debug("connected to server");
 
             this._connectionStatus = ServerConnectionStatus.Connected;
 
             this.emitHostInformation();
 
-            this.emitHeartBeat();
+            await this.emitHeartBeat();
 
             if (!this._heartBeatInterval) {
                 this._heartBeatInterval = setInterval(() => this.emitHeartBeat(), SocketIoClient._HEARTBEAT_INTERVAL_SECONDS * 1000);
@@ -109,7 +99,7 @@ export class SocketIoClient {
         });
     }
 
-    private async emitHostInformation() {
+    private emitHostInformation() {
         this._socket.emit("hostInformation", this._hostInformation);
     }
 

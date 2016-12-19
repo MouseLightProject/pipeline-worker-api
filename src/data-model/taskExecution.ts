@@ -1,14 +1,16 @@
-const DataLoader = require("dataloader");
+import {ITableModelRow, TableModel} from "./tableModel";
 import * as uuid from "node-uuid";
+const ChildProcess = require("child_process");
 
 import {knex} from "../data-access/knexConnector";
 import {ITaskDefinition} from "./taskDefinition";
 import {IProcessInfo, ExecutionStatus} from "../task-management/pm2-async";
-import serverConfiguration from "../../config/server.config";
+import readServerConfiguration from "../../config/server.config";
+import {updateStatisticsForTaskId, ISystemProcessStatistics} from "./taskStatistics";
 
 const debug = require("debug")("mouselight:worker-api:tasks");
 
-const configuration = serverConfiguration();
+const serverConfiguration = readServerConfiguration();
 
 export enum ExecutionStatusCode {
     Undefined = 0,
@@ -26,53 +28,26 @@ export enum CompletionStatusCode {
     Error = 4
 }
 
-export interface ITaskExecution {
-    id: string;
+export interface ITaskExecution extends ITableModelRow {
+    machine_id: string;
+    task_id: string;
+    work_units: number;
     resolved_script: string;
     resolved_interpreter: string;
+    resolved_args: string;
     execution_status_code: ExecutionStatusCode;
     completion_status_code: CompletionStatusCode;
-    machine_id: string;
-    started_at: Date;
-    completed_at: Date;
-    script_args: string;
     last_process_status_code: number;
     max_memory: number;
     max_cpu: number;
     exit_code: number;
-    task_id: string;
-    created_at: Date;
-    updated_at: Date;
-    deleted_at: Date;
+    started_at: Date;
+    completed_at: Date;
 }
 
-export class TaskExecutions {
-    private static _tableName = "TaskExecutions";
-    private static _idKey = "id";
-    /*
-     private static readonly _persistentProperties: string[] = [
-     "id",
-     "resolved_script",
-     "resolved_interpreter",
-     "execution_status_code",
-     "completion_status_code",
-     "machine_id",
-     "started_at",
-     "completed_at",
-     "script_args",
-     "last_process_status_code",
-     "last_memory",
-     "last_cpu",
-     "task_id",
-     "created_at",
-     "updated_at",
-     "deleted_at"
-     ];
-     */
-    private _dataLoader: any;
-
+export class TaskExecutions extends TableModel<ITaskExecution> {
     public constructor() {
-        this._dataLoader = new DataLoader(TaskExecutions.fetch);
+        super("TaskExecution");
     }
 
     public async createTask(taskDefinition: ITaskDefinition, scriptArgs: Array<string>): Promise<ITaskExecution> {
@@ -83,23 +58,15 @@ export class TaskExecutions {
         await this.save(taskExecution);
 
         // Retrieves back through data loader
-        taskExecution = await this.getTask(taskExecution.id);
+        taskExecution = await this.get(taskExecution.id);
 
         return taskExecution;
     }
 
-    public getTask(id: string): Promise<ITaskExecution> {
-        debug(`get task with id ${id}`);
-
-        return this._dataLoader.load(id);
-    }
-
-    public async getTasks() {
+    public async getAll() {
         debug(`get all tasks`);
 
-        let ids = await TaskExecutions._getIdList();
-
-        let tasks = await this._dataLoader.loadMany(ids);
+        let tasks = await super.getAll();
 
         tasks.sort((a, b) => {
             // Descending
@@ -112,46 +79,39 @@ export class TaskExecutions {
     public async getRunningTasks() {
         debug(`get running tasks`);
 
-        let ids = await TaskExecutions._getRunningIdList();
+        let ids = await this._getRunningIdList();
 
-        return this._dataLoader.loadMany(ids);
-    }
-
-    public async save(taskExecution: ITaskExecution) {
-        if (taskExecution.created_at == null) {
-            debug(`creating new task execution ${taskExecution.id}`);
-
-            taskExecution.created_at = new Date();
-
-            await knex(TaskExecutions._tableName).insert(taskExecution);
-        } else {
-            debug(`saving updates for task execution ${taskExecution.id}`);
-
-            if (!taskExecution.deleted_at) {
-                taskExecution.updated_at = new Date();
-            }
-
-            await knex(TaskExecutions._tableName).where(TaskExecutions._idKey, taskExecution.id).update(taskExecution);
-
-            this._dataLoader.clear(taskExecution.id);
-        }
-
-        // Reload for caller.
-        return this.getTask(taskExecution.id);
+        return this.dataLoader.loadMany(ids);
     }
 
     public async clearAllComplete() {
-        let count = await knex(TaskExecutions._tableName).where("execution_status_code", ExecutionStatusCode.Completed).del();
+        let count = await knex(this.tableName).where("execution_status_code", ExecutionStatusCode.Completed).del();
 
-        this._dataLoader.clear();
+        this.dataLoader.clear();
 
         return count;
     }
 
-    public async update(taskExecution: ITaskExecution, processInfo: IProcessInfo) {
+    public async update(taskExecution: ITaskExecution, processInfo: IProcessInfo, manually: boolean) {
         if (taskExecution == null || processInfo == null) {
             debug(`skipping update for null task execution (${taskExecution == null}) or process info (${processInfo == null})`);
             return;
+        }
+
+        if (processInfo.processId && processInfo.processId > 0) {
+            let stats = await readProcessStatistics(processInfo.processId);
+
+            console.log(stats);
+
+            if (!isNaN(stats.memory_mb) && (stats.memory_mb > taskExecution.max_memory || isNaN(taskExecution.max_memory))) {
+                taskExecution.max_memory = stats.memory_mb;
+            }
+
+            if (!isNaN(stats.cpu_percent) && (stats.cpu_percent > taskExecution.max_cpu || isNaN(taskExecution.max_cpu))) {
+                taskExecution.max_cpu = stats.cpu_percent;
+            }
+
+            console.log(taskExecution.max_cpu);
         }
 
         // Have a real status from the process manager (e.g, PM2).
@@ -177,65 +137,86 @@ export class TaskExecutions {
         // PM2 is not uniform on when its "process object" includes an exit code.  Handle outside of the formal
         // completion code above.
         if (processInfo.exitCode != null) {
-            taskExecution.exit_code = processInfo.exitCode;
-            taskExecution.completion_status_code = (processInfo.exitCode === 0) ? CompletionStatusCode.Success : CompletionStatusCode.Error;
-        }
+            // May already be set if cancelled.
+            if (taskExecution.completion_status_code < CompletionStatusCode.Cancel) {
+                taskExecution.completion_status_code = (processInfo.exitCode === 0) ? CompletionStatusCode.Success : CompletionStatusCode.Error;
 
-        // Basic stats
-        if (processInfo.memory > taskExecution.max_memory) {
-            taskExecution.max_memory = processInfo.memory;
-        }
+            }
 
-        if (processInfo.cpu > taskExecution.max_cpu) {
-            taskExecution.max_cpu = processInfo.cpu;
+            if (taskExecution.exit_code === null) {
+                taskExecution.exit_code = processInfo.exitCode;
+
+                updateStatisticsForTaskId(taskExecution);
+            }
         }
 
         await this.save(taskExecution);
     }
 
-    private static async _getIdList() {
-        let objList = await knex(TaskExecutions._tableName).select(TaskExecutions._idKey);
+    private async _getRunningIdList() {
+        let objList = await knex(this.tableName).where("execution_status_code", ExecutionStatusCode.Running).select(this.idKey).orderBy("id");
 
         return <string[]>objList.map(obj => obj.id);
     }
+}
 
-    private static async _getRunningIdList() {
-        let objList = await knex(TaskExecutions._tableName).where("execution_status_code", ExecutionStatusCode.Running).select(TaskExecutions._idKey);
+function readProcessStatistics(processId): Promise<ISystemProcessStatistics> {
+    return new Promise<ISystemProcessStatistics>((resolve, reject) => {
+        ChildProcess.exec(`ps -A -o pid,pgid,rss,%cpu | grep ${processId}`, (err, stdout, stderr) => {
+            if (err || stderr) {
+                reject(err);
+            }
+            else {
+                let stats: ISystemProcessStatistics = {
+                    memory_mb: NaN,
+                    cpu_percent: NaN
+                };
 
-        return <string[]>objList.map(obj => obj.id);
-    }
+                stdout = stdout.split(/\n/).filter(Boolean);
 
-    private static fetch(keys: string[]): Promise<ITaskExecution[]> {
-        return new Promise<TaskExecutions[]>((resolve) => {
-            knex(TaskExecutions._tableName).whereIn(TaskExecutions._idKey, keys).then((tasks) => {
-                let result = keys.map((key) => {
-                    let task = tasks.filter((obj) => {
-                        return obj.id === key;
-                    });
-                    return task.length > 0 ? task[0] : null;
-                });
-                resolve(result);
-            });
+                let statsArray: Array<ISystemProcessStatistics> = stdout.map(obj => {
+                    let parts = obj.split(/[\s+]/).filter(Boolean);
+
+                    if (parts.length === 4) {
+                        return {
+                            memory_mb: parseInt(parts[2]) / 1024,
+                            cpu_percent: parseFloat(parts[3])
+                        };
+                    } else {
+                        return null;
+                    }
+                }).filter(Boolean);
+
+                stats = statsArray.reduce((prev, stats) => {
+                    return {
+                        memory_mb: isNaN(prev.memory_mb) ? stats.memory_mb : prev.memory_mb + stats.memory_mb,
+                        cpu_percent: isNaN(prev.cpu_percent) ? stats.cpu_percent : prev.cpu_percent + stats.cpu_percent
+                    };
+                }, stats);
+
+                resolve(stats);
+            }
         });
-    }
+    });
 }
 
 function _createTaskFromDefinition(taskDefinition: ITaskDefinition, scriptArgs: Array<string>): ITaskExecution {
     return {
         id: uuid.v4(),
+        machine_id: serverConfiguration.hostInformation.machineId,
+        task_id: taskDefinition.id,
+        work_units: taskDefinition.work_units,
         resolved_script: null,
         resolved_interpreter: null,
+        resolved_args: scriptArgs ? scriptArgs.join(", ") : "",
         execution_status_code: ExecutionStatusCode.Initializing,
         completion_status_code: CompletionStatusCode.Incomplete,
-        machine_id: configuration.hostInformation.machineId,
+        last_process_status_code: null,
+        max_memory: NaN,
+        max_cpu: NaN,
+        exit_code: null,
         started_at: null,
         completed_at: null,
-        script_args: scriptArgs ? scriptArgs.join(", ") : "",
-        last_process_status_code: null,
-        max_memory: 0,
-        max_cpu: 0,
-        exit_code: null,
-        task_id: taskDefinition.id,
         created_at: null,
         updated_at: null,
         deleted_at: null

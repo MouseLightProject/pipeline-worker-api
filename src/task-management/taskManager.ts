@@ -4,6 +4,7 @@ import {ITaskDefinition, TaskDefinitions} from "../data-model/taskDefinition";
 import {ITaskExecution, TaskExecutions, ExecutionStatusCode, CompletionStatusCode} from "../data-model/taskExecution";
 import * as ProcessManager from "./pm2-async";
 import {IProcessInfo, ExecutionStatus} from "./pm2-async";
+import {ITaskStatistics, TaskStatistics, taskStatisticsInstance} from "../data-model/taskStatistics";
 
 const debug = require("debug")("mouselight:worker-api:task-manager");
 
@@ -11,11 +12,15 @@ export interface ITaskManager extends ProcessManager.IPM2MonitorDelegate {
     getTaskDefinitions(): Promise<ITaskDefinition[]>;
     getTask(id: string): Promise<ITaskExecution>;
     getTasks(): Promise<ITaskExecution[]>;
+    getStatistics(): Promise<ITaskStatistics[]>;
+    statisticsForTask(id: string): Promise<ITaskStatistics>;
     getRunningTasks(): Promise<ITaskExecution[]>;
     startTask(taskDefinitionId: string, scriptArgs: Array<string>): Promise<ITaskExecution>;
+    stopTask(taskExecutionId: string): Promise<ITaskExecution>;
     refreshTasksFromProcessManager();
     refreshTaskFromProcessManager(taskExecutionId: string);
-    clearAllCompleteExecutions();
+    clearAllCompleteExecutions(): Promise<number>;
+    resetStatistics(): Promise<number>;
 }
 
 export class TaskManager implements ITaskManager {
@@ -24,17 +29,18 @@ export class TaskManager implements ITaskManager {
 
         await ProcessManager.monitor(this);
 
-        setInterval(() => {
-            this.refreshTasksFromProcessManager();
+        setInterval(async() => {
+            await this.refreshTasksFromProcessManager();
         }, 3000);
     }
 
     private _taskDefinitions = new TaskDefinitions();
     private _taskExecutions = new TaskExecutions();
 
-    public processEvent(name: string, processInfo: IProcessInfo) {
+    public async processEvent(name: string, processInfo: IProcessInfo, manually: boolean) {
         debug(`Handling event ${name} for ${processInfo.name} with status ${processInfo.status}`);
-        this._updateTask(processInfo);
+
+        await this._updateTask(processInfo, manually);
     }
 
     public pm2Killed() {
@@ -46,19 +52,31 @@ export class TaskManager implements ITaskManager {
     }
 
     public getTask(id: string): Promise<ITaskExecution> {
-        return this._taskExecutions.getTask(id);
+        return this._taskExecutions.get(id);
     }
 
     public getTasks(): Promise<ITaskExecution[]> {
-        return this._taskExecutions.getTasks();
+        return this._taskExecutions.getAll();
     }
 
     public getRunningTasks(): Promise<ITaskExecution[]> {
         return this._taskExecutions.getRunningTasks();
     }
 
-    public clearAllCompleteExecutions() {
+    public getStatistics(): Promise<ITaskStatistics[]> {
+        return taskStatisticsInstance.getAll();
+    }
+
+    public statisticsForTask(id: string): Promise<ITaskStatistics> {
+        return taskStatisticsInstance.getForTaskId(id);
+    }
+
+    public clearAllCompleteExecutions(): Promise<number> {
         return this._taskExecutions.clearAllComplete();
+    }
+
+    public resetStatistics(): Promise<number> {
+        return taskStatisticsInstance.reset();
     }
 
     // TODO Need a function to refresh what the database thinks are running tasks (find orphans, update stats, etc).
@@ -82,26 +100,40 @@ export class TaskManager implements ITaskManager {
         return this._startTask(taskExecution, taskDefinition, combinedArgs);
     }
 
+    public async stopTask(taskExecutionId: string) {
+        let taskExecution = await this._taskExecutions.get(taskExecutionId);
+
+        if (taskExecution.completion_status_code < CompletionStatusCode.Cancel) {
+            taskExecution.completion_status_code = CompletionStatusCode.Cancel;
+        }
+
+        await this._taskExecutions.save(taskExecution);
+
+        await ProcessManager.stop(taskExecutionId);
+
+        return await this._taskExecutions.get(taskExecutionId);
+    }
+
     public async refreshTasksFromProcessManager() {
         let processList: IProcessInfo[] = await ProcessManager.list();
 
         // Get TaskExecution object for each PM2 entry (if exists)
         let taskList: ITaskExecution[] = await Promise.all(processList.map((processInfo) => {
-            return this._taskExecutions.getTask(processInfo.name);
+            return this._taskExecutions.get(processInfo.name);
         }));
 
         // Map updated info where applicable
-        await Promise.all(taskList.map((taskExecution, index) => {
+        await Promise.all(taskList.map(async(taskExecution, index) => {
             if (taskExecution === undefined) {
                 debug(`unknown PM2 process with name ${processList[index].name}`);
                 return null;
             }
 
-            this._taskExecutions.update(taskExecution, processList[index]);
+            await this._taskExecutions.update(taskExecution, processList[index], false);
 
             if (taskExecution.execution_status_code === ExecutionStatusCode.Completed && processList[0].status === ExecutionStatus.Stopped) {
                 debug(`removing completed process (${processList[index].managerId}) from process manager`);
-                ProcessManager.deleteTask(processList[index].managerId);
+                await ProcessManager.deleteTask(processList[index].managerId);
             }
         }));
 
@@ -112,30 +144,16 @@ export class TaskManager implements ITaskManager {
     }
 
     public async refreshTaskFromProcessManager(taskExecutionId: string) {
-        let taskExecution = await this._taskExecutions.getTask(taskExecutionId);
+        let taskExecution = await this._taskExecutions.get(taskExecutionId);
 
         let matchingProcessInfo = this._findProcessId(taskExecutionId);
 
         if (matchingProcessInfo && taskExecution) {
-            await this._taskExecutions.update(taskExecution, matchingProcessInfo[0]);
+            await this._taskExecutions.update(taskExecution, matchingProcessInfo[0], false);
         }
 
         return taskExecution;
     }
-
-    /*
-     public async deleteTask(taskExecutionId: string) {
-     let matchingProcessInfo: IProcessInfo = await this._findProcessId(taskExecutionId);
-
-     if (matchingProcessInfo) {
-     await ProcessManager.del(matchingProcessInfo.managerId);
-     }
-
-     let taskExecution = await this._taskExecutions.getTask(taskExecutionId);
-
-     return taskExecution;
-     }
-     */
 
     private async _startTask(taskExecution: ITaskExecution, taskDefinition: ITaskDefinition, argsArray: string[]) {
         taskExecution.resolved_script = path.normalize(path.isAbsolute(taskDefinition.script) ? taskDefinition.script : (process.cwd() + "/" + taskDefinition.script));
@@ -158,7 +176,7 @@ export class TaskManager implements ITaskManager {
 
             // Not using returned processInfo - using bus messages to get start/online events.  Handling directly here
             // is a race condition with start/exit events for a fast completion process.
-            ProcessManager.start(opts);
+            await ProcessManager.start(opts);
         } catch (_) {
             taskExecution.completed_at = new Date();
             taskExecution.execution_status_code = ExecutionStatusCode.Completed;
@@ -180,19 +198,27 @@ export class TaskManager implements ITaskManager {
         return (matchingProcessInfo.length > 0) ? matchingProcessInfo[0] : null;
     }
 
-    private async _updateTask(processInfo: IProcessInfo) {
+    private async _updateTask(processInfo: IProcessInfo, manually: boolean) {
         let taskExecution: ITaskExecution = null;
 
         if (processInfo != null) {
 
-            taskExecution = await this._taskExecutions.getTask(processInfo.name);
+            taskExecution = await this._taskExecutions.get(processInfo.name);
 
             if (taskExecution != null) {
                 debug(`updating task event ${taskExecution.id}`);
-                await this._taskExecutions.update(taskExecution, processInfo);
+                await this._taskExecutions.update(taskExecution, processInfo, manually);
             }
         }
 
         return taskExecution;
     }
 }
+
+export const taskManager = new TaskManager();
+
+taskManager.connect().catch(err => {
+    debug("Failed to connect to process manager from graphql context.");
+});
+
+

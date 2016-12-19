@@ -12,7 +12,20 @@ input_file="$pipeline_input_root/$tile_relative_path/$tile_name-ngc.$channel.tif
 output_file="$pipeline_output_root/$tile_relative_path/$tile_name"
 output_file+="_Probabilities"
 
-/Volumes/Spare/Projects/MouseLight/Classifier/ilastik/ilastik-1.1.8-OSX.app/Contents/ilastik-release/run_ilastik.sh --headless --project="$ilastik_project" --output_filename_format="$output_file" --output_format=hdf5 "$input_file"
+export PREFIX=/Volumes/Spare/Projects/MouseLight/Classifier/ilastik/ilastik-1.1.8-OSX.app/Contents/ilastik-release
+
+# Do not use the user's previous LD_LIBRARY_PATH settings because they can cause conflicts.
+# Start with an empty LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=""
+
+# Similarly, clear PYTHONPATH
+export PYTHONPATH=""
+
+# Do not use the user's own QT_PLUGIN_PATH, which can cause conflicts with our QT build.
+# This is especially important on KDE, which is uses its own version of QT and may conflict.
+export QT_PLUGIN_PATH=$PREFIX/plugins
+
+$PREFIX/bin/python $PREFIX/ilastik-meta/ilastik/ilastik.py --headless --project="$ilastik_project" --output_filename_format="$output_file" --output_format=hdf5 "$input_file"
 
 if [ $? -eq 0 ]
 then

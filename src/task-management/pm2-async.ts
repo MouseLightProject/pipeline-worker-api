@@ -36,7 +36,7 @@ export interface IProcessInfo {
 }
 
 export interface IPM2MonitorDelegate {
-    processEvent(name: string, processInfo: IProcessInfo);
+    processEvent(name: string, processInfo: IProcessInfo, manually: boolean);
     pm2Killed();
 }
 
@@ -67,7 +67,7 @@ export function monitor(delegate: IPM2MonitorDelegate = null): Promise<void> {
                 debug(`process:event "${evt.event}" for ${evt.process.name} (manual: ${evt.manually})`);
                 if (localDelegate) {
                     let processInfo = _mapProcessInfo(evt.process);
-                    localDelegate.processEvent(evt.event, processInfo);
+                    localDelegate.processEvent(evt.event, processInfo, evt.manually);
                 }
             });
 

@@ -11,6 +11,7 @@ type TaskDefinition implements ITimestamps {
   description: String!
   script: String!
   interpreter: String!
+  work_units: Float
   created_at: String
   updated_at: String
   deleted_at: String
@@ -18,18 +19,41 @@ type TaskDefinition implements ITimestamps {
 
 type TaskExecution implements ITimestamps {
   id: String!
+  machine_id: String
+  task_id: String
+  work_units: Float
   resolved_script: String
   resolved_interpreter: String
+  resolved_args: String
   execution_status_code: Int
   completion_status_code: Int
-  machine_id: String
-  started_at: String
-  completed_at: String
-  script_args: String
   last_process_status_code: Float
   max_memory: Float
-  max_cpu: Float  
+  max_cpu: Float
+  exit_code: Int
+  started_at: String
+  completed_at: String
+  created_at: String
+  updated_at: String
+  deleted_at: String
+}
+
+type TaskStatistics implements ITimestamps {
+  id: String!
   task_id: String
+  num_execute: Int
+  num_complete: Int
+  num_error: Int
+  num_cancel: Int
+  cpu_average: Float
+  cpu_high: Float
+  cpu_low: Float
+  memory_average: Float
+  memory_high: Float
+  memory_low: Float
+  duration_average: Float
+  duration_high: Float
+  duration_low: Float
   created_at: String
   updated_at: String
   deleted_at: String
@@ -37,18 +61,23 @@ type TaskExecution implements ITimestamps {
 
 type Query {
   taskDefinitions: [TaskDefinition!]!
+  taskStatistics: [TaskStatistics!]!
   taskExecutions: [TaskExecution!]!
   taskExecution(id: String!): TaskExecution
+  taskStatistics: [TaskStatistics!]!
+  statisticsForTask(id: String): TaskStatistics
   runningTasks: [TaskExecution!]!
+  workUnitCapacity: Float
 }
 
 type Mutation {
   debugMessage(msg: String!): String!
   startTask(taskDefinitionId: String!, scriptArgs: [String!]): TaskExecution
-  stopTask(taskExecutionId: String!, forceIfNeeded: Boolean = false): TaskExecution
+  stopTask(taskExecutionId: String!): TaskExecution
   refreshTasksFromProcessManager: [TaskExecution!]
   refreshTaskFromProcessManager(taskExecutionId: String!): TaskExecution
   clearAllCompleteExecutions: Int
+  resetStatistics: Int
 }
 
 schema {

@@ -1,6 +1,7 @@
 import {IGraphQLAppContext} from "./graphQLContext";
 import {ITaskExecution} from "../data-model/taskExecution";
 import {ITaskDefinition} from "../data-model/taskDefinition";
+import {ITaskStatistics} from "../data-model/taskStatistics";
 
 const debug = require("debug")("mouselight:worker-api:resolvers");
 
@@ -29,16 +30,27 @@ let resolvers = {
             return context.taskManager.getTaskDefinitions();
         },
         taskExecution(_, args: IIdOnlyArguments, context: IGraphQLAppContext): Promise<ITaskExecution[]> {
-            debug(`get all task ${args.id}`);
+            debug(`get task ${args.id}`);
             return context.taskManager.getTask(args.id);
         },
         taskExecutions(_, __, context: IGraphQLAppContext): Promise<ITaskExecution[]> {
             debug("get all tasks");
             return context.taskManager.getTasks();
         },
+        taskStatistics(_, __, context: IGraphQLAppContext): Promise<ITaskStatistics[]> {
+            debug(`get all task statistics`);
+            return context.taskManager.getStatistics();
+        },
+        statisticsForTask(_, args: IIdOnlyArguments, context: IGraphQLAppContext): Promise<ITaskExecution[]> {
+            debug(`get task statistics for ${args.id}`);
+            return context.taskManager.statisticsForTask(args.id);
+        },
         runningTasks(_, __, context: IGraphQLAppContext): Promise<ITaskExecution[]> {
             debug("get all running tasks");
             return context.taskManager.getRunningTasks();
+        },
+        workUnitCapacity(_, __, context: IGraphQLAppContext): number {
+            return context.serverConfiguration.hostInformation.workUnitCapacity;
         }
     },
     Mutation: {
@@ -50,9 +62,9 @@ let resolvers = {
             debug(`start task with definition ${args.taskDefinitionId}`);
             return context.taskManager.startTask(args.taskDefinitionId, args.scriptArgs);
         },
-        stopTask(_, args: ICancelTaskArguments, context: IGraphQLAppContext): void {
+        stopTask(_, args: ICancelTaskArguments, context: IGraphQLAppContext): Promise<ITaskExecution> {
             debug(`stop task ${args.taskExecutionId}`);
-            console.log(`Cancel task ${args.taskExecutionId} (force - ${args.forceIfNeeded}) - not implemented.`);
+            return context.taskManager.stopTask(args.taskExecutionId);
         },
         refreshTasksFromProcessManager(_, __, context: IGraphQLAppContext) {
             debug("refresh tasks");
@@ -64,6 +76,9 @@ let resolvers = {
         },
         clearAllCompleteExecutions(_, __, context: IGraphQLAppContext) {
             return context.taskManager.clearAllCompleteExecutions();
+        },
+        resetStatistics(_, __, context: IGraphQLAppContext) {
+            return context.taskManager.resetStatistics();
         }
     }
 };
