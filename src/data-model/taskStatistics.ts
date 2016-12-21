@@ -1,6 +1,6 @@
 import {knex} from "../data-access/knexConnector";
-const AsyncLock = require("async");
 import * as uuid from "node-uuid";
+const AsyncLock = require("async");
 
 import {ITableModelRow, TableModel} from "./tableModel";
 import {CompletionStatusCode, ITaskExecution} from "./taskExecution";
