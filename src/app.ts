@@ -15,10 +15,10 @@ app.use(bodyParser.urlencoded({extended: true}));
 
 app.use(bodyParser.json());
 
-app.use(serverConfiguration.graphQlEndpoint, graphQLMiddleware());
+app.use(serverConfiguration.apiService.graphQlEndpoint, graphQLMiddleware());
 
-app.use(serverConfiguration.graphiQlEndpoint, graphiQLMiddleware(serverConfiguration));
+app.use(serverConfiguration.apiService.graphiQlEndpoint, graphiQLMiddleware(serverConfiguration.apiService));
 
 SocketIoClient.use(serverConfiguration);
 
-app.listen(serverConfiguration.port, () => debug(`API Server is now running on http://localhost:${serverConfiguration.port}`));
+app.listen(serverConfiguration.apiService.networkPort, () => debug(`API Server is now running on http://localhost:${serverConfiguration.apiService.networkPort}`));

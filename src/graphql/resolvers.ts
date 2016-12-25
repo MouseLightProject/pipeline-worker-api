@@ -50,7 +50,7 @@ let resolvers = {
             return context.taskManager.getRunningTasks();
         },
         workUnitCapacity(_, __, context: IGraphQLAppContext): number {
-            return context.serverConfiguration.hostInformation.workUnitCapacity;
+            return context.serverConfiguration.apiService.workUnitCapacity;
         }
     },
     Mutation: {

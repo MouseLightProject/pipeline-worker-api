@@ -203,7 +203,7 @@ function readProcessStatistics(processId): Promise<ISystemProcessStatistics> {
 function _createTaskFromDefinition(taskDefinition: ITaskDefinition, scriptArgs: Array<string>): ITaskExecution {
     return {
         id: uuid.v4(),
-        machine_id: serverConfiguration.hostInformation.machineId,
+        machine_id: serverConfiguration.apiService.machineId,
         task_id: taskDefinition.id,
         work_units: taskDefinition.work_units,
         resolved_script: null,

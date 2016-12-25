@@ -2,13 +2,14 @@ import * as apolloServer  from "apollo-server";
 
 import {schema} from "./schema";
 import {GraphQLAppContext} from "./graphQLContext";
+import {IApiServiceConfiguration} from "../../config/server.config";
 
 export function graphQLMiddleware() {
     return apolloServer.apolloExpress(graphqlRequestHandler);
 }
 
-export function graphiQLMiddleware(configuration) {
-    return apolloServer.graphiqlExpress({endpointURL: configuration.graphQlEndpoint});
+export function graphiQLMiddleware(configuration: IApiServiceConfiguration) {
+    return apolloServer.graphiqlExpress({endpointURL: configuration.graphiQlEndpoint});
 }
 
 function graphqlRequestHandler(req) {

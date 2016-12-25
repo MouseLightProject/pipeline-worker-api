@@ -1,9 +1,8 @@
 import * as socket_io from "socket.io-client";
 
-const os = require("os");
 const debug = require("debug")("mouselight:worker-api:socket.io");
 
-import {IServerConfig, IHostInformation} from "../../config/server.config";
+import {IServerConfig, IApiServiceConfiguration} from "../../config/server.config";
 import {TaskExecutions, ITaskExecution} from "../data-model/taskExecution";
 
 export enum ServerConnectionStatus {
@@ -21,21 +20,13 @@ export class SocketIoClient {
 
     private static _ioClient: SocketIoClient = null;
 
-    public static get status(): ServerConnectionStatus {
-        if (this._ioClient) {
-            return this._ioClient.connectionStatus;
-        } else {
-            return ServerConnectionStatus.Uninitialized;
-        }
-    }
-
     public static use(config: IServerConfig) {
         this._ioClient = new SocketIoClient(config);
     }
 
     private _socket;
 
-    private _hostInformation: IHostInformation = null;
+    private _apiService: IApiServiceConfiguration = null;
 
     private _heartBeatInterval = null;
 
@@ -43,18 +34,14 @@ export class SocketIoClient {
 
     private _taskExecutions = new TaskExecutions();
 
-    public get connectionStatus(): ServerConnectionStatus {
-        return this._connectionStatus;
-    }
-
     private constructor(config: IServerConfig) {
         this._socket = socket_io(`http://${config.managementService.host}:${config.managementService.port}`);
 
-        this._hostInformation = config.hostInformation;
+        this._apiService = config.apiService;
 
         debug("interface available");
 
-        this._socket.on("connect", async () => {
+        this._socket.on("connect", async() => {
             debug("connected to server");
 
             this._connectionStatus = ServerConnectionStatus.Connected;
@@ -100,7 +87,7 @@ export class SocketIoClient {
     }
 
     private emitHostInformation() {
-        this._socket.emit("hostInformation", this._hostInformation);
+        this._socket.emit("workerApiService", this._apiService);
     }
 
     private async emitHeartBeat() {
@@ -118,7 +105,7 @@ export class SocketIoClient {
         debug(`heartbeat (${taskLoad} task load)`);
 
         this._socket.emit("heartBeat", {
-            machineId: this._hostInformation.machineId,
+            machineId: this._apiService.machineId,
             taskLoad: taskLoad
         });
     }
