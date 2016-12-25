@@ -29,7 +29,7 @@ let resolvers = {
             debug("get all task definitions");
             return context.taskManager.getTaskDefinitions();
         },
-        taskExecution(_, args: IIdOnlyArguments, context: IGraphQLAppContext): Promise<ITaskExecution[]> {
+        taskExecution(_, args: IIdOnlyArguments, context: IGraphQLAppContext): Promise<ITaskExecution> {
             debug(`get task ${args.id}`);
             return context.taskManager.getTask(args.id);
         },
@@ -41,7 +41,7 @@ let resolvers = {
             debug(`get all task statistics`);
             return context.taskManager.getStatistics();
         },
-        statisticsForTask(_, args: IIdOnlyArguments, context: IGraphQLAppContext): Promise<ITaskExecution[]> {
+        statisticsForTask(_, args: IIdOnlyArguments, context: IGraphQLAppContext): Promise<ITaskStatistics> {
             debug(`get task statistics for ${args.id}`);
             return context.taskManager.statisticsForTask(args.id);
         },
