@@ -49,7 +49,7 @@ export class TaskStatistics extends TableModel<ITaskStatistics> {
             let row = null;
 
             try {
-                row = await this.dataLoader.load(idList[0]);
+                row = await this.get(idList[0]);
             } catch (err) {
                 console.log(err);
             }
@@ -91,8 +91,6 @@ export class TaskStatistics extends TableModel<ITaskStatistics> {
     public async reset(now: boolean = false) {
         if (now) {
             await knex(this.tableName).select().del();
-
-            this.dataLoader.clearAll();
         } else {
             queue.push(null, (err) => {
             });
@@ -169,7 +167,7 @@ queue.error = (err) => {
 export function updateStatisticsForTaskId(taskExecution: ITaskExecution) {
     let duration_ms = null;
 
-    if (taskExecution.completed_at) {
+    if (taskExecution.completed_at && taskExecution.started_at) {
         duration_ms = taskExecution.completed_at.valueOf() - taskExecution.started_at.valueOf();
     }
 

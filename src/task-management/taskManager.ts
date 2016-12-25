@@ -174,8 +174,11 @@ export class TaskManager implements ITaskManager {
         try {
             taskExecution.execution_status_code = ExecutionStatusCode.Running;
 
+            await this._taskExecutions.save(taskExecution);
+
             // Not using returned processInfo - using bus messages to get start/online events.  Handling directly here
             // is a race condition with start/exit events for a fast completion process.
+
             await ProcessManager.start(opts);
         } catch (_) {
             taskExecution.completed_at = new Date();

@@ -70,7 +70,17 @@ export class TaskExecutions extends TableModel<ITaskExecution> {
 
         tasks.sort((a, b) => {
             // Descending
-            return b.updated_at - a.updated_at;
+            if (a.updated_at === null) {
+                if (b.updated_at === null) {
+                    return 0;
+                } else {
+                    return 1;
+                }
+            } else if (b.updated_at === null) {
+                return -1;
+            }
+
+            return b.updated_at.valueOf() - a.updated_at.valueOf();
         });
 
         return tasks;
@@ -81,15 +91,11 @@ export class TaskExecutions extends TableModel<ITaskExecution> {
 
         let ids = await this._getRunningIdList();
 
-        return this.dataLoader.loadMany(ids);
+        return this.fetch(ids);
     }
 
-    public async clearAllComplete() {
-        let count = await knex(this.tableName).where("execution_status_code", ExecutionStatusCode.Completed).del();
-
-        this.dataLoader.clear();
-
-        return count;
+    public async clearAllComplete(): Promise<number> {
+        return await knex(this.tableName).where("execution_status_code", ExecutionStatusCode.Completed).del();
     }
 
     public async update(taskExecution: ITaskExecution, processInfo: IProcessInfo, manually: boolean) {
@@ -101,8 +107,6 @@ export class TaskExecutions extends TableModel<ITaskExecution> {
         if (processInfo.processId && processInfo.processId > 0) {
             let stats = await readProcessStatistics(processInfo.processId);
 
-            console.log(stats);
-
             if (!isNaN(stats.memory_mb) && (stats.memory_mb > taskExecution.max_memory || isNaN(taskExecution.max_memory))) {
                 taskExecution.max_memory = stats.memory_mb;
             }
@@ -110,8 +114,6 @@ export class TaskExecutions extends TableModel<ITaskExecution> {
             if (!isNaN(stats.cpu_percent) && (stats.cpu_percent > taskExecution.max_cpu || isNaN(taskExecution.max_cpu))) {
                 taskExecution.max_cpu = stats.cpu_percent;
             }
-
-            console.log(taskExecution.max_cpu);
         }
 
         // Have a real status from the process manager (e.g, PM2).
