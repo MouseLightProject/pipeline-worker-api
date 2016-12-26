@@ -42,7 +42,7 @@ export interface IServerConfig {
 const configurations: IConfiguration<IServerConfig> = {
     development: {
         apiService: {
-            machineId: "",
+            machineId: "1bcc812d-97ce-4b14-ad48-5c3c9b9b416e",
             name: "",
             networkInterface: "",
             networkAddress: "",

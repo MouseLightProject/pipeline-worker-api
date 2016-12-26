@@ -9,7 +9,7 @@ export function graphQLMiddleware() {
 }
 
 export function graphiQLMiddleware(configuration: IApiServiceConfiguration) {
-    return apolloServer.graphiqlExpress({endpointURL: configuration.graphiQlEndpoint});
+    return apolloServer.graphiqlExpress({endpointURL: configuration.graphQlEndpoint});
 }
 
 function graphqlRequestHandler(req) {

@@ -2,19 +2,18 @@
   "name": "ml",
   "version": "0.1.0",
   "description": "",
-  "main": "app.js",
+  "main": "pipelineWorkerApp.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "DEBUG=mouselight* node $NODE_DEBUG_OPTION src/pipelineWorkerApp.js",
     "start": "node src/pipelineWorkerApp.js"
   },
-  "author": "Patrick Edson <pedson@leapscientific.com>",
-  "license": "ISC",
+  "author": "Patrick Edson <pedson@leapscientific.com> (http://github.com/pedson)",
+  "license": "Janelia",
   "dependencies": {
     "apollo-server": "^0.3.2",
     "async": "^2.1.4",
     "body-parser": "^1.15.2",
-    "dataloader": "^1.2.0",
     "debug": "^2.2.0",
     "express": "^4.14.0",
     "fs-extra": "^1.0.0",
