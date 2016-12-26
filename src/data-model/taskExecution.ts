@@ -142,7 +142,6 @@ export class TaskExecutions extends TableModel<ITaskExecution> {
             // May already be set if cancelled.
             if (taskExecution.completion_status_code < CompletionStatusCode.Cancel) {
                 taskExecution.completion_status_code = (processInfo.exitCode === 0) ? CompletionStatusCode.Success : CompletionStatusCode.Error;
-
             }
 
             if (taskExecution.exit_code === null) {
