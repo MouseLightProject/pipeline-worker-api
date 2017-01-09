@@ -10,9 +10,9 @@ exports.seed = (knex, Promise) => {
                     id: '1161F8E6-29D5-44B0-B6A9-8D3E54D23292'.toLocaleLowerCase(),
                     name: 'ilastik Axon UInt16',
                     description: 'ilastik Axon UInt16 hard-coded to ',
-                    script: '/groups/mousebrainmicro/mousebrainmicro/erhan_dm11/AxonClassifier',
+                    script: 'test/ilastik-axon-uint16.sh',
                     interpreter: 'none',
-                    args: '/Users/pedson/Developer/Leap/Janelia/acq-dashboard-worker-api/test/pixel_classifier_test',
+                    args: '/groups/mousebrainmicro/mousebrainmicro/erhan_dm11/AxonClassifier',
                     work_units: 10,
                     created_at: createDate(3, 0)
                 }),
