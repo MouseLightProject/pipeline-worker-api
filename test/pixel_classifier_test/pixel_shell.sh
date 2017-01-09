@@ -15,7 +15,19 @@ output_file1="$output_file.0"
 output_file2="$output_file.1"
 log_file="$7/testing.log"
 
-export PREFIX=/Volumes/Spare/Projects/MouseLight/Classifier/ilastik/ilastik-1.1.8-OSX.app/Contents/ilastik-release
+# Default location on test machines.  Most configurations should export IL_PREFIX in their launch script that also sets
+# machine id, etc.
+if [ -z "$IL_PREFIX" ]
+then
+  if [ "$(uname)" == "Darwin" ]
+  then
+    export IL_PREFIX=/Volumes/Spare/Projects/MouseLight/Classifier/ilastik/ilastik-1.1.8-OSX.app/Contents/ilastik-release
+  else
+    export IL_PREFIX=/home/labadmin/mouselight/ilastik-1.1.8.post1-Linux
+  fi
+fi
+
+# Comments and execution based on iLastik's default run script.
 
 # Do not use the user's previous LD_LIBRARY_PATH settings because they can cause conflicts.
 # Start with an empty LD_LIBRARY_PATH
@@ -31,9 +43,9 @@ export QT_PLUGIN_PATH=${PREFIX}/plugins
 export LAZYFLOW_THREADS=4
 export LAZYFLOW_TOTAL_RAM_MB=600
 
-${PREFIX}/bin/python ${PREFIX}/ilastik-meta/ilastik/ilastik.py --headless --logfile="log_file" --project="$ilastik_project" --output_filename_format="$output_file1" --output_format=hdf5 "$input_file1"
+${IL_PREFIX}/bin/python ${IL_PREFIX}/ilastik-meta/ilastik/ilastik.py --headless --logfile="log_file" --project="$ilastik_project" --output_filename_format="$output_file1" --output_format=hdf5 "$input_file1"
 
-${PREFIX}/bin/python ${PREFIX}/ilastik-meta/ilastik/ilastik.py --headless --logfile="log_file" --project="$ilastik_project" --output_filename_format="$output_file2" --output_format=hdf5 "$input_file2"
+${IL_PREFIX}/bin/python ${IL_PREFIX}/ilastik-meta/ilastik/ilastik.py --headless --logfile="log_file" --project="$ilastik_project" --output_filename_format="$output_file2" --output_format=hdf5 "$input_file2"
 
 if [ $? -eq 0 ]
 then
