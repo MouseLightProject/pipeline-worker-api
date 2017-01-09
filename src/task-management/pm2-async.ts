@@ -144,8 +144,8 @@ export function describe(pid: number): Promise<IProcessInfo> {
                     debug(err);
                     reject(err);
                 } else {
-                    debug(`describe returned ${processList.length} process descriptions`);
-                    if (processList.length > 0) {
+                    // debug(`describe returned ${processList.length} process descriptions`);
+                    if (processList && processList.length > 0) {
                         let result = _mapProcessInfo(processList[0].pm2_env, processList[0].monit, processList[0].pid);
                         console.log(result);
                     } else {
@@ -187,7 +187,7 @@ export function deleteTask(pid: any): Promise<IProcessInfo[]> {
                 debug(err);
                 reject(err);
             } else {
-                debug(`delete returned ${processList.length} process descriptions`);
+                // debug(`delete returned ${processList.length} process descriptions`);
                 let result: IProcessInfo[] = [];
                 processList.forEach((processInfo) => {
                     result.push(_mapProcessInfo(processInfo.pm2_env));

@@ -178,7 +178,7 @@ function readProcessStatistics(processId): Promise<ISystemProcessStatistics> {
                 let statsArray: Array<ISystemProcessStatistics> = stdout.map(obj => {
                     let parts = obj.split(/[\s+]/).filter(Boolean);
 
-                    if (parts.length === 4) {
+                    if (parts && parts.length === 4) {
                         return {
                             memory_mb: parseInt(parts[2]) / 1024,
                             cpu_percent: parseFloat(parts[3])

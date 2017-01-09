@@ -19,7 +19,7 @@ export abstract class TableModel<T extends ITableModelRow> {
     public async get(id: string): Promise<T> {
         let results = await this.fetch([id]);
 
-        if (results.length > 0) {
+        if (results && results.length > 0) {
             return results[0];
         } else {
             return null;
