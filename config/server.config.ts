@@ -49,7 +49,7 @@ const configurations: IConfiguration<IServerConfig> = {
             networkPort: 3001,
             graphQlEndpoint: "/graphql",
             graphiQlEndpoint: "/graphiql",
-            workUnitCapacity: 2,
+            workUnitCapacity: 4,
             machineProperties: {
                 osType: "",
                 platform: "",

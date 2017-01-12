@@ -4,6 +4,6 @@ echo $@
 
 DUR=$(($RANDOM % 10 + 4))
 
-sleep $DUR
+sleep ${DUR}
 
 exit 0

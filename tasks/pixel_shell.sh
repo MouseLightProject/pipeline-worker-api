@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/env bash
+
 project_name=$1
 project_root=$2
 pipeline_input_root=$3
@@ -23,7 +24,7 @@ then
   then
     export IL_PREFIX=/Volumes/Spare/Projects/MouseLight/Classifier/ilastik/ilastik-1.1.8-OSX.app/Contents/ilastik-release
   else
-    export IL_PREFIX=/home/labadmin/mouselight/ilastik-1.1.8.post1-Linux
+    export IL_PREFIX=/groups/mousebrainmicro/mousebrainmicro/Software/ilastik-1.1.8.post1-Linux
   fi
 fi
 
