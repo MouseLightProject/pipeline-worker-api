@@ -22,7 +22,7 @@ exports.seed = (knex, Promise) => {
                     description: 'ilastik Axon UInt16',
                     script: 'tasks/ilastik-axon-uint16.sh',
                     interpreter: 'none',
-                    args: '/groups/mousebrainmicro/mousebrainmicro/Software/pipeline/apps',
+                    args: '/groups/mousebrainmicro/mousebrainmicro/Software/pipeline/apps/axon-classifier',
                     work_units: 10,
                     created_at: createDate(3, 0)
                 }),
@@ -32,7 +32,7 @@ exports.seed = (knex, Promise) => {
                     description: '',
                     script: 'tasks/dogDescriptor.sh',
                     interpreter: 'none',
-                    args: '/groups/mousebrainmicro/mousebrainmicro/Software/pipeline/apps /groups/mousebrainmicro/mousebrainmicro/Software/mcr/v90',
+                    args: '/groups/mousebrainmicro/mousebrainmicro/Software/pipeline/apps/dogDescriptor /groups/mousebrainmicro/mousebrainmicro/Software/mcr/v90',
                     work_units: 2,
                     created_at: createDate(3, 0)
                 }),
@@ -42,7 +42,7 @@ exports.seed = (knex, Promise) => {
                     description: '',
                     script: 'tasks/getDescriptorsForTile.sh',
                     interpreter: 'none',
-                    args: '/groups/mousebrainmicro/mousebrainmicro/Software/pipeline/apps /groups/mousebrainmicro/mousebrainmicro/Software/mcr/v90',
+                    args: '/groups/mousebrainmicro/mousebrainmicro/Software/pipeline/apps/getDescriptorsForTile /groups/mousebrainmicro/mousebrainmicro/Software/mcr/v90',
                     work_units: 1,
                     created_at: createDate(3, 0)
                 }),
