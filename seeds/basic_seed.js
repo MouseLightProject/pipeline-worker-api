@@ -108,7 +108,7 @@ function developmentSeed() {
                         description: '',
                         script: 'tasks/getDescriptorsForTile.sh',
                         interpreter: 'none',
-                        args: '/Volumes/Spare/Projects/MouseLight/Apps/Pipeline/dogDescriptor/getDescriptorPerTile /groups/mousebrainmicro/mousebrainmicro/Software/mcr/v90',
+                        args: '/Volumes/Spare/Projects/MouseLight/Apps/Pipeline/getDescriptorPerTile /groups/mousebrainmicro/mousebrainmicro/Software/mcr/v90',
                         work_units: 1,
                         created_at: createDate(3, 0)
                     }),
