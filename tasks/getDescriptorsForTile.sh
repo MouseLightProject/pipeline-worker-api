@@ -22,7 +22,7 @@ LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${mcrRoot}/sys/opengl/lib/glnxa64;
 export LD_LIBRARY_PATH;
 echo LD_LIBRARY_PATH is ${LD_LIBRARY_PATH};
 
-${app} ${mcr} ${input_file1} ${input_file2} ${output_file}
+${app} ${input_file1} ${input_file2} ${output_file}
 
 if [ $? -eq 0 ]
 then
