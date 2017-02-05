@@ -9,6 +9,8 @@ import {SocketIoClient} from "./io/serverConnection";
 
 const serverConfiguration = readServerConfiguration();
 
+const PORT = process.env.WORKER_API_PORT || serverConfiguration.apiService.networkPort;
+
 const app = express();
 
 app.use(bodyParser.urlencoded({extended: true}));
@@ -21,4 +23,4 @@ app.use(serverConfiguration.apiService.graphiQlEndpoint, graphiQLMiddleware(serv
 
 SocketIoClient.use(serverConfiguration);
 
-app.listen(serverConfiguration.apiService.networkPort, () => debug(`API Server is now running on http://localhost:${serverConfiguration.apiService.networkPort}`));
+app.listen(PORT, () => debug(`API Server is now running on http://localhost:${PORT}`));

@@ -94,6 +94,33 @@ const configurations: IConfiguration<IServerConfig> = {
             graphQLEndpoint: "/graphql"
         }
     },
+    staging: {
+        apiService: {
+            machineId: "",
+            name: "",
+            networkInterface: "",
+            networkAddress: "",
+            networkPort: 3051,
+            graphQlEndpoint: "/graphql",
+            graphiQlEndpoint: "/graphiql",
+            workUnitCapacity: 2,
+            machineProperties: {
+                osType: "",
+                platform: "",
+                arch: "",
+                release: "",
+                cpuCount: 0,
+                totalMemory: 0,
+                freeMemory: 0,
+                loadAverage: 0,
+            }
+        },
+        managementService: {
+            host: "localhost",
+            port: 3050,
+            graphQLEndpoint: "/graphql"
+        }
+    },
     production: {
         apiService: {
             machineId: "",
@@ -116,7 +143,7 @@ const configurations: IConfiguration<IServerConfig> = {
             }
         },
         managementService: {
-            host: "pipelineServer",
+            host: "localhost",
             port: 3000,
             graphQLEndpoint: "/graphql"
         }

@@ -37,6 +37,16 @@ const configurations: IConfiguration<IDatabaseConfig> = {
             tableName: "knex_migrations"
         }
     },
+    staging: {
+        client: "sqlite3",
+        connection: {
+            filename: path.join(internalDataPath, "system-data-production.sqlite3")
+        },
+        useNullAsDefault: true,
+        migrations: {
+            tableName: "knex_migrations"
+        }
+    },
     production: {
         client: "sqlite3",
         connection: {
