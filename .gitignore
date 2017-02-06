@@ -36,6 +36,7 @@ tmp
 # js in ts folders
 config/**/*.js
 src/**/*.js
+seeds/**/*.js
 graphql/**/.js
 
 # Development databases

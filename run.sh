@@ -2,16 +2,18 @@
 
 LAST_NODE_ENV=${NODE_ENV}
 
-if [ -z "$1" ]; then
-    export NODE_ENV=production
-else
+if [ "$#" -gt 1 ]; then
     export NODE_ENV=${1}
+    source ${2}
+elif [ "$#" -gt 0 ]; then
+    export NODE_ENV=${1}
+    if [ -a "id.sh" ]; then
+        source "id.sh"
+    fi
 fi
 
-if [ -z "$2" ]; then
-    echo
-else
-    source ${2}
+if [ -z "$NODE_ENV" ]; then
+    NODE_ENV=production
 fi
 
 if [ -z "$MACHINE_ID" ]; then
