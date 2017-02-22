@@ -40,12 +40,12 @@ export PYTHONPATH=""
 # This is especially important on KDE, which is uses its own version of QT and may conflict.
 export QT_PLUGIN_PATH=${IL_PREFIX}/plugins
 
-export LAZYFLOW_THREADS=10
-export LAZYFLOW_TOTAL_RAM_MB=150000
+export LAZYFLOW_THREADS=4
+export LAZYFLOW_TOTAL_RAM_MB=30000
 
-${IL_PREFIX}/bin/python ${IL_PREFIX}/ilastik-meta/ilastik/ilastik.py --headless --logfile="$log_file" --cutout_subregion="[(None,None,None,0),(None,None,None,1)]" --project="$ilastik_project" --output_filename_format="$output_file1" --output_format=hdf5 "$input_file1"
+${IL_PREFIX}/bin/python ${IL_PREFIX}/ilastik-meta/ilastik/ilastik.py --headless --cutout_subregion="[(None,None,None,0),(None,None,None,1)]" --project="$ilastik_project" --output_filename_format="$output_file1" --output_format=hdf5 "$input_file1"
 
-${IL_PREFIX}/bin/python ${IL_PREFIX}/ilastik-meta/ilastik/ilastik.py --headless --logfile="$log_file" --cutout_subregion="[(None,None,None,0),(None,None,None,1)]" --project="$ilastik_project" --output_filename_format="$output_file2" --output_format=hdf5 "$input_file2"
+${IL_PREFIX}/bin/python ${IL_PREFIX}/ilastik-meta/ilastik/ilastik.py --headless --cutout_subregion="[(None,None,None,0),(None,None,None,1)]" --project="$ilastik_project" --output_filename_format="$output_file2" --output_format=hdf5 "$input_file2"
 
 if [ $? -eq 0 ]
 then
