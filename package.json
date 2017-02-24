@@ -14,7 +14,7 @@
     "apollo-server": "^0.3.2",
     "async": "^2.1.4",
     "body-parser": "^1.15.2",
-    "debug": "^2.2.0",
+    "debug": "^2.6.1",
     "express": "^4.14.0",
     "fs-extra": "^1.0.0",
     "graphql": "^0.7.1",

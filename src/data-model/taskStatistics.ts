@@ -27,12 +27,18 @@ export interface ITaskStatistics extends ITableModelRow {
     duration_low: number;
 }
 
+enum UpdateQueueAction {
+    Update,
+    Reset
+}
+
 interface IUpdateQueueTask {
     taskId: string;
-    status: CompletionStatusCode;
-    cpu: number;
-    mem: number;
-    duration_ms: number;
+    action: UpdateQueueAction;
+    status?: CompletionStatusCode;
+    cpu?: number;
+    mem?: number;
+    duration_ms?: number;
 }
 
 export class TaskStatistics extends TableModel<ITaskStatistics> {
@@ -88,11 +94,11 @@ export class TaskStatistics extends TableModel<ITaskStatistics> {
         await this.save(statisticsForTask);
     }
 
-    public async reset(now: boolean = false) {
+    public async reset(taskId: string, now: boolean = false) {
         if (now) {
-            await knex(this.tableName).select().del();
+            return await knex(this.tableName).where({task_id: taskId}).del();
         } else {
-            queue.push(null, (err) => {
+            queue.push({taskId: taskId, action: UpdateQueueAction.Reset}, (err) => {
             });
         }
 
@@ -146,8 +152,8 @@ function updateAverage(existing_average: number, existing_count: number, latestV
 export const taskStatisticsInstance = new TaskStatistics();
 
 const queue = AsyncLock.queue(async(updateTask: IUpdateQueueTask, callback) => {
-    if (!updateTask) {
-        await taskStatisticsInstance.reset(true);
+    if (updateTask.action === UpdateQueueAction.Reset) {
+        await taskStatisticsInstance.reset(updateTask.taskId, true);
     } else {
 
         try {
@@ -172,8 +178,12 @@ export function updateStatisticsForTaskId(taskExecution: ITaskExecution) {
     }
 
     queue.push({
-        taskId: taskExecution.task_id, status: taskExecution.completion_status_code, cpu: taskExecution.max_cpu,
-        mem: taskExecution.max_memory, duration_ms: duration_ms
+        taskId: taskExecution.task_id,
+        action: UpdateQueueAction.Update,
+        status: taskExecution.completion_status_code,
+        cpu: taskExecution.max_cpu,
+        mem: taskExecution.max_memory,
+        duration_ms: duration_ms
     }, (err) => {
     });
 }

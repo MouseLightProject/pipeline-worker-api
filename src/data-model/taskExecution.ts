@@ -64,7 +64,7 @@ export class TaskExecutions extends TableModel<ITaskExecution> {
     }
 
     public async getAll() {
-        debug(`get all tasks`);
+        // debug(`get all tasks`);
 
         let tasks = await super.getAll();
 
@@ -87,15 +87,19 @@ export class TaskExecutions extends TableModel<ITaskExecution> {
     }
 
     public async getRunningTasks() {
-        debug(`get running tasks`);
+        // debug(`get running tasks`);
 
         let ids = await this._getRunningIdList();
 
         return this.fetch(ids);
     }
 
-    public async clearAllComplete(): Promise<number> {
-        return await knex(this.tableName).where("execution_status_code", ExecutionStatusCode.Completed).del();
+    public async removeCompletedExecutionsWithCode(code: CompletionStatusCode): Promise<number> {
+        if (code === undefined || code === null) {
+            code = CompletionStatusCode.Success;
+        }
+
+        return await knex(this.tableName).where("completion_status_code", code).del();
     }
 
     public async update(taskExecution: ITaskExecution, processInfo: IProcessInfo, manually: boolean) {

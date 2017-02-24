@@ -21,6 +21,7 @@ type TaskExecution implements ITimestamps {
   id: String!
   machine_id: String
   task_id: String
+  task: TaskDefinition
   work_units: Float
   resolved_script: String
   resolved_interpreter: String
@@ -41,6 +42,7 @@ type TaskExecution implements ITimestamps {
 type TaskStatistics implements ITimestamps {
   id: String!
   task_id: String
+  task: TaskDefinition
   num_execute: Int
   num_complete: Int
   num_error: Int
@@ -76,8 +78,8 @@ type Mutation {
   stopTask(taskExecutionId: String!): TaskExecution
   refreshTasksFromProcessManager: [TaskExecution!]
   refreshTaskFromProcessManager(taskExecutionId: String!): TaskExecution
-  clearAllCompleteExecutions: Int
-  resetStatistics: Int
+  removeCompletedExecutionsWithCode(code: Int): Int
+  resetStatistics(taskId: String): Int
 }
 
 schema {

@@ -10,6 +10,7 @@ const debug = require("debug")("mouselight:worker-api:task-manager");
 
 export interface ITaskManager extends ProcessManager.IPM2MonitorDelegate {
     getTaskDefinitions(): Promise<ITaskDefinition[]>;
+    getTaskDefinition(id: string): Promise<ITaskDefinition>;
     getTask(id: string): Promise<ITaskExecution>;
     getTasks(): Promise<ITaskExecution[]>;
     getStatistics(): Promise<ITaskStatistics[]>;
@@ -19,8 +20,8 @@ export interface ITaskManager extends ProcessManager.IPM2MonitorDelegate {
     stopTask(taskExecutionId: string): Promise<ITaskExecution>;
     refreshTasksFromProcessManager();
     refreshTaskFromProcessManager(taskExecutionId: string);
-    clearAllCompleteExecutions(): Promise<number>;
-    resetStatistics(): Promise<number>;
+    removeCompletedExecutionsWithCode(code: CompletionStatusCode): Promise<number>;
+    resetStatistics(taskId: string): Promise<number>;
 }
 
 export class TaskManager implements ITaskManager {
@@ -51,6 +52,10 @@ export class TaskManager implements ITaskManager {
         return this._taskDefinitions.getAll();
     }
 
+    public getTaskDefinition(id: string): Promise<ITaskDefinition> {
+        return this._taskDefinitions.get(id);
+    }
+
     public getTask(id: string): Promise<ITaskExecution> {
         return this._taskExecutions.get(id);
     }
@@ -71,12 +76,12 @@ export class TaskManager implements ITaskManager {
         return taskStatisticsInstance.getForTaskId(id);
     }
 
-    public clearAllCompleteExecutions(): Promise<number> {
-        return this._taskExecutions.clearAllComplete();
+    public removeCompletedExecutionsWithCode(code: CompletionStatusCode): Promise<number> {
+        return this._taskExecutions.removeCompletedExecutionsWithCode(code);
     }
 
-    public resetStatistics(): Promise<number> {
-        return taskStatisticsInstance.reset();
+    public resetStatistics(taskId: string): Promise<number> {
+        return taskStatisticsInstance.reset(taskId);
     }
 
     // TODO Need a function to refresh what the database thinks are running tasks (find orphans, update stats, etc).

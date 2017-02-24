@@ -57,31 +57,28 @@ export class SocketIoClient {
 
         this._socket.on("error", reason => {
             debug("connection error");
-
             this._connectionStatus = ServerConnectionStatus.ConnectionError;
         });
 
         this._socket.on("reconnect", count => {
             debug(`reconnected after ${count} attempts`);
-
             this._connectionStatus = ServerConnectionStatus.Connected;
         });
 
         this._socket.on("reconnecting", count => {
-            debug(`reconnect attempt ${count}`);
-
+            if (count % 10 === 0) {
+                debug(`reconnect attempt ${count}`);
+            }
             this._connectionStatus = ServerConnectionStatus.Reconnecting;
         });
 
         this._socket.on("reconnect_error", reason => {
-            debug("reconnection error");
-
+            // debug("reconnection error");
             this._connectionStatus = ServerConnectionStatus.ReconnectionError;
         });
 
         this._socket.on("disconnect", () => {
             debug("disconnected");
-
             this._connectionStatus = ServerConnectionStatus.Disconnected;
         });
     }
