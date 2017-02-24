@@ -15,8 +15,8 @@ output_file1="$output_file.0.h5"
 output_file2="$output_file.1.h5"
 log_file_base="$tile_relative_path/$tile_name"
 log_file_base=${log_file_base//\//-}
-log_file_1="/nrs/mouselight/pipeline_output/logs/$log_file_base.0.txt"
-log_file_2="/nrs/mouselight/pipeline_output/logs/$log_file_base.1.txt"
+log_file_1="/groups/mousebrainmicro/mousebrainmicro/LOG/2017-02-22/$log_file_base.0.txt"
+log_file_2="/groups/mousebrainmicro/mousebrainmicro/LOG/2017-02-22/$log_file_base.1.txt"
 
 # Default location on test machines.  Most configurations should export IL_PREFIX in their launch script that also sets
 # machine id, etc.
