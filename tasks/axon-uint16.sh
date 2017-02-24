@@ -13,7 +13,10 @@ output_file="$pipeline_output_root/$tile_relative_path/$tile_name"
 output_file+="-prob"
 output_file1="$output_file.0.h5"
 output_file2="$output_file.1.h5"
-log_file="/groups/mousebrainmicro/mousebrainmicro/LOG/2016-10-31-DEMO-2/ilp_06062-rKwXRk9zgP.txt"
+log_file_base="$tile_relative_path/$tile_name"
+log_file_base=${log_file_base//\//-}
+log_file_1="/nrs/mouselight/pipeline_output/logs/$log_file_base.0.txt"
+log_file_2="/nrs/mouselight/pipeline_output/logs/$log_file_base.1.txt"
 
 # Default location on test machines.  Most configurations should export IL_PREFIX in their launch script that also sets
 # machine id, etc.
@@ -43,9 +46,9 @@ export QT_PLUGIN_PATH=${IL_PREFIX}/plugins
 export LAZYFLOW_THREADS=4
 export LAZYFLOW_TOTAL_RAM_MB=30000
 
-${IL_PREFIX}/bin/python ${IL_PREFIX}/ilastik-meta/ilastik/ilastik.py --headless --cutout_subregion="[(None,None,None,0),(None,None,None,1)]" --project="$ilastik_project" --output_filename_format="$output_file1" --output_format=hdf5 "$input_file1"
+${IL_PREFIX}/bin/python ${IL_PREFIX}/ilastik-meta/ilastik/ilastik.py --logfile=${log_file_1} --headless --cutout_subregion="[(None,None,None,0),(None,None,None,1)]" --project="$ilastik_project" --output_filename_format="$output_file1" --output_format=hdf5 "$input_file1"
 
-${IL_PREFIX}/bin/python ${IL_PREFIX}/ilastik-meta/ilastik/ilastik.py --headless --cutout_subregion="[(None,None,None,0),(None,None,None,1)]" --project="$ilastik_project" --output_filename_format="$output_file2" --output_format=hdf5 "$input_file2"
+${IL_PREFIX}/bin/python ${IL_PREFIX}/ilastik-meta/ilastik/ilastik.py --logfile=${log_file_2} --headless --cutout_subregion="[(None,None,None,0),(None,None,None,1)]" --project="$ilastik_project" --output_filename_format="$output_file2" --output_format=hdf5 "$input_file2"
 
 if [ $? -eq 0 ]
 then
