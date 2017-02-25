@@ -38,9 +38,9 @@ export class TaskDefinitions extends TableModel<ITaskDefinition> {
         row.name = taskDefinition.name || row.name;
         row.description = taskDefinition.description || row.description;
         row.script = taskDefinition.script || row.script;
-        row.interpreter = taskDefinition.interpreter || taskDefinition.interpreter;
-        row.args = taskDefinition.args || taskDefinition.args;
-        row.work_units = taskDefinition.work_units || taskDefinition.work_units;
+        row.interpreter = taskDefinition.interpreter || row.interpreter;
+        row.args = taskDefinition.args || row.args;
+        row.work_units = taskDefinition.work_units || row.work_units;
 
         return await this.save(row);
     }

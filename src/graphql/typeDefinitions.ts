@@ -11,7 +11,8 @@ type TaskDefinition implements ITimestamps {
   description: String!
   script: String!
   interpreter: String!
-  work_units: Float
+  args: String!
+  work_units: Float!
   created_at: String
   updated_at: String
   deleted_at: String
@@ -67,6 +68,7 @@ input TaskDefinitionInput {
   description: String
   script: String
   interpreter: String
+  args: String
   work_units: Float
 }
 

@@ -31,7 +31,7 @@ interface ICancelTaskArguments {
 }
 
 interface IUpdateTaskDefinitionArguments {
-    project: ITaskDefinitionInput;
+    taskDefinition: ITaskDefinitionInput;
 }
 
 let resolvers = {
@@ -70,7 +70,7 @@ let resolvers = {
             return "OK";
         },
         updateTaskDefinition(_, args: IUpdateTaskDefinitionArguments, context: IGraphQLAppContext): Promise<ITaskDefinition> {
-            return context.taskManager.updateTaskDefinition(args.project);
+            return context.taskManager.updateTaskDefinition(args.taskDefinition);
         },
         startTask(_, args: IRunTaskArguments, context: IGraphQLAppContext): Promise<ITaskExecution> {
             debug(`start task with definition ${args.taskDefinitionId}`);
