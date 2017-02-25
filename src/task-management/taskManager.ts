@@ -1,6 +1,6 @@
 import * as path from "path";
 
-import {ITaskDefinition, TaskDefinitions} from "../data-model/taskDefinition";
+import {ITaskDefinition, TaskDefinitions, ITaskDefinitionInput} from "../data-model/taskDefinition";
 import {ITaskExecution, TaskExecutions, ExecutionStatusCode, CompletionStatusCode} from "../data-model/taskExecution";
 import * as ProcessManager from "./pm2-async";
 import {IProcessInfo, ExecutionStatus} from "./pm2-async";
@@ -16,6 +16,8 @@ export interface ITaskManager extends ProcessManager.IPM2MonitorDelegate {
     getStatistics(): Promise<ITaskStatistics[]>;
     statisticsForTask(id: string): Promise<ITaskStatistics>;
     getRunningTasks(): Promise<ITaskExecution[]>;
+
+    updateTaskDefinition(taskDefinition: ITaskDefinitionInput): Promise<ITaskDefinition> ;
     startTask(taskDefinitionId: string, scriptArgs: Array<string>): Promise<ITaskExecution>;
     stopTask(taskExecutionId: string): Promise<ITaskExecution>;
     refreshTasksFromProcessManager();
@@ -74,6 +76,10 @@ export class TaskManager implements ITaskManager {
 
     public statisticsForTask(id: string): Promise<ITaskStatistics> {
         return taskStatisticsInstance.getForTaskId(id);
+    }
+
+    public updateTaskDefinition(taskDefinition: ITaskDefinitionInput): Promise<ITaskDefinition> {
+        return this._taskDefinitions.updateFromInput(taskDefinition);
     }
 
     public removeCompletedExecutionsWithCode(code: CompletionStatusCode): Promise<number> {

@@ -1,6 +1,6 @@
 import {IGraphQLAppContext} from "./graphQLContext";
 import {ITaskExecution, CompletionStatusCode} from "../data-model/taskExecution";
-import {ITaskDefinition} from "../data-model/taskDefinition";
+import {ITaskDefinition, ITaskDefinitionInput} from "../data-model/taskDefinition";
 import {ITaskStatistics} from "../data-model/taskStatistics";
 
 const debug = require("debug")("mouselight:worker-api:resolvers");
@@ -28,6 +28,10 @@ interface IRunTaskArguments {
 interface ICancelTaskArguments {
     taskExecutionId: string;
     forceIfNeeded: boolean;
+}
+
+interface IUpdateTaskDefinitionArguments {
+    project: ITaskDefinitionInput;
 }
 
 let resolvers = {
@@ -64,6 +68,9 @@ let resolvers = {
         debugMessage(_, args: IDebugMessageArguments): string {
             debug(`debug message: ${args.msg}`);
             return "OK";
+        },
+        updateTaskDefinition(_, args: IUpdateTaskDefinitionArguments, context: IGraphQLAppContext): Promise<ITaskDefinition> {
+            return context.taskManager.updateTaskDefinition(args.project);
         },
         startTask(_, args: IRunTaskArguments, context: IGraphQLAppContext): Promise<ITaskExecution> {
             debug(`start task with definition ${args.taskDefinitionId}`);

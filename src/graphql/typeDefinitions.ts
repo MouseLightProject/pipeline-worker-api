@@ -61,6 +61,15 @@ type TaskStatistics implements ITimestamps {
   deleted_at: String
 }
 
+input TaskDefinitionInput {
+  id: String
+  name: String
+  description: String
+  script: String
+  interpreter: String
+  work_units: Float
+}
+
 type Query {
   taskDefinitions: [TaskDefinition!]!
   taskStatistics: [TaskStatistics!]!
@@ -74,6 +83,7 @@ type Query {
 
 type Mutation {
   debugMessage(msg: String!): String!
+  updateTaskDefinition(taskDefinition: TaskDefinitionInput): TaskDefinition
   startTask(taskDefinitionId: String!, scriptArgs: [String!]): TaskExecution
   stopTask(taskExecutionId: String!): TaskExecution
   refreshTasksFromProcessManager: [TaskExecution!]
