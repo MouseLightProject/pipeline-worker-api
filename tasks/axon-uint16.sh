@@ -43,16 +43,20 @@ export PYTHONPATH=""
 # This is especially important on KDE, which is uses its own version of QT and may conflict.
 export QT_PLUGIN_PATH=${IL_PREFIX}/plugins
 
-export LAZYFLOW_THREADS=10
+export LAZYFLOW_THREADS=20
 export LAZYFLOW_TOTAL_RAM_MB=30000
 
 node_bind="$(shuf --input-range=0-1 --head-count=1)"
 
-numactl --cpubind=${node_bind} --membind=${node_bind} -- ${IL_PREFIX}/bin/python ${IL_PREFIX}/ilastik-meta/ilastik/ilastik.py --logfile=${log_file_1} --headless --cutout_subregion="[(None,None,None,0),(None,None,None,1)]" --project="$ilastik_project" --output_filename_format="$output_file1" --output_format=hdf5 "$input_file1"
+# numactl --cpubind=${node_bind} --membind=${node_bind} -- ${IL_PREFIX}/bin/python ${IL_PREFIX}/ilastik-meta/ilastik/ilastik.py --logfile=${log_file_1} --headless --cutout_subregion="[(None,None,None,0),(None,None,None,1)]" --project="$ilastik_project" --output_filename_format="$output_file1" --output_format=hdf5 "$input_file1"
+
+${IL_PREFIX}/bin/python ${IL_PREFIX}/ilastik-meta/ilastik/ilastik.py --logfile=${log_file_1} --headless --cutout_subregion="[(None,None,None,0),(None,None,None,1)]" --project="$ilastik_project" --output_filename_format="$output_file1" --output_format=hdf5 "$input_file1"
 
 node_bind="$(shuf --input-range=0-1 --head-count=1)"
 
-numactl --cpubind=${node_bind} --membind=${node_bind} -- ${IL_PREFIX}/bin/python ${IL_PREFIX}/ilastik-meta/ilastik/ilastik.py --logfile=${log_file_2} --headless --cutout_subregion="[(None,None,None,0),(None,None,None,1)]" --project="$ilastik_project" --output_filename_format="$output_file2" --output_format=hdf5 "$input_file2"
+# numactl --cpubind=${node_bind} --membind=${node_bind} -- ${IL_PREFIX}/bin/python ${IL_PREFIX}/ilastik-meta/ilastik/ilastik.py --logfile=${log_file_2} --headless --cutout_subregion="[(None,None,None,0),(None,None,None,1)]" --project="$ilastik_project" --output_filename_format="$output_file2" --output_format=hdf5 "$input_file2"
+
+${IL_PREFIX}/bin/python ${IL_PREFIX}/ilastik-meta/ilastik/ilastik.py --logfile=${log_file_2} --headless --cutout_subregion="[(None,None,None,0),(None,None,None,1)]" --project="$ilastik_project" --output_filename_format="$output_file2" --output_format=hdf5 "$input_file2"
 
 if [ $? -eq 0 ]
 then
