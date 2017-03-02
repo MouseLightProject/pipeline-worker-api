@@ -43,7 +43,7 @@ export PYTHONPATH=""
 # This is especially important on KDE, which is uses its own version of QT and may conflict.
 export QT_PLUGIN_PATH=${IL_PREFIX}/plugins
 
-export LAZYFLOW_THREADS=4
+export LAZYFLOW_THREADS=10
 export LAZYFLOW_TOTAL_RAM_MB=30000
 
 node_bind="$(shuf --input-range=0-1 --head-count=1)"
