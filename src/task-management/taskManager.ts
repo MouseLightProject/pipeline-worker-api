@@ -46,6 +46,8 @@ export class TaskManager implements ITaskManager {
 
     public constructor() {
         this._isClusterProxy = serverConfiguration.apiService.isClusterProxy ? "1" : "0";
+
+        debug(`setting cluster proxy flag to ${this._isClusterProxy}`);
     }
 
     public async processEvent(name: string, processInfo: IProcessInfo, manually: boolean) {
