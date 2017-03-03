@@ -74,7 +74,7 @@ input TaskDefinitionInput {
 
 type Query {
   taskDefinitions: [TaskDefinition!]!
-  taskStatistics: [TaskStatistics!]!
+  taskDefinition(id: String!): TaskDefinition
   taskExecutions: [TaskExecution!]!
   taskExecution(id: String!): TaskExecution
   taskStatistics: [TaskStatistics!]!

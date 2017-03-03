@@ -36,6 +36,10 @@ interface IUpdateTaskDefinitionArguments {
 
 let resolvers = {
     Query: {
+        taskDefinition(_, args: IIdOnlyArguments, context: IGraphQLAppContext): Promise<ITaskDefinition> {
+            // debug(`get task ${args.id}`);
+            return context.taskManager.getTaskDefinition(args.id);
+        },
         taskDefinitions(_, __, context: IGraphQLAppContext): Promise<ITaskDefinition[]> {
             // debug("get all task definitions");
             return context.taskManager.getTaskDefinitions();

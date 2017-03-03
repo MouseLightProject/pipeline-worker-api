@@ -12,8 +12,8 @@ import readServerConfiguration from "../../config/server.config";
 const serverConfiguration = readServerConfiguration();
 
 export interface ITaskManager extends ProcessManager.IPM2MonitorDelegate {
-    getTaskDefinitions(): Promise<ITaskDefinition[]>;
     getTaskDefinition(id: string): Promise<ITaskDefinition>;
+    getTaskDefinitions(): Promise<ITaskDefinition[]>;
     getTask(id: string): Promise<ITaskExecution>;
     getTasks(): Promise<ITaskExecution[]>;
     getStatistics(): Promise<ITaskStatistics[]>;
