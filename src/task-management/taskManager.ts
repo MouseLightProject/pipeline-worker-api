@@ -138,14 +138,16 @@ export class TaskManager implements ITaskManager {
     public async refreshTasksFromProcessManager() {
         let processList: IProcessInfo[] = await ProcessManager.list();
 
-        // Get TaskExecution object for each PM2 entry (if exists)
-        let taskList: ITaskExecution[] = await Promise.all(processList.map((processInfo) => {
+        // Get TaskExecution object for each PM2 entry (if exists).  Note that if another worker is running on the same
+        // machine (e.g., a cluster proxy, PM2 may be returning tasks that are not owned by this worker, thus the filter
+        // operation.
+        let taskList: ITaskExecution[] = (await Promise.all(processList.map((processInfo) => {
             return this._taskExecutions.get(processInfo.name);
-        }));
+        }))).filter(task => task);
 
         // Map updated info where applicable
         await Promise.all(taskList.map(async(taskExecution, index) => {
-            if (taskExecution === undefined) {
+            if (taskExecution === undefined || taskExecution === null) {
                 debug(`unknown PM2 process with name ${processList[index].name}`);
                 return null;
             }
