@@ -198,7 +198,7 @@ function readHostProperties(config: IApiServiceConfiguration, preferredNetworkIn
         name: os.hostname(),
         networkInterface: networkProperties.interfaceName,
         networkAddress: networkProperties.networkAddress,
-        networkPort: process.env.PORT || config.networkPort,
+        networkPort: process.env.WORKER_API_PORT || config.networkPort,
         graphQlEndpoint: config.graphQlEndpoint,
         graphiQlEndpoint: config.graphiQlEndpoint,
         workUnitCapacity: process.env.WORK_UNIT_CAPACITY || config.workUnitCapacity,

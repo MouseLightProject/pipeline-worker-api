@@ -9,7 +9,7 @@ import {SocketIoClient} from "./io/serverConnection";
 
 const serverConfiguration = readServerConfiguration();
 
-const PORT = process.env.WORKER_API_PORT || serverConfiguration.apiService.networkPort;
+const PORT = serverConfiguration.apiService.networkPort;
 
 const app = express();
 
