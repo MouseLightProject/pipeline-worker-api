@@ -24,6 +24,7 @@ export interface IApiServiceConfiguration {
     graphQlEndpoint: string;
     graphiQlEndpoint: string;
     workUnitCapacity: number;
+    isClusterProxy: boolean;
     machineProperties: IIMachineProperties;
 }
 
@@ -50,6 +51,7 @@ const configurations: IConfiguration<IServerConfig> = {
             graphQlEndpoint: "/graphql",
             graphiQlEndpoint: "/graphiql",
             workUnitCapacity: 4,
+            isClusterProxy: false,
             machineProperties: {
                 osType: "",
                 platform: "",
@@ -77,6 +79,7 @@ const configurations: IConfiguration<IServerConfig> = {
             graphQlEndpoint: "/graphql",
             graphiQlEndpoint: "/graphiql",
             workUnitCapacity: 2,
+            isClusterProxy: false,
             machineProperties: {
                 osType: "",
                 platform: "",
@@ -104,6 +107,7 @@ const configurations: IConfiguration<IServerConfig> = {
             graphQlEndpoint: "/graphql",
             graphiQlEndpoint: "/graphiql",
             workUnitCapacity: 2,
+            isClusterProxy: false,
             machineProperties: {
                 osType: "",
                 platform: "",
@@ -131,6 +135,7 @@ const configurations: IConfiguration<IServerConfig> = {
             graphQlEndpoint: "/graphql",
             graphiQlEndpoint: "/graphiql",
             workUnitCapacity: 2,
+            isClusterProxy: false,
             machineProperties: {
                 osType: "",
                 platform: "",
@@ -197,6 +202,7 @@ function readHostProperties(config: IApiServiceConfiguration, preferredNetworkIn
         graphQlEndpoint: config.graphQlEndpoint,
         graphiQlEndpoint: config.graphiQlEndpoint,
         workUnitCapacity: process.env.WORK_UNIT_CAPACITY || config.workUnitCapacity,
+        isClusterProxy: process.env.IS_CLUSTER_PROXY || config.isClusterProxy,
         machineProperties: config.machineProperties
     };
 }

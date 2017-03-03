@@ -6,8 +6,9 @@ pipeline_input_root=$3
 pipeline_output_root=$4
 tile_relative_path=$5
 tile_name=$6
-app="$7/dogDescriptor"
-MCRROOT=$8
+is_cluster_job=$7
+app="$8/dogDescriptor"
+MCRROOT=$9
 
 input_file1="$pipeline_input_root/$tile_relative_path/$tile_name-prob.0.h5"
 input_file2="$pipeline_input_root/$tile_relative_path/$tile_name-prob.1.h5"

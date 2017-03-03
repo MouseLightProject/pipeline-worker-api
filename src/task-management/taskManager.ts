@@ -1,12 +1,15 @@
 import * as path from "path";
 
+const debug = require("debug")("mouselight:worker-api:task-manager");
+
 import {ITaskDefinition, TaskDefinitions, ITaskDefinitionInput} from "../data-model/taskDefinition";
 import {ITaskExecution, TaskExecutions, ExecutionStatusCode, CompletionStatusCode} from "../data-model/taskExecution";
-import * as ProcessManager from "./pm2-async";
 import {IProcessInfo, ExecutionStatus} from "./pm2-async";
-import {ITaskStatistics, TaskStatistics, taskStatisticsInstance} from "../data-model/taskStatistics";
+import {ITaskStatistics, taskStatisticsInstance} from "../data-model/taskStatistics";
+import * as ProcessManager from "./pm2-async";
 
-const debug = require("debug")("mouselight:worker-api:task-manager");
+import readServerConfiguration from "../../config/server.config";
+const serverConfiguration = readServerConfiguration();
 
 export interface ITaskManager extends ProcessManager.IPM2MonitorDelegate {
     getTaskDefinitions(): Promise<ITaskDefinition[]>;
@@ -39,6 +42,11 @@ export class TaskManager implements ITaskManager {
 
     private _taskDefinitions = new TaskDefinitions();
     private _taskExecutions = new TaskExecutions();
+    private _isClusterProxy = "0";
+
+    public constructor() {
+        this._isClusterProxy = serverConfiguration.apiService.isClusterProxy ? "1" : "0";
+    }
 
     public async processEvent(name: string, processInfo: IProcessInfo, manually: boolean) {
         debug(`Handling event ${name} for ${processInfo.name} with status ${processInfo.status}`);
@@ -104,7 +112,7 @@ export class TaskManager implements ITaskManager {
             customArgs = taskDefinition.args.split(/[\s+]/).filter(Boolean);
         }
 
-        let combinedArgs = scriptArgs.concat(customArgs);
+        let combinedArgs = scriptArgs.concat([this._isClusterProxy]).concat(customArgs);
 
         let taskExecution = await this._taskExecutions.createTask(taskDefinition, combinedArgs);
 
