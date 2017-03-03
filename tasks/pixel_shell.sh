@@ -15,7 +15,7 @@ output_file="$pipeline_output_root/$tile_relative_path/$tile_name"
 output_file+="-prob"
 output_file1="$output_file.0.h5"
 output_file2="$output_file.1.h5"
-log_file="$7/testing.log"
+log_file="$8/testing.log"
 
 # Default location on test machines.  Most configurations should export IL_PREFIX in their launch script that also sets
 # machine id, etc.
