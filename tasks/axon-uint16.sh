@@ -19,6 +19,8 @@ log_file_base="$tile_relative_path/$tile_name"
 log_file_base=${log_file_base//\//-}
 log_file_1="/groups/mousebrainmicro/mousebrainmicro/LOG/2017-02-22/$log_file_base.0.txt"
 log_file_2="/groups/mousebrainmicro/mousebrainmicro/LOG/2017-02-22/$log_file_base.1.txt"
+log_file_cluster_1="/groups/mousebrainmicro/mousebrainmicro/LOG/2017-02-22/$log_file_base-cluster.0.txt"
+log_file_cluster_2="/groups/mousebrainmicro/mousebrainmicro/LOG/2017-02-22/$log_file_base-cluster.1.txt"
 
 # Default location on test machines.  Most configurations should export IL_PREFIX in their launch script that also sets
 # machine id, etc.
@@ -54,22 +56,48 @@ then
     export LAZYFLOW_TOTAL_RAM_MB=30000
 
     eval ${cmd1}
+
+    if [ $? -eq 0 ]
+    then
+      echo "Successfully executed ilastik 1"
+      exit 0
+    else
+      echo "ilastik failed 1"
+      exit $?
+    fi
+
     eval ${cmd2}
+    if [ $? -eq 0 ]
+    then
+      echo "Successfully executed ilastik 2"
+      exit 0
+    else
+      echo "ilastik failed 2"
+      exit $?
+    fi
 else
     export LAZYFLOW_THREADS=4
     export LAZYFLOW_TOTAL_RAM_MB=30000
 
-    ssh login1 "source /etc/profile; qsub -sync y -pe batch 4 -N ml-${tile_name} -j y -o /dev/null -b y -cwd -V -l d_rt=900 '${cmd1}'"
-    ssh login1 "source /etc/profile; qsub -sync y -pe batch 4 -N ml-${tile_name} -j y -o /dev/null -b y -cwd -V -l d_rt=900 '${cmd2}'"
-fi
+    ssh login1 "source /etc/profile; qsub -sync y -pe batch 4 -N ml-${tile_name} -j y -o ${log_file_cluster_1} -b y -cwd -V -l d_rt=3600 '${cmd1}'"
+    if [ $? -eq 0 ]
+    then
+      echo "Successfully executed ilastik 1"
+      exit 0
+    else
+      echo "ilastik failed 1"
+      exit $?
+    fi
 
-if [ $? -eq 0 ]
-then
-  echo "Successfully executed ilastik"
-  exit 0
-else
-  echo "ilastik failed"
-  exit 1
+    ssh login1 "source /etc/profile; qsub -sync y -pe batch 4 -N ml-${tile_name} -j y -o ${log_file_cluster_2} -b y -cwd -V -l d_rt=3600 '${cmd2}'"
+    if [ $? -eq 0 ]
+    then
+      echo "Successfully executed ilastik 2"
+      exit 0
+    else
+      echo "ilastik failed 2"
+      exit $?
+    fi
 fi
 
 # ${IL_PREFIX}/bin/python ${IL_PREFIX}/ilastik-meta/ilastik/ilastik.py --logfile=${log_file_1} --headless --cutout_subregion="[(None,None,None,0),(None,None,None,1)]" --project="$ilastik_project" --output_filename_format="$output_file1" --output_format=hdf5 "$input_file1"
