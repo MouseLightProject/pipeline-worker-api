@@ -195,7 +195,7 @@ function readHostProperties(config: IApiServiceConfiguration, preferredNetworkIn
 
     return {
         machineId: process.env.MACHINE_ID || config.machineId,
-        name: os.hostname(),
+        name: process.env.WORKER_NAME || os.hostname(),
         networkInterface: networkProperties.interfaceName,
         networkAddress: networkProperties.networkAddress,
         networkPort: process.env.WORKER_API_PORT || config.networkPort,
