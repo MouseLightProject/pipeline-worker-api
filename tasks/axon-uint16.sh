@@ -75,8 +75,8 @@ then
       exit $?
     fi
 else
-    export LAZYFLOW_THREADS=4
-    export LAZYFLOW_TOTAL_RAM_MB=30000
+    export LAZYFLOW_THREADS=2
+    export LAZYFLOW_TOTAL_RAM_MB=60000
 
     ssh login1 "source /etc/profile; qsub -sync y -pe batch 4 -N ml-${tile_name} -j y -o ${log_file_cluster_1} -b y -cwd -V -l d_rt=3600 -l broadwell=true '${cmd1}'"
     if [ $? -eq 0 ]
