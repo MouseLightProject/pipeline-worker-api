@@ -156,9 +156,11 @@ const configurations: IConfiguration<IServerConfig> = {
 };
 
 function overrideDefaults(config: IServerConfig): IServerConfig {
-    let preferredNetworkInterface = process.env.PREFERRED_NETWORK_INTERFACE || config.apiService.networkInterface;
+    let networkProperties: INetworkProperties = findNetworkAddress(process.env.PREFERRED_NETWORK_INTERFACE || config.apiService.networkInterface);
 
-    config.apiService = readHostProperties(config.apiService, preferredNetworkInterface);
+    networkProperties.networkAddress = process.env.HOST_NETWORK_ADDRESS || networkProperties.networkAddress;
+
+    config.apiService = readHostProperties(config.apiService, networkProperties);
 
     config.apiService.machineProperties = readMachineProperties();
 
@@ -190,9 +192,7 @@ interface INetworkProperties {
     networkAddress: string;
 }
 
-function readHostProperties(config: IApiServiceConfiguration, preferredNetworkInterface: string): IApiServiceConfiguration {
-    let networkProperties: INetworkProperties = findNetworkAddress(preferredNetworkInterface);
-
+function readHostProperties(config: IApiServiceConfiguration, networkProperties: INetworkProperties): IApiServiceConfiguration {
     return {
         machineId: process.env.MACHINE_ID || config.machineId,
         name: process.env.WORKER_NAME || os.hostname(),
