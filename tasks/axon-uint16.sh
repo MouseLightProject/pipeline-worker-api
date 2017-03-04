@@ -52,8 +52,8 @@ cmd2="${IL_PREFIX}/bin/python ${IL_PREFIX}/ilastik-meta/ilastik/ilastik.py --log
 
 if [ ${is_cluster_job} -eq 0 ]
 then
-    export LAZYFLOW_THREADS=20
-    export LAZYFLOW_TOTAL_RAM_MB=30000
+    export LAZYFLOW_THREADS=1
+    export LAZYFLOW_TOTAL_RAM_MB=15000
 
     eval ${cmd1}
 
@@ -75,10 +75,10 @@ then
       exit $?
     fi
 else
-    export LAZYFLOW_THREADS=2
-    export LAZYFLOW_TOTAL_RAM_MB=60000
+    export LAZYFLOW_THREADS=1
+    export LAZYFLOW_TOTAL_RAM_MB=15000
 
-    ssh login1 "source /etc/profile; qsub -sync y -pe batch 4 -N ml-${tile_name} -j y -o ${log_file_cluster_1} -b y -cwd -V -l d_rt=3600 -l broadwell=true '${cmd1}'"
+    ssh login1 "source /etc/profile; qsub -sync y -pe batch 1 -N ml-${tile_name} -j y -o ${log_file_cluster_1} -b y -cwd -V -l d_rt=3600 -l broadwell=true '${cmd1}'"
     if [ $? -eq 0 ]
     then
       echo "Successfully executed ilastik 1"
@@ -87,7 +87,7 @@ else
       exit $?
     fi
 
-    ssh login1 "source /etc/profile; qsub -sync y -pe batch 4 -N ml-${tile_name} -j y -o ${log_file_cluster_2} -b y -cwd -V -l d_rt=3600 -l broadwell=true '${cmd2}'"
+    ssh login1 "source /etc/profile; qsub -sync y -pe batch 1 -N ml-${tile_name} -j y -o ${log_file_cluster_2} -b y -cwd -V -l d_rt=3600 -l broadwell=true '${cmd2}'"
     if [ $? -eq 0 ]
     then
       echo "Successfully executed ilastik 2"
