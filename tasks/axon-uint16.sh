@@ -15,7 +15,7 @@ output_file="$pipeline_output_root/$tile_relative_path/$tile_name"
 output_file+="-prob"
 output_file1="$output_file.0.h5"
 output_file2="$output_file.1.h5"
-log_file_base="$tile_relative_path/$tile_name"
+log_file_base="$tile_relative_path"
 log_file_base=${log_file_base//\//-}
 log_file_1="/groups/mousebrainmicro/mousebrainmicro/LOG/2017-02-22/$log_file_base.0.txt"
 log_file_2="/groups/mousebrainmicro/mousebrainmicro/LOG/2017-02-22/$log_file_base.1.txt"
@@ -75,10 +75,10 @@ then
       exit $?
     fi
 else
-    export LAZYFLOW_THREADS=4
-    export LAZYFLOW_TOTAL_RAM_MB=30000
+    export LAZYFLOW_THREADS=1
+    export LAZYFLOW_TOTAL_RAM_MB=20000
 
-    ssh login1 "source /etc/profile; qsub -sync y -pe batch 4 -N ml-${tile_name} -j y -o ${log_file_cluster_1} -b y -cwd -V -l d_rt=3600 '${cmd1}'"
+    ssh login1 "source /etc/profile; qsub -sync y -pe batch 4 -N ml-${tile_name} -j y -o ${log_file_cluster_1} -b y -cwd -V -l d_rt=3600 -l broadwell=true '${cmd1}'"
     if [ $? -eq 0 ]
     then
       echo "Successfully executed ilastik 1"
@@ -87,7 +87,7 @@ else
       exit $?
     fi
 
-    ssh login1 "source /etc/profile; qsub -sync y -pe batch 4 -N ml-${tile_name} -j y -o ${log_file_cluster_2} -b y -cwd -V -l d_rt=3600 '${cmd2}'"
+    ssh login1 "source /etc/profile; qsub -sync y -pe batch 4 -N ml-${tile_name} -j y -o ${log_file_cluster_2} -b y -cwd -V -l d_rt=3600 -l broadwell=true '${cmd2}'"
     if [ $? -eq 0 ]
     then
       echo "Successfully executed ilastik 2"
