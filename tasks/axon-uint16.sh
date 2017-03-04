@@ -60,7 +60,6 @@ then
     if [ $? -eq 0 ]
     then
       echo "Successfully executed ilastik 1"
-      exit 0
     else
       echo "ilastik failed 1"
       exit $?
@@ -83,7 +82,6 @@ else
     if [ $? -eq 0 ]
     then
       echo "Successfully executed ilastik 1"
-      exit 0
     else
       echo "ilastik failed 1"
       exit $?
