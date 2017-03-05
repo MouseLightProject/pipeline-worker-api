@@ -38,7 +38,7 @@ if [ ${is_cluster_job} -eq 0 ]
 then
     export LD_LIBRARY_PATH;
 
-    eval ${cmd}
+    eval ${cmd} &> ${log_file}
 
     if [ $? -eq 0 ]
     then

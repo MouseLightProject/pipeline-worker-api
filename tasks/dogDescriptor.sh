@@ -43,7 +43,7 @@ if [ ${is_cluster_job} -eq 0 ]
 then
     export LD_LIBRARY_PATH;
 
-    eval ${cmd1}
+    eval ${cmd1} &> ${log_file_1}
 
     if [ $? -eq 0 ]
     then
@@ -53,7 +53,7 @@ then
       exit $?
     fi
 
-    eval ${cmd2}
+    eval ${cmd2} &> ${log_file_2}
     if [ $? -eq 0 ]
     then
       echo "Completed descriptor for channel 1."
