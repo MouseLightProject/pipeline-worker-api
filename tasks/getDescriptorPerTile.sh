@@ -32,31 +32,30 @@ LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${mcrRoot}/bin/glnxa64 ;
 LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${mcrRoot}/sys/os/glnxa64;
 LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${mcrRoot}/sys/opengl/lib/glnxa64;
 
-export LD_LIBRARY_PATH;
-echo LD_LIBRARY_PATH is ${LD_LIBRARY_PATH};
-
 cmd="${app} ${input_file1} ${input_file2} ${output_file}"
 
 if [ ${is_cluster_job} -eq 0 ]
 then
+    export LD_LIBRARY_PATH;
+
     eval ${cmd}
 
     if [ $? -eq 0 ]
     then
-      echo "Successfully executed ilastik 1"
+      echo "Completed descriptor merge."
       exit 0
     else
-      echo "ilastik failed 1"
+      echo "Failed descriptor merge."
       exit $?
     fi
 else
-    ssh login1 "source /etc/profile; qsub -sync y -pe batch 1 -N ml-${tile_name} -j y -o ${log_file} -b y -cwd -V -l d_rt=3600 -l broadwell=true '${cmd}'"
+    ssh login1 "source /etc/profile; export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}; qsub -sync y -pe batch 1 -N ml-${tile_name} -j y -o ${log_file} -b y -cwd -V -l d_rt=3600 -l broadwell=true '${cmd}'"
     if [ $? -eq 0 ]
     then
-      echo "Successfully executed ilastik 1"
+      echo "Completed descriptor merge (cluster)."
       exit 0
     else
-      echo "ilastik failed 1"
+      echo "Failed descriptor merge (cluster)."
       exit $?
     fi
 fi

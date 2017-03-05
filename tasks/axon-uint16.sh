@@ -67,19 +67,19 @@ then
 
     if [ $? -eq 0 ]
     then
-      echo "Successfully executed ilastik 1"
+      echo "Completed classifier for channel 0."
     else
-      echo "ilastik failed 1"
+      echo "Failed classifier for channel 0."
       exit $?
     fi
 
     eval ${cmd2}
     if [ $? -eq 0 ]
     then
-      echo "Successfully executed ilastik 2"
+      echo "Completed classifier for channel 1."
       exit 0
     else
-      echo "ilastik failed 2"
+      echo "Failed classifier for channel 1."
       exit $?
     fi
 else
@@ -91,19 +91,19 @@ else
     ssh login1 "source /etc/profile; export LAZYFLOW_THREADS=${LAZYFLOW_THREADS}; export LAZYFLOW_TOTAL_RAM_MB=${LAZYFLOW_TOTAL_RAM_MB}; qsub -sync y -pe batch 4 -N ml-ax-${tile_name} -j y -o /dev/null -b y -cwd -V -l d_rt=3600 -l broadwell=true '${cmd1}'"
     if [ $? -eq 0 ]
     then
-      echo "Successfully executed ilastik 1"
+      echo "Completed classifier for channel 0 (cluster)."
     else
-      echo "ilastik failed 1"
+      echo "Failed classifier for channel 0 (cluster)."
       exit $?
     fi
 
     ssh login1 "source /etc/profile; export LAZYFLOW_THREADS=${LAZYFLOW_THREADS}; export LAZYFLOW_TOTAL_RAM_MB=${LAZYFLOW_TOTAL_RAM_MB}; qsub -sync y -pe batch 4 -N ml-ax-${tile_name} -j y -o /dev/null -b y -cwd -V -l d_rt=3600 -l broadwell=true '${cmd2}'"
     if [ $? -eq 0 ]
     then
-      echo "Successfully executed ilastik 2"
+      echo "Completed classifier for channel 1 (cluster)."
       exit 0
     else
-      echo "ilastik failed 2"
+      echo "Failed classifier for channel 1 (cluster)."
       exit $?
     fi
 fi
