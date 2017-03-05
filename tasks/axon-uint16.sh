@@ -29,8 +29,7 @@ log_file_prefix="ax-"
 log_file_1="${log_path_base}/${log_file_prefix}${log_file_base}.0.txt"
 log_file_2="${log_path_base}/${log_file_prefix}${log_file_base}.1.txt"
 
-# Default location on test machines.  Most configurations should export IL_PREFIX in their launch script that also sets
-# machine id, etc.
+# Default location on test and production machines.  Can also export IL_PREFIX in worker profile script (typically id.sh).
 if [ -z "$IL_PREFIX" ]
 then
   if [ "$(uname)" == "Darwin" ]
@@ -40,16 +39,6 @@ then
     export IL_PREFIX=/groups/mousebrainmicro/mousebrainmicro/cluster/software/ilastik-1.2.0-Linux
   fi
 fi
-
-# Comments and execution based on iLastik's default run script.
-
-# Do not use the user's previous LD_LIBRARY_PATH settings because they can cause conflicts.
-# Start with an empty LD_LIBRARY_PATH
-
-# Similarly, clear PYTHONPATH
-
-# Do not use the user's own QT_PLUGIN_PATH, which can cause conflicts with our QT build.
-# This is especially important on KDE, which is uses its own version of QT and may conflict.
 
 cmd1="${IL_PREFIX}/bin/python ${IL_PREFIX}/ilastik-meta/ilastik/ilastik.py --logfile=${log_file_1} --headless --cutout_subregion=\"[(None,None,None,0),(None,None,None,1)]\" --project=\"$ilastik_project\" --output_filename_format=\"$output_file1\" --output_format=\"compressed hdf5\" \"$input_file1\""
 cmd2="${IL_PREFIX}/bin/python ${IL_PREFIX}/ilastik-meta/ilastik/ilastik.py --logfile=${log_file_2} --headless --cutout_subregion=\"[(None,None,None,0),(None,None,None,1)]\" --project=\"$ilastik_project\" --output_filename_format=\"$output_file2\" --output_format=\"compressed hdf5\" \"$input_file2\""
@@ -88,7 +77,7 @@ else
 
     cluster_exports="export LAZYFLOW_THREADS=${LAZYFLOW_THREADS}; export LAZYFLOW_TOTAL_RAM_MB=${LAZYFLOW_TOTAL_RAM_MB}; LD_LIBRARY_PATH=\"\"; PYTHONPATH=\"\"; QT_PLUGIN_PATH=${IL_PREFIX}/plugins"
 
-    ssh login1 "source /etc/profile; export LAZYFLOW_THREADS=${LAZYFLOW_THREADS}; export LAZYFLOW_TOTAL_RAM_MB=${LAZYFLOW_TOTAL_RAM_MB}; qsub -sync y -pe batch 4 -N ml-ax-${tile_name} -j y -o /dev/null -b y -cwd -V -l d_rt=3600 -l broadwell=true '${cmd1}'"
+    ssh login1 "source /etc/profile; ${cluster_exports}; qsub -sync y -pe batch 4 -N ml-ax-${tile_name} -j y -o /dev/null -b y -cwd -V -l d_rt=3600 -l broadwell=true '${cmd1}'"
     if [ $? -eq 0 ]
     then
       echo "Completed classifier for channel 0 (cluster)."
@@ -97,7 +86,7 @@ else
       exit $?
     fi
 
-    ssh login1 "source /etc/profile; export LAZYFLOW_THREADS=${LAZYFLOW_THREADS}; export LAZYFLOW_TOTAL_RAM_MB=${LAZYFLOW_TOTAL_RAM_MB}; qsub -sync y -pe batch 4 -N ml-ax-${tile_name} -j y -o /dev/null -b y -cwd -V -l d_rt=3600 -l broadwell=true '${cmd2}'"
+    ssh login1 "source /etc/profile; ${cluster_exports}; qsub -sync y -pe batch 4 -N ml-ax-${tile_name} -j y -o /dev/null -b y -cwd -V -l d_rt=3600 -l broadwell=true '${cmd2}'"
     if [ $? -eq 0 ]
     then
       echo "Completed classifier for channel 1 (cluster)."
@@ -107,16 +96,3 @@ else
       exit $?
     fi
 fi
-
-# ${IL_PREFIX}/bin/python ${IL_PREFIX}/ilastik-meta/ilastik/ilastik.py --logfile=${log_file_1} --headless --cutout_subregion="[(None,None,None,0),(None,None,None,1)]" --project="$ilastik_project" --output_filename_format="$output_file1" --output_format=hdf5 "$input_file1"
-# ${IL_PREFIX}/bin/python ${IL_PREFIX}/ilastik-meta/ilastik/ilastik.py --logfile=${log_file_2} --headless --cutout_subregion="[(None,None,None,0),(None,None,None,1)]" --project="$ilastik_project" --output_filename_format="$output_file2" --output_format=hdf5 "$input_file2"
-
-# node_bind="$(shuf --input-range=0-1 --head-count=1)"
-
-# numactl --cpubind=${node_bind} --membind=${node_bind} -- ${IL_PREFIX}/bin/python ${IL_PREFIX}/ilastik-meta/ilastik/ilastik.py --logfile=${log_file_2} --headless --cutout_subregion="[(None,None,None,0),(None,None,None,1)]" --project="$ilastik_project" --output_filename_format="$output_file2" --output_format=hdf5 "$input_file2"
-
-# LAZYFLOW_THREADS=20 LAZYFLOW_TOTAL_RAM_MB=150000 /groups/mousebrainmicro/mousebrainmicro/cluster/software/ilastik-1.1.9-Linux/run_ilastik.sh
-# --headless  --cutout_subregion="[(None,None,None,0),(None,None,None,1)]" --logfile=/groups/mousebrainmicro/mousebrainmicro/LOG/2016-10-31-DEMO-2/ilp_06062-rKwXRk9zgP.txt
-# --project=/groups/mousebrainmicro/mousebrainmicro/erhan_dm11/AxonClassifier/axon_uint16.ilp --output_format="hdf5"
-# --output_filename_format=/nrs/mouselight/cluster/2016-10-31-demo-2/classifier_output/2016-11-03/00/00105/00105-prob.1.h5
-# /groups/mousebrainmicro/mousebrainmicro/from_tier2/data/2016-10-31/Tiling/2016-11-03/00/00105/00105-ngc.1.tif
