@@ -14,7 +14,7 @@ export abstract class TableModel<T extends ITableModelRow> {
     public constructor(tableName: string, idKey: string = "id") {
         this._tableName = tableName;
         this._idKey = idKey;
-     }
+    }
 
     public async get(id: string): Promise<T> {
         let results = await this.fetch([id]);
@@ -102,6 +102,7 @@ export abstract class TableModel<T extends ITableModelRow> {
 
     private async _getIdList(includeSoftDelete: boolean = false) {
         let objList;
+
         if (includeSoftDelete) {
             objList = await knex(this._tableName).select(this._idKey).orderBy("id");
         } else {

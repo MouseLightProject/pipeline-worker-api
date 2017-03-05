@@ -88,8 +88,6 @@ type Mutation {
   updateTaskDefinition(taskDefinition: TaskDefinitionInput): TaskDefinition
   startTask(taskDefinitionId: String!, scriptArgs: [String!]): TaskExecution
   stopTask(taskExecutionId: String!): TaskExecution
-  refreshTasksFromProcessManager: [TaskExecution!]
-  refreshTaskFromProcessManager(taskExecutionId: String!): TaskExecution
   removeCompletedExecutionsWithCode(code: Int): Int
   resetStatistics(taskId: String): Int
 }
@@ -101,3 +99,6 @@ schema {
 `;
 
 export default typeDefinitions;
+
+// refreshTasksFromProcessManager: [TaskExecution!]
+// refreshTaskFromProcessManager(taskExecutionId: String!): TaskExecution

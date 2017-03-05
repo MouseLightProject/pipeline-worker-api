@@ -84,14 +84,14 @@ let resolvers = {
             debug(`stop task ${args.taskExecutionId}`);
             return context.taskManager.stopTask(args.taskExecutionId);
         },
-        refreshTasksFromProcessManager(_, __, context: IGraphQLAppContext) {
+        //refreshTasksFromProcessManager(_, __, context: IGraphQLAppContext) {
             // debug("refresh tasks");
-            return context.taskManager.refreshTasksFromProcessManager();
-        },
-        refreshTaskFromProcessManager(_, {taskExecutionId}, context: IGraphQLAppContext) {
+        //    return context.taskManager.refreshTasksFromProcessManager();
+        //},
+        //refreshTaskFromProcessManager(_, {taskExecutionId}, context: IGraphQLAppContext) {
             // debug(`refresh task ${taskExecutionId}`);
-            return context.taskManager.refreshTaskFromProcessManager(taskExecutionId);
-        },
+        //    return context.taskManager.refreshTaskFromProcessManager(taskExecutionId);
+        //},
         removeCompletedExecutionsWithCode(_, args: IRemoveCompletedArguments, context: IGraphQLAppContext) {
             return context.taskManager.removeCompletedExecutionsWithCode(args.code);
         },
