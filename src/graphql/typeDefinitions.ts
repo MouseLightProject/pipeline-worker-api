@@ -62,6 +62,18 @@ type TaskStatistics implements ITimestamps {
   deleted_at: String
 }
 
+type Worker implements ITimestamps {
+  id: String
+  preferred_network_interface_id: String
+  display_name: String
+  work_capacity: Float
+  is_cluster_proxy: Boolean
+  is_accepting_jobs: Boolean
+  created_at: String
+  updated_at: String
+  deleted_at: String
+}
+
 input TaskDefinitionInput {
   id: String
   name: String
@@ -72,6 +84,15 @@ input TaskDefinitionInput {
   work_units: Float
 }
 
+input WorkerInput {
+  id: String
+  preferred_network_interface_id: String
+  display_name: String
+  work_capacity: Float
+  is_cluster_proxy: Boolean
+  is_accepting_jobs: Boolean
+}
+
 type Query {
   taskDefinitions: [TaskDefinition!]!
   taskDefinition(id: String!): TaskDefinition
@@ -80,15 +101,19 @@ type Query {
   taskStatistics: [TaskStatistics!]!
   statisticsForTask(id: String): TaskStatistics
   runningTasks: [TaskExecution!]!
+  worker: Worker
   workUnitCapacity: Float
 }
 
-type Mutation {
-  debugMessage(msg: String!): String!
+type Mutation {  
   updateTaskDefinition(taskDefinition: TaskDefinitionInput): TaskDefinition
+  updateWorker(worker: WorkerInput): Worker
+  
   startTask(taskDefinitionId: String!, scriptArgs: [String!]): TaskExecution
   stopTask(taskExecutionId: String!): TaskExecution
+  
   removeCompletedExecutionsWithCode(code: Int): Int
+  
   resetStatistics(taskId: String): Int
 }
 

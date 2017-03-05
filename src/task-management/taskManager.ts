@@ -7,9 +7,7 @@ import {ITaskExecution, TaskExecutions, ExecutionStatusCode, CompletionStatusCod
 import {IProcessInfo, ExecutionStatus} from "./pm2-async";
 import {ITaskStatistics, taskStatisticsInstance} from "../data-model/taskStatistics";
 import * as ProcessManager from "./pm2-async";
-
-import readServerConfiguration from "../../config/server.config";
-const serverConfiguration = readServerConfiguration();
+import {Workers, IWorker, IWorkerInput} from "../data-model/worker";
 
 export interface ITaskManager extends ProcessManager.IPM2MonitorDelegate {
     getTaskDefinition(id: string): Promise<ITaskDefinition>;
@@ -21,6 +19,8 @@ export interface ITaskManager extends ProcessManager.IPM2MonitorDelegate {
     getRunningTasks(): Promise<ITaskExecution[]>;
 
     updateTaskDefinition(taskDefinition: ITaskDefinitionInput): Promise<ITaskDefinition> ;
+    updateWorker(worker: IWorkerInput): Promise<IWorker>;
+
     startTask(taskDefinitionId: string, scriptArgs: Array<string>): Promise<ITaskExecution>;
     stopTask(taskExecutionId: string): Promise<ITaskExecution>;
 
@@ -41,13 +41,6 @@ export class TaskManager implements ITaskManager {
 
     private _taskDefinitions = new TaskDefinitions();
     private _taskExecutions = new TaskExecutions();
-    private _isClusterProxy = "0";
-
-    public constructor() {
-        this._isClusterProxy = serverConfiguration.apiService.isClusterProxy ? "1" : "0";
-
-        debug(`setting cluster proxy flag to ${this._isClusterProxy}`);
-    }
 
     public async processEvent(name: string, processInfo: IProcessInfo, manually: boolean): Promise<void> {
         debug(`handling event ${name} for ${processInfo.name} with status ${processInfo.status}`);
@@ -91,6 +84,10 @@ export class TaskManager implements ITaskManager {
         return this._taskDefinitions.updateFromInput(taskDefinition);
     }
 
+    public updateWorker(worker: IWorkerInput): Promise<IWorker> {
+        return Workers.Instance().updateFromInput(worker);
+    }
+
     public removeCompletedExecutionsWithCode(code: CompletionStatusCode): Promise<number> {
         return this._taskExecutions.removeCompletedExecutionsWithCode(code);
     }
@@ -113,7 +110,11 @@ export class TaskManager implements ITaskManager {
             customArgs = taskDefinition.args.split(/[\s+]/).filter(Boolean);
         }
 
-        const combinedArgs = scriptArgs.concat([this._isClusterProxy]).concat(customArgs);
+        const worker = await Workers.Instance().worker();
+
+        const isClusterProxy = worker.is_cluster_proxy ? "1" : "0";
+
+        const combinedArgs = scriptArgs.concat([isClusterProxy]).concat(customArgs);
 
         const taskExecution = await this._taskExecutions.createTask(taskDefinition, combinedArgs);
 

@@ -6,21 +6,29 @@ const debug = require("debug")("mouselight:worker-api:server");
 import readServerConfiguration from "../config/server.config";
 import {graphQLMiddleware, graphiQLMiddleware} from "./graphql/graphQLMiddleware";
 import {SocketIoClient} from "./io/serverConnection";
+import {Workers} from "./data-model/worker";
 
-const serverConfiguration = readServerConfiguration();
+start().then(() => {
+});
 
-const PORT = serverConfiguration.apiService.networkPort;
+async function start() {
+    const worker = await Workers.Instance().worker();
 
-const app = express();
+    const serverConfiguration = readServerConfiguration();
 
-app.use(bodyParser.urlencoded({extended: true}));
+    const PORT = serverConfiguration.apiService.networkPort;
 
-app.use(bodyParser.json());
+    const app = express();
 
-app.use(serverConfiguration.apiService.graphQlEndpoint, graphQLMiddleware());
+    app.use(bodyParser.urlencoded({extended: true}));
 
-app.use(serverConfiguration.apiService.graphiQlEndpoint, graphiQLMiddleware(serverConfiguration.apiService));
+    app.use(bodyParser.json());
 
-SocketIoClient.use(serverConfiguration);
+    app.use(serverConfiguration.apiService.graphQlEndpoint, graphQLMiddleware());
 
-app.listen(PORT, () => debug(`API Server is now running on http://localhost:${PORT}`));
+    app.use(serverConfiguration.apiService.graphiQlEndpoint, graphiQLMiddleware(serverConfiguration.apiService));
+
+    SocketIoClient.use(worker, serverConfiguration);
+
+    app.listen(PORT, () => debug(`API Server is now running on http://localhost:${PORT}`));
+}

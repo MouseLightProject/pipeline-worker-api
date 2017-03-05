@@ -4,6 +4,7 @@ const debug = require("debug")("mouselight:worker-api:socket.io");
 
 import {IServerConfig, IApiServiceConfiguration} from "../../config/server.config";
 import {TaskExecutions, ITaskExecution} from "../data-model/taskExecution";
+import {IWorker, Workers} from "../data-model/worker";
 
 export enum ServerConnectionStatus {
     Uninitialized,
@@ -20,8 +21,8 @@ export class SocketIoClient {
 
     private static _ioClient: SocketIoClient = null;
 
-    public static use(config: IServerConfig) {
-        this._ioClient = new SocketIoClient(config);
+    public static use(worker: IWorker, config: IServerConfig) {
+        this._ioClient = new SocketIoClient(worker, config);
     }
 
     private _socket;
@@ -34,7 +35,7 @@ export class SocketIoClient {
 
     private _taskExecutions = new TaskExecutions();
 
-    private constructor(config: IServerConfig) {
+    private constructor(worker: IWorker, config: IServerConfig) {
         this._socket = socket_io(`http://${config.managementService.host}:${config.managementService.port}`);
 
         this._apiService = config.apiService;
@@ -46,7 +47,7 @@ export class SocketIoClient {
 
             this._connectionStatus = ServerConnectionStatus.Connected;
 
-            this.emitHostInformation();
+            this.emitHostInformation(worker);
 
             await this.emitHeartBeat();
 
@@ -83,8 +84,8 @@ export class SocketIoClient {
         });
     }
 
-    private emitHostInformation() {
-        this._socket.emit("workerApiService", this._apiService);
+    private emitHostInformation(worker: IWorker) {
+        this._socket.emit("workerApiService", {worker: worker, service: this._apiService});
     }
 
     private async emitHeartBeat() {
@@ -99,11 +100,14 @@ export class SocketIoClient {
             }, 0);
         }
 
+        const worker = await Workers.Instance().worker();
+
         debug(`heartbeat (${taskLoad} task load)`);
 
         this._socket.emit("heartBeat", {
-            machineId: this._apiService.machineId,
-            taskLoad: taskLoad
+            machineId: worker.id,
+            taskLoad: taskLoad,
+            capacity: worker.work_capacity
         });
     }
 }

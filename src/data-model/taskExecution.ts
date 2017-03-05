@@ -5,12 +5,10 @@ const ChildProcess = require("child_process");
 import {knex} from "../data-access/knexConnector";
 import {ITaskDefinition} from "./taskDefinition";
 import {IProcessInfo, ExecutionStatus} from "../task-management/pm2-async";
-import readServerConfiguration from "../../config/server.config";
 import {updateStatisticsForTaskId, ISystemProcessStatistics} from "./taskStatistics";
+import {Workers} from "./worker";
 
 const debug = require("debug")("mouselight:worker-api:tasks");
-
-const serverConfiguration = readServerConfiguration();
 
 export enum ExecutionStatusCode {
     Undefined = 0,
@@ -46,6 +44,7 @@ export interface ITaskExecution extends ITableModelRow {
 }
 
 export class TaskExecutions extends TableModel<ITaskExecution> {
+
     public constructor() {
         super("TaskExecution");
     }
@@ -53,7 +52,7 @@ export class TaskExecutions extends TableModel<ITaskExecution> {
     public async createTask(taskDefinition: ITaskDefinition, scriptArgs: Array<string>): Promise<ITaskExecution> {
         debug(`create task execution from definition ${taskDefinition.id}`);
 
-        let taskExecution = _createTaskFromDefinition(taskDefinition, scriptArgs);
+        let taskExecution = await _createTaskFromDefinition(taskDefinition, scriptArgs);
 
         await this.save(taskExecution);
 
@@ -205,10 +204,12 @@ function readProcessStatistics(processId): Promise<ISystemProcessStatistics> {
     });
 }
 
-function _createTaskFromDefinition(taskDefinition: ITaskDefinition, scriptArgs: Array<string>): ITaskExecution {
+async function _createTaskFromDefinition(taskDefinition: ITaskDefinition, scriptArgs: Array<string>): Promise<ITaskExecution> {
+    const worker = await Workers.Instance().worker();
+
     return {
         id: uuid.v4(),
-        machine_id: serverConfiguration.apiService.machineId,
+        machine_id: worker.id,
         task_id: taskDefinition.id,
         work_units: taskDefinition.work_units,
         resolved_script: null,
