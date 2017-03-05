@@ -99,6 +99,3 @@ schema {
 `;
 
 export default typeDefinitions;
-
-// refreshTasksFromProcessManager: [TaskExecution!]
-// refreshTaskFromProcessManager(taskExecutionId: String!): TaskExecution

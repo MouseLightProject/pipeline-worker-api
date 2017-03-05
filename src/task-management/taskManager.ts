@@ -23,8 +23,7 @@ export interface ITaskManager extends ProcessManager.IPM2MonitorDelegate {
     updateTaskDefinition(taskDefinition: ITaskDefinitionInput): Promise<ITaskDefinition> ;
     startTask(taskDefinitionId: string, scriptArgs: Array<string>): Promise<ITaskExecution>;
     stopTask(taskExecutionId: string): Promise<ITaskExecution>;
-//    refreshTasksFromProcessManager();
-//    refreshTaskFromProcessManager(taskExecutionId: string);
+
     removeCompletedExecutionsWithCode(code: CompletionStatusCode): Promise<number>;
     resetStatistics(taskId: string): Promise<number>;
 }
@@ -106,7 +105,7 @@ export class TaskManager implements ITaskManager {
     // a bug where a process gets kicked off, but the initial save to database fails at creation.
 
     public async startTask(taskDefinitionId: string, scriptArgs: Array<string>) {
-        let taskDefinition = await this._taskDefinitions.get(taskDefinitionId);
+        const taskDefinition = await this._taskDefinitions.get(taskDefinitionId);
 
         let customArgs = [];
 
@@ -114,9 +113,9 @@ export class TaskManager implements ITaskManager {
             customArgs = taskDefinition.args.split(/[\s+]/).filter(Boolean);
         }
 
-        let combinedArgs = scriptArgs.concat([this._isClusterProxy]).concat(customArgs);
+        const combinedArgs = scriptArgs.concat([this._isClusterProxy]).concat(customArgs);
 
-        let taskExecution = await this._taskExecutions.createTask(taskDefinition, combinedArgs);
+        const taskExecution = await this._taskExecutions.createTask(taskDefinition, combinedArgs);
 
         return this._startTask(taskExecution, taskDefinition, combinedArgs);
     }
@@ -136,36 +135,7 @@ export class TaskManager implements ITaskManager {
     }
 
     private async refreshTasksFromProcessManager() {
-        let processList: IProcessInfo[] = await ProcessManager.list();
-
-        /*
-         // Get TaskExecution object for each PM2 entry (if exists).  Note that if another worker is running on the same
-         // machine (e.g., a cluster proxy, PM2 may be returning tasks that are not owned by this worker, thus the filter
-         // operation.
-         let taskList: ITaskExecution[] = (await Promise.all(processList.map((processInfo) => {
-         return this._taskExecutions.get(processInfo.name);
-         }))).filter(task => task !== null);
-
-         // Map updated info where applicable
-         await Promise.all(taskList.map(async(taskExecution, index) => {
-         if (taskExecution === undefined || taskExecution === null) {
-         debug(`unknown PM2 process with name ${processList[index].name}`);
-         return null;
-         }
-
-         await this._taskExecutions.update(taskExecution, processList[index], false);
-
-         if (taskExecution.execution_status_code === ExecutionStatusCode.Completed && processList[index].status === ExecutionStatus.Stopped) {
-         debug(`removing completed process (${processList[index].managerId}) from process manager`);
-         await ProcessManager.deleteTask(processList[index].managerId);
-         }
-         }));
-
-         // Only return PM2 processes that map to something we started.
-         return taskList.filter((task) => {
-         return task != null;
-         });
-         */
+        const processList: IProcessInfo[] = await ProcessManager.list();
 
         await Promise.all(processList.map(processInfo => this.refreshOneTaskForProcess(processInfo)));
     }
@@ -187,19 +157,6 @@ export class TaskManager implements ITaskManager {
         }
     }
 
-    /*
-     public async refreshTaskFromProcessManager(taskExecutionId: string) {
-     let taskExecution = await this._taskExecutions.get(taskExecutionId);
-
-     let matchingProcessInfo = this._findProcessId(taskExecutionId);
-
-     if (matchingProcessInfo && taskExecution) {
-     await this._taskExecutions.update(taskExecution, matchingProcessInfo[0], false);
-     }
-
-     return taskExecution;
-     }
-     */
     private async _startTask(taskExecution: ITaskExecution, taskDefinition: ITaskDefinition, argsArray: string[]) {
         taskExecution.resolved_script = path.normalize(path.isAbsolute(taskDefinition.script) ? taskDefinition.script : (process.cwd() + "/" + taskDefinition.script));
         taskExecution.resolved_interpreter = taskDefinition.interpreter;
@@ -235,34 +192,6 @@ export class TaskManager implements ITaskManager {
 
         return taskExecution;
     }
-/*
-    private async _findProcessId(taskExecutionId: string) {
-        let processList: IProcessInfo[] = await ProcessManager.list();
-
-        let matchingProcessInfo: IProcessInfo[] = processList.filter((processInfo) => {
-            return processInfo.name === taskExecutionId;
-        });
-
-        return (matchingProcessInfo.length > 0) ? matchingProcessInfo[0] : null;
-    }*/
-/*
-    private async _updateTask(processInfo: IProcessInfo, manually: boolean): Promise<void> {
-        ////
-        let taskExecution: ITaskExecution = null;
-
-        if (processInfo != null) {
-            taskExecution = await this._taskExecutions.get(processInfo.name);
-
-            if (taskExecution != null) {
-                debug(`updating task event ${taskExecution.id}`);
-                await this._taskExecutions.update(taskExecution, processInfo, manually);
-            }
-        }
-
-        return taskExecution;
-        ////
-        return this.refreshOneTaskForProcess(processInfo, manually);
-    }*/
 }
 
 export const taskManager = new TaskManager();
