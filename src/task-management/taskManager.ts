@@ -9,11 +9,30 @@ import {ITaskStatistics, taskStatisticsInstance} from "../data-model/taskStatist
 import * as ProcessManager from "./pm2-async";
 import {Workers, IWorker, IWorkerInput} from "../data-model/worker";
 
+export interface IPageInfo {
+    endCursor: string,
+    hasNextPage: boolean;
+}
+
+export interface IPaginationEdge<T> {
+    node: T,
+    cursor: string;
+}
+
+export interface IPaginationConnections<T> {
+    totalCount: number;
+    pageInfo: IPageInfo;
+    edges: T[];
+}
+
 export interface ITaskManager extends ProcessManager.IPM2MonitorDelegate {
     getTaskDefinition(id: string): Promise<ITaskDefinition>;
     getTaskDefinitions(): Promise<ITaskDefinition[]>;
+
     getTask(id: string): Promise<ITaskExecution>;
     getTasks(): Promise<ITaskExecution[]>;
+    getExecutionConnections(first: number, after: string): Promise<IPaginationConnections<ITaskExecution>>;
+
     getStatistics(): Promise<ITaskStatistics[]>;
     statisticsForTask(id: string): Promise<ITaskStatistics>;
     getRunningTasks(): Promise<ITaskExecution[]>;
@@ -68,6 +87,41 @@ export class TaskManager implements ITaskManager {
         return this._taskExecutions.getAll();
     }
 
+    public async getExecutionConnections(first: number, after: string): Promise<IPaginationConnections<ITaskExecution>> {
+        /*
+        let offset = 0;
+        let limit = 10;
+
+        if (first) {
+            limit = first;
+        }
+
+        if (after) {
+            offset = decodeObj64(after)["offset"] + 1;
+        }
+
+        let count = await this._storageManager.TracingNodes.count({where: {tracingId: tracing.id}});
+
+        let nodes = await this._storageManager.TracingNodes.findAll({
+            where: {tracingId: tracing.id},
+            order: [["sampleNumber", "ASC"]],
+            offset: offset,
+            limit: limit
+        });
+
+        return {
+            totalCount: count,
+            pageInfo: {
+                endCursor: encodeObj64({offset: offset + limit - 1}),
+                hasNextPage: offset + limit < count
+            },
+            edges: nodes.map((node, index) => {
+                return {node: node, cursor: encodeObj64({offset: offset + index})}
+            })
+        }*/
+        return null;
+    }
+
     public getRunningTasks(): Promise<ITaskExecution[]> {
         return this._taskExecutions.getRunningTasks();
     }
@@ -98,7 +152,7 @@ export class TaskManager implements ITaskManager {
 
     // TODO Need a function to refresh what the database thinks are running tasks (find orphans, update stats, etc).
     // Should it be merged with refreshing the list from the process manager?  If we are only going to start through
-    // this interface than the only ones that should exist that we'd care about should be known to us, unless there is
+    // this interface than the only ones that should exist that we"d care about should be known to us, unless there is
     // a bug where a process gets kicked off, but the initial save to database fails at creation.
 
     public async startTask(taskDefinitionId: string, scriptArgs: Array<string>) {
@@ -201,4 +255,18 @@ taskManager.connect().catch(err => {
     debug("failed to connect to process manager from graphql context.");
 });
 
+function encodeObj64(obj: any) {
+    return encode64(JSON.stringify(obj));
+}
 
+function decodeObj64(str: string) {
+    return JSON.parse(decode64(str));
+}
+
+function encode64(str: string) {
+    return (new Buffer(str, "ascii")).toString("base64");
+}
+
+function decode64(str: string) {
+    return (new Buffer(str, "base64")).toString("ascii");
+}

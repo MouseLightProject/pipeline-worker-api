@@ -1,8 +1,9 @@
 import {IGraphQLAppContext} from "./graphQLContext";
-import {ITaskExecution, CompletionStatusCode} from "../data-model/taskExecution";
+import {ITaskExecution, CompletionStatusCode, TaskExecutions} from "../data-model/taskExecution";
 import {ITaskDefinition, ITaskDefinitionInput} from "../data-model/taskDefinition";
 import {ITaskStatistics} from "../data-model/taskStatistics";
 import {Workers, IWorker, IWorkerInput} from "../data-model/worker";
+import {IPaginationConnections} from "../task-management/taskManager";
 
 const debug = require("debug")("mouselight:worker-api:resolvers");
 
@@ -15,10 +16,6 @@ interface ITaskIdArguments {
 
 interface IRemoveCompletedArguments {
     code: CompletionStatusCode;
-}
-
-interface IDebugMessageArguments {
-    msg: string;
 }
 
 interface IRunTaskArguments {
@@ -39,6 +36,11 @@ interface IUpdateWorkerArguments {
     worker: IWorkerInput;
 }
 
+interface IConnectionArguments {
+    first: number;
+    after: string;
+}
+
 let resolvers = {
     Query: {
         taskDefinition(_, args: IIdOnlyArguments, context: IGraphQLAppContext): Promise<ITaskDefinition> {
@@ -56,6 +58,9 @@ let resolvers = {
         taskExecutions(_, __, context: IGraphQLAppContext): Promise<ITaskExecution[]> {
             // debug("get all tasks");
             return context.taskManager.getTasks();
+        },
+        taskExecutionConnections(_, args: IConnectionArguments, context: IGraphQLAppContext): Promise<IPaginationConnections<ITaskExecution>> {
+            return context.taskManager.getExecutionConnections(args.first, args.after);
         },
         taskStatistics(_, __, context: IGraphQLAppContext): Promise<ITaskStatistics[]> {
             // debug(`get all task statistics`);

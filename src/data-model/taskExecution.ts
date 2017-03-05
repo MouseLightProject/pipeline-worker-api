@@ -65,7 +65,11 @@ export class TaskExecutions extends TableModel<ITaskExecution> {
     public async getAll() {
         // debug(`get all tasks`);
 
-        let tasks = await super.getAll();
+        // let tasks = await super.getAll();
+
+        let objList = await knex(this.tableName).select(this.idKey).whereNull("deleted_at").orderBy("completed_at", "desc").limit(20);
+
+        let tasks = await this.fetch(objList);
 
         tasks.sort((a, b) => {
             // Descending
@@ -92,6 +96,8 @@ export class TaskExecutions extends TableModel<ITaskExecution> {
 
         return this.fetch(ids);
     }
+
+    public async
 
     public async removeCompletedExecutionsWithCode(code: CompletionStatusCode): Promise<number> {
         if (code === undefined || code === null) {

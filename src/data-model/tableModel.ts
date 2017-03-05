@@ -40,6 +40,10 @@ export abstract class TableModel<T extends ITableModelRow> {
         return this._tableName;
     }
 
+    public async count(): Promise<number> {
+        return knex(this._tableName).whereNull("deleted_at").count("id");
+    }
+
     public async insertRow(row: T) {
         await this.save(row);
 

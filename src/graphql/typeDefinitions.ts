@@ -5,6 +5,22 @@ interface ITimestamps {
   deleted_at: String
 }
 
+type PageInfo {
+    endCursor: String
+    hasNextPage: Boolean
+}
+
+type ExecutionEdge {
+    node: TaskExecution
+    cursor: String
+}
+
+type ExecutionConnection {
+    totalCount: Int
+    pageInfo: PageInfo
+    edges: [ExecutionEdge]
+}
+
 type TaskDefinition implements ITimestamps {
   id: String!
   name: String!
@@ -98,6 +114,7 @@ type Query {
   taskDefinition(id: String!): TaskDefinition
   taskExecutions: [TaskExecution!]!
   taskExecution(id: String!): TaskExecution
+  taskExecutionConnections(first: Int, after: String): ExecutionConnection
   taskStatistics: [TaskStatistics!]!
   statisticsForTask(id: String): TaskStatistics
   runningTasks: [TaskExecution!]!
