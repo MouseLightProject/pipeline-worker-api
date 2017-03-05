@@ -72,7 +72,7 @@ else
       exit $?
     fi
 
-    ssh login1 "source /etc/profile; export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}; qsub -sync y -pe batch 41-N ml-dg-${tile_name} -j y -o ${log_file_2} -b y -cwd -V -l d_rt=3600 -l broadwell=true '${cmd2}'"
+    ssh login1 "source /etc/profile; export LD_LIBRARY_PATH=${LD_LIBRARY_PATH}; qsub -sync y -pe batch 1 -N ml-dg-${tile_name} -j y -o ${log_file_2} -b y -cwd -V -l d_rt=3600 -l broadwell=true '${cmd2}'"
     if [ $? -eq 0 ]
     then
       echo "Completed descriptor for channel 1 (cluster)."
