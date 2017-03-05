@@ -17,8 +17,8 @@ mcrRoot=$9
 log_path_base="/groups/mousebrainmicro/mousebrainmicro/LOG/pipeline"
 
 # Compile derivatives
-input_file1="$pipeline_input_root/$tile_relative_path/$tile_name-prob.0.txt"
-input_file2="$pipeline_input_root/$tile_relative_path/$tile_name-prob.1.txt"
+input_file1="$pipeline_input_root/$tile_relative_path/$tile_name-desc.0.txt"
+input_file2="$pipeline_input_root/$tile_relative_path/$tile_name-desc.1.txt"
 
 output_file="$pipeline_output_root/$tile_relative_path/$tile_name"
 output_file+="-desc.mat"
