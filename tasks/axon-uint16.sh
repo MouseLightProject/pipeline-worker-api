@@ -52,8 +52,8 @@ cmd2="${IL_PREFIX}/bin/python ${IL_PREFIX}/ilastik-meta/ilastik/ilastik.py --log
 
 if [ ${is_cluster_job} -eq 0 ]
 then
-    export LAZYFLOW_THREADS=20
-    export LAZYFLOW_TOTAL_RAM_MB=150000
+    export LAZYFLOW_THREADS=18
+    export LAZYFLOW_TOTAL_RAM_MB=200000
 
     eval ${cmd1}
 
