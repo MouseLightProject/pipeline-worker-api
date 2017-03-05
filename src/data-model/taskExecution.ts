@@ -67,10 +67,12 @@ export class TaskExecutions extends TableModel<ITaskExecution> {
 
         // let tasks = await super.getAll();
 
-        let objList = await knex(this.tableName).select(this.idKey).whereNull("deleted_at").orderBy("completed_at", "desc").limit(20);
+        const objListObj = await knex(this.tableName).select(this.idKey).whereNull("deleted_at").orderBy("completed_at", "desc").limit(2000);
+
+        const objList = <string[]>objListObj.map(obj => obj.id);
 
         let tasks = await this.fetch(objList);
-
+/*
         tasks.sort((a, b) => {
             // Descending
             if (a.updated_at === null) {
@@ -84,7 +86,7 @@ export class TaskExecutions extends TableModel<ITaskExecution> {
             }
 
             return b.updated_at.valueOf() - a.updated_at.valueOf();
-        });
+        });*/
 
         return tasks;
     }
