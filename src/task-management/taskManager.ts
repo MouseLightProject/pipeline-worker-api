@@ -205,16 +205,12 @@ export class TaskManager implements ITaskManager {
         const taskExecution = await this._taskExecutions.get(processInfo.name);
 
         if (taskExecution) {
-            debug(`found task for refresh ${processInfo.name}`);
-
             await this._taskExecutions.update(taskExecution, processInfo, manually);
 
             if (taskExecution.execution_status_code === ExecutionStatusCode.Completed && processInfo.status === ExecutionStatus.Stopped) {
                 debug(`removing completed process (${processInfo.managerId}) from process manager`);
                 await ProcessManager.deleteTask(processInfo.managerId);
             }
-        } else {
-            debug(`unknown process info (not my task?) ${processInfo.name}`);
         }
     }
 
