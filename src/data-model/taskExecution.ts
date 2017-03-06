@@ -67,7 +67,7 @@ export class TaskExecutions extends TableModel<ITaskExecution> {
 
         // let tasks = await super.getAll();
 
-        const objListObj = await knex(this.tableName).select(this.idKey).whereNull("deleted_at").orderBy("completed_at", "desc").limit(2000);
+        const objListObj = await knex(this.tableName).select(this.idKey).whereNull("deleted_at").orderBy("completed_at", "desc").limit(100);
 
         const objList = <string[]>objListObj.map(obj => obj.id);
 
