@@ -25,6 +25,8 @@ export interface IWorker extends ITableModelRow {
 export class Workers extends TableModel<IWorker> {
     private static _manager = new Workers();
 
+    private _worker: IWorker = null;
+
     public static Instance(): Workers {
         return Workers._manager;
     }
@@ -34,12 +36,19 @@ export class Workers extends TableModel<IWorker> {
     }
 
     public async worker(): Promise<IWorker> {
+        if (this._worker) {
+            return this._worker;
+        }
+
         try {
             const workers = await this.getAll();
 
             if (workers.length > 0) {
                 debug(`found existing worker entry with id ${workers[0].id}`);
-                return workers[0];
+
+                this._worker = workers[0];
+
+                return this._worker;
             }
 
             debug(`creating initial worker entry`);
@@ -60,10 +69,14 @@ export class Workers extends TableModel<IWorker> {
 
             debug(`created worker entry with id `);
 
-            return await this.get(worker.id);
+            this._worker = await this.get(worker.id);
+
+            return this._worker;
         } catch (err) {
             debug(err);
         }
+
+        return null;
     }
 
     public async updateFromInput(worker: IWorkerInput): Promise<IWorker> {
@@ -83,6 +96,8 @@ export class Workers extends TableModel<IWorker> {
         row.is_cluster_proxy = worker.is_cluster_proxy || row.is_cluster_proxy;
         row.is_accepting_jobs = worker.is_accepting_jobs || row.is_accepting_jobs;
 
-        return await this.save(row);
+        this._worker = await this.save(row);
+
+        return this._worker;
     }
 }

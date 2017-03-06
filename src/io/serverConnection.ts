@@ -105,9 +105,8 @@ export class SocketIoClient {
         debug(`heartbeat (${taskLoad} task load)`);
 
         this._socket.emit("heartBeat", {
-            machineId: worker.id,
-            taskLoad: taskLoad,
-            capacity: worker.work_capacity
+            worker: worker,
+            taskLoad: taskLoad
         });
     }
 }

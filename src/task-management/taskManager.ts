@@ -53,13 +53,19 @@ export class TaskManager implements ITaskManager {
 
         await ProcessManager.monitor(this);
 
-        setInterval(async() => {
-            await this.refreshTasksFromProcessManager();
-        }, 5000);
+        setTimeout(() => {
+            this.refreshAllTasks();
+        }, 0);
     }
 
     private _taskDefinitions = new TaskDefinitions();
     private _taskExecutions = new TaskExecutions();
+
+    private refreshAllTasks() {
+        this.refreshTasksFromProcessManager().then(() => {
+            setTimeout(() => this.refreshAllTasks(), 60000);
+        });
+    }
 
     public async processEvent(name: string, processInfo: IProcessInfo, manually: boolean): Promise<void> {
         debug(`handling event ${name} for ${processInfo.name} with status ${processInfo.status}`);
@@ -89,36 +95,36 @@ export class TaskManager implements ITaskManager {
 
     public async getExecutionConnections(first: number, after: string): Promise<IPaginationConnections<ITaskExecution>> {
         /*
-        let offset = 0;
-        let limit = 10;
+         let offset = 0;
+         let limit = 10;
 
-        if (first) {
-            limit = first;
-        }
+         if (first) {
+         limit = first;
+         }
 
-        if (after) {
-            offset = decodeObj64(after)["offset"] + 1;
-        }
+         if (after) {
+         offset = decodeObj64(after)["offset"] + 1;
+         }
 
-        let count = await this._storageManager.TracingNodes.count({where: {tracingId: tracing.id}});
+         let count = await this._storageManager.TracingNodes.count({where: {tracingId: tracing.id}});
 
-        let nodes = await this._storageManager.TracingNodes.findAll({
-            where: {tracingId: tracing.id},
-            order: [["sampleNumber", "ASC"]],
-            offset: offset,
-            limit: limit
-        });
+         let nodes = await this._storageManager.TracingNodes.findAll({
+         where: {tracingId: tracing.id},
+         order: [["sampleNumber", "ASC"]],
+         offset: offset,
+         limit: limit
+         });
 
-        return {
-            totalCount: count,
-            pageInfo: {
-                endCursor: encodeObj64({offset: offset + limit - 1}),
-                hasNextPage: offset + limit < count
-            },
-            edges: nodes.map((node, index) => {
-                return {node: node, cursor: encodeObj64({offset: offset + index})}
-            })
-        }*/
+         return {
+         totalCount: count,
+         pageInfo: {
+         endCursor: encodeObj64({offset: offset + limit - 1}),
+         hasNextPage: offset + limit < count
+         },
+         edges: nodes.map((node, index) => {
+         return {node: node, cursor: encodeObj64({offset: offset + index})}
+         })
+         }*/
         return null;
     }
 
