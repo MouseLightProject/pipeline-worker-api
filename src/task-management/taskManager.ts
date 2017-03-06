@@ -68,7 +68,7 @@ export class TaskManager implements ITaskManager {
     }
 
     public async processEvent(name: string, processInfo: IProcessInfo, manually: boolean): Promise<void> {
-        debug(`handling event ${name} for ${processInfo.name} with status ${processInfo.status}`);
+        // debug(`handling event ${name} for ${processInfo.name} with status ${processInfo.status}`);
 
         return this.refreshOneTaskForProcess(processInfo, manually);
     }

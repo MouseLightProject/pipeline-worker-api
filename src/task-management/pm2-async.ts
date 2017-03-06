@@ -64,7 +64,8 @@ export function monitor(delegate: IPM2MonitorDelegate = null): Promise<void> {
             }
 
             bus.on("process:event", (evt) => {
-                debug(`process:event "${evt.event}" for ${evt.process.name} (manual: ${evt.manually})`);
+                // debug(`process:event "${evt.event}" for ${evt.process.name} (manual: ${evt.manually})`);
+
                 if (localDelegate) {
                     let processInfo = _mapProcessInfo(evt.process);
                     localDelegate.processEvent(evt.event, processInfo, evt.manually);
@@ -92,7 +93,8 @@ export function start(options): Promise<IProcessInfo> {
                 debug(err);
                 reject(err);
             } else {
-                debug(`start() returned ${processList.length} process description`);
+                // debug(`start() returned ${processList.length} process description`);
+
                 if (processList.length > 0) {
                     resolve(_mapProcessInfo(processList[0].pm2_env));
                 } else {
