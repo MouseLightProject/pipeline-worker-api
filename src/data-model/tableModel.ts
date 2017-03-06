@@ -41,7 +41,13 @@ export abstract class TableModel<T extends ITableModelRow> {
     }
 
     public async count(): Promise<number> {
-        return knex(this._tableName).whereNull("deleted_at").count("id");
+        const result = await knex(this._tableName).whereNull("deleted_at").count("id");
+
+        if (result && result.length > 0) {
+            return result[0][`count("id")`];
+        } else {
+            return -1;
+        }
     }
 
     public async insertRow(row: T) {
@@ -116,14 +122,11 @@ export abstract class TableModel<T extends ITableModelRow> {
         return <string[]>objList.map(obj => obj.id);
     }
 
-    protected fetch(keys: string[]): Promise<T[]> {
-        return new Promise<T[]>((resolve) => {
-            knex(this.tableName).whereIn(this.idKey, keys).orderBy("id").then((rows) => {
-                rows = rows.map(row => {
-                    return this.didFetchRow(row);
-                });
-                resolve(rows);
-            });
+    protected async fetch(keys: string[], orderBy: string = "id", asc: boolean = true): Promise<T[]> {
+        const rows = await knex(this.tableName).whereIn(this.idKey, keys).orderBy(orderBy, asc ? "asc" : "desc");
+
+        return rows.map(row => {
+            return this.didFetchRow(row);
         });
     }
 }

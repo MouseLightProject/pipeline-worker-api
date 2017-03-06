@@ -63,16 +63,10 @@ export class TaskExecutions extends TableModel<ITaskExecution> {
     }
 
     public async getAll() {
-        // debug(`get all tasks`);
+        // ebug(`get all tasks`);
 
-        // let tasks = await super.getAll();
+        let tasks = await super.getAll();
 
-        const objListObj = await knex(this.tableName).select(this.idKey).whereNull("deleted_at").orderBy("completed_at", "desc").limit(100);
-
-        const objList = <string[]>objListObj.map(obj => obj.id);
-
-        let tasks = await this.fetch(objList);
-/*
         tasks.sort((a, b) => {
             // Descending
             if (a.updated_at === null) {
@@ -86,9 +80,19 @@ export class TaskExecutions extends TableModel<ITaskExecution> {
             }
 
             return b.updated_at.valueOf() - a.updated_at.valueOf();
-        });*/
+        });
 
         return tasks;
+    }
+
+    public async getPage(offset: number, limit: number): Promise<ITaskExecution[]> {
+        const orderBy = "started_at";
+
+        const objListObj = await knex(this.tableName).select(this.idKey).whereNull("deleted_at").orderBy(orderBy, "desc").offset(offset).limit(limit);
+
+        const objList = <string[]>objListObj.map(obj => obj.id);
+
+        return await this.fetch(objList, orderBy, false);
     }
 
     public async getRunningTasks() {
@@ -99,9 +103,7 @@ export class TaskExecutions extends TableModel<ITaskExecution> {
         return this.fetch(ids);
     }
 
-    public async
-
-    public async removeCompletedExecutionsWithCode(code: CompletionStatusCode): Promise<number> {
+    async removeCompletedExecutionsWithCode(code: CompletionStatusCode): Promise<number> {
         if (code === undefined || code === null) {
             code = CompletionStatusCode.Success;
         }

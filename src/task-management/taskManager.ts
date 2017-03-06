@@ -22,7 +22,7 @@ export interface IPaginationEdge<T> {
 export interface IPaginationConnections<T> {
     totalCount: number;
     pageInfo: IPageInfo;
-    edges: T[];
+    edges: IPaginationEdge<T>[];
 }
 
 export interface ITaskManager extends ProcessManager.IPM2MonitorDelegate {
@@ -94,38 +94,31 @@ export class TaskManager implements ITaskManager {
     }
 
     public async getExecutionConnections(first: number, after: string): Promise<IPaginationConnections<ITaskExecution>> {
-        /*
-         let offset = 0;
-         let limit = 10;
+        let offset = 0;
+        let limit = 10;
 
-         if (first) {
-         limit = first;
-         }
+        if (first) {
+            limit = first;
+        }
 
-         if (after) {
-         offset = decodeObj64(after)["offset"] + 1;
-         }
+        if (after) {
+            offset = decodeObj64(after)["offset"] + 1;
+        }
 
-         let count = await this._storageManager.TracingNodes.count({where: {tracingId: tracing.id}});
+        const count = await this._taskExecutions.count();
 
-         let nodes = await this._storageManager.TracingNodes.findAll({
-         where: {tracingId: tracing.id},
-         order: [["sampleNumber", "ASC"]],
-         offset: offset,
-         limit: limit
-         });
+        const nodes: ITaskExecution[] = await this._taskExecutions.getPage(offset, limit);
 
-         return {
-         totalCount: count,
-         pageInfo: {
-         endCursor: encodeObj64({offset: offset + limit - 1}),
-         hasNextPage: offset + limit < count
-         },
-         edges: nodes.map((node, index) => {
-         return {node: node, cursor: encodeObj64({offset: offset + index})}
-         })
-         }*/
-        return null;
+        return {
+            totalCount: count,
+            pageInfo: {
+                endCursor: encodeObj64({offset: offset + limit - 1}),
+                hasNextPage: offset + limit < count
+            },
+            edges: nodes.map((node, index) => {
+                return {node: node, cursor: encodeObj64({offset: offset + index})}
+            })
+        }
     }
 
     public getRunningTasks(): Promise<ITaskExecution[]> {
