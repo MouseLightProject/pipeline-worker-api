@@ -25,12 +25,21 @@ export interface IPaginationConnections<T> {
     edges: IPaginationEdge<T>[];
 }
 
+export interface ISimplePage<T> {
+    offset: number;
+    limit: number;
+    totalCount: number;
+    hasNextPage: boolean;
+    items: T[]
+}
+
 export interface ITaskManager extends ProcessManager.IPM2MonitorDelegate {
     getTaskDefinition(id: string): Promise<ITaskDefinition>;
     getTaskDefinitions(): Promise<ITaskDefinition[]>;
 
     getTask(id: string): Promise<ITaskExecution>;
     getTasks(): Promise<ITaskExecution[]>;
+    getExecutionPage(reqOffset: number, reqLimit: number): Promise<ISimplePage<ITaskExecution>> ;
     getExecutionConnections(first: number, after: string): Promise<IPaginationConnections<ITaskExecution>>;
 
     getStatistics(): Promise<ITaskStatistics[]>;
@@ -91,6 +100,41 @@ export class TaskManager implements ITaskManager {
 
     public getTasks(): Promise<ITaskExecution[]> {
         return this._taskExecutions.getAll();
+    }
+
+    public async getExecutionPage(reqOffset: number, reqLimit: number): Promise<ISimplePage<ITaskExecution>> {
+        let offset = 0;
+        let limit = 10;
+
+        if (reqOffset !== null && reqOffset !== undefined) {
+            offset = reqOffset;
+        }
+
+        if (reqLimit !== null && reqLimit !== undefined) {
+            limit = reqLimit;
+        }
+
+        const count = await this._taskExecutions.count();
+
+        if (offset > count) {
+            return {
+                offset: offset,
+                limit: limit,
+                totalCount: count,
+                hasNextPage: false,
+                items: []
+            };
+        }
+
+        const nodes: ITaskExecution[] = await this._taskExecutions.getPage(offset, limit);
+
+        return {
+            offset: offset,
+            limit: limit,
+            totalCount: count,
+            hasNextPage: offset + limit < count,
+            items: nodes
+        };
     }
 
     public async getExecutionConnections(first: number, after: string): Promise<IPaginationConnections<ITaskExecution>> {

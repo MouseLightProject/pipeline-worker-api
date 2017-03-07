@@ -21,6 +21,14 @@ type ExecutionConnection {
     edges: [ExecutionEdge]
 }
 
+type ExecutionPage {
+    offset: Int
+    limit: Int
+    totalCount: Int
+    hasNextPage: Boolean
+    items: [TaskExecution]
+}
+
 type TaskDefinition implements ITimestamps {
   id: String!
   name: String!
@@ -112,8 +120,9 @@ input WorkerInput {
 type Query {
   taskDefinitions: [TaskDefinition!]!
   taskDefinition(id: String!): TaskDefinition
-  taskExecutions: [TaskExecution!]!
   taskExecution(id: String!): TaskExecution
+  taskExecutions: [TaskExecution!]!
+  taskExecutionPage(offset: Int, limit: Int): ExecutionPage
   taskExecutionConnections(first: Int, after: String): ExecutionConnection
   taskStatistics: [TaskStatistics!]!
   statisticsForTask(id: String): TaskStatistics

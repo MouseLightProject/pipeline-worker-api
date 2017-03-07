@@ -137,7 +137,7 @@ export class TaskExecutions extends TableModel<ITaskExecution> {
         // Stop/Exit/Delete
         if (processInfo.status >= ExecutionStatus.Stopped) {
             if (taskExecution.completed_at == null) {
-                debug(`marking complete for task execution ${taskExecution.id}`);
+                // debug(`marking complete for task execution ${taskExecution.id}`);
 
                 taskExecution.completed_at = new Date();
                 taskExecution.execution_status_code = ExecutionStatusCode.Completed;

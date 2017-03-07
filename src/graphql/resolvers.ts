@@ -1,9 +1,9 @@
 import {IGraphQLAppContext} from "./graphQLContext";
-import {ITaskExecution, CompletionStatusCode, TaskExecutions} from "../data-model/taskExecution";
+import {ITaskExecution, CompletionStatusCode} from "../data-model/taskExecution";
 import {ITaskDefinition, ITaskDefinitionInput} from "../data-model/taskDefinition";
 import {ITaskStatistics} from "../data-model/taskStatistics";
 import {Workers, IWorker, IWorkerInput} from "../data-model/worker";
-import {IPaginationConnections} from "../task-management/taskManager";
+import {IPaginationConnections, ISimplePage} from "../task-management/taskManager";
 
 const debug = require("debug")("mouselight:worker-api:resolvers");
 
@@ -36,6 +36,11 @@ interface IUpdateWorkerArguments {
     worker: IWorkerInput;
 }
 
+interface IPageArguments {
+    offset: number;
+    limit: number;
+}
+
 interface IConnectionArguments {
     first: number;
     after: string;
@@ -58,6 +63,10 @@ let resolvers = {
         taskExecutions(_, __, context: IGraphQLAppContext): Promise<ITaskExecution[]> {
             // debug("get all tasks");
             return context.taskManager.getTasks();
+        },
+        taskExecutionPage(_, args: IPageArguments, context: IGraphQLAppContext): Promise<ISimplePage<ITaskExecution>> {
+            debug(`execution page ${args.offset} ${args.limit}`);
+            return context.taskManager.getExecutionPage(args.offset, args.limit);
         },
         taskExecutionConnections(_, args: IConnectionArguments, context: IGraphQLAppContext): Promise<IPaginationConnections<ITaskExecution>> {
             return context.taskManager.getExecutionConnections(args.first, args.after);
@@ -91,7 +100,7 @@ let resolvers = {
             return context.taskManager.updateWorker(args.worker);
         },
         startTask(_, args: IRunTaskArguments, context: IGraphQLAppContext): Promise<ITaskExecution> {
-            debug(`start task with definition ${args.taskDefinitionId}`);
+            // debug(`start task with definition ${args.taskDefinitionId}`);
             return context.taskManager.startTask(args.taskDefinitionId, args.scriptArgs);
         },
         stopTask(_, args: ICancelTaskArguments, context: IGraphQLAppContext): Promise<ITaskExecution> {
