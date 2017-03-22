@@ -56,22 +56,27 @@ then
 
     eval ${cmd1}
 
-    if [ $? -eq 0 ]
+    result=$?
+
+    if [ ${result} -eq 0 ]
     then
       echo "Completed classifier for channel 0."
     else
       echo "Failed classifier for channel 0."
-      exit $?
+      exit ${result}
     fi
 
     eval ${cmd2}
-    if [ $? -eq 0 ]
+
+    result=$?
+
+    if [ ${result} -eq 0 ]
     then
       echo "Completed classifier for channel 1."
       exit 0
     else
       echo "Failed classifier for channel 1."
-      exit $?
+      exit ${result}
     fi
 else
     LAZYFLOW_THREADS=4
@@ -80,21 +85,27 @@ else
     cluster_exports="export LAZYFLOW_THREADS=${LAZYFLOW_THREADS}; export LAZYFLOW_TOTAL_RAM_MB=${LAZYFLOW_TOTAL_RAM_MB}; LD_LIBRARY_PATH=\"\"; PYTHONPATH=\"\"; QT_PLUGIN_PATH=${IL_PREFIX}/plugins"
 
     ssh login1 "source /etc/profile; ${cluster_exports}; qsub -sync y -pe batch 4 -N ml-ax-${tile_name} -j y -o /dev/null -b y -cwd -V -l d_rt=3600 -l broadwell=true '${cmd1}'"
-    if [ $? -eq 0 ]
+
+    result=$?
+
+    if [ ${result} -eq 0 ]
     then
       echo "Completed classifier for channel 0 (cluster)."
     else
       echo "Failed classifier for channel 0 (cluster)."
-      exit $?
+      exit ${result}
     fi
 
     ssh login1 "source /etc/profile; ${cluster_exports}; qsub -sync y -pe batch 4 -N ml-ax-${tile_name} -j y -o /dev/null -b y -cwd -V -l d_rt=3600 -l broadwell=true '${cmd2}'"
-    if [ $? -eq 0 ]
+
+    result=$?
+
+    if [ ${result} -eq 0 ]
     then
       echo "Completed classifier for channel 1 (cluster)."
       exit 0
     else
       echo "Failed classifier for channel 1 (cluster)."
-      exit $?
+      exit ${result}
     fi
 fi

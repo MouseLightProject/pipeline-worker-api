@@ -45,16 +45,33 @@ export QT_PLUGIN_PATH=${IL_PREFIX}/plugins
 export LAZYFLOW_THREADS=2
 export LAZYFLOW_TOTAL_RAM_MB=600
 
-${IL_PREFIX}/bin/python ${IL_PREFIX}/ilastik-meta/ilastik/ilastik.py --headless --logfile="$log_file" --project="$ilastik_project" --output_filename_format="$output_file1" --output_format=hdf5 "$input_file1"
+cmd1="${IL_PREFIX}/bin/python ${IL_PREFIX}/ilastik-meta/ilastik/ilastik.py --headless --logfile=\"${log_file}\" --project=\"${ilastik_project}\" --output_filename_format=\"${output_file1}\" --output_format=hdf5 \"${input_file1}\""
+echo "${cmd1}"
 
-${IL_PREFIX}/bin/python ${IL_PREFIX}/ilastik-meta/ilastik/ilastik.py --headless --logfile="$log_file" --project="$ilastik_project" --output_filename_format="$output_file2" --output_format=hdf5 "$input_file2"
+cmd2="${IL_PREFIX}/bin/python ${IL_PREFIX}/ilastik-meta/ilastik/ilastik.py --headless --logfile=\"${log_file}\" --project=\"${ilastik_project}\" --output_filename_format=\"${output_file2}\" --output_format=hdf5 \"${input_file2}\""
+echo "${cmd2}"
 
-if [ $? -eq 0 ]
+eval ${cmd1}
+
+result=$?
+
+if [ ${result} -eq 0 ]
 then
-  echo "Successfully executed ilastik"
-  exit 0
+  echo "Completed classifier for channel 0."
 else
-  echo "ilastik failed"
-  exit 1
+  echo "Failed classifier for channel 0."
+  exit ${result}
 fi
 
+eval ${cmd2}
+
+result=$?
+
+if [ ${result} -eq 0 ]
+then
+  echo "Completed classifier for channel 1."
+  exit 0
+else
+  echo "Failed classifier for channel 1."
+  exit ${result}
+fi
