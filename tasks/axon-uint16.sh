@@ -29,19 +29,21 @@ log_file_prefix="ax-"
 log_file_1="${log_path_base}/${log_file_prefix}${log_file_base}.0.txt"
 log_file_2="${log_path_base}/${log_file_prefix}${log_file_base}.1.txt"
 
+output_format="hdf5"
+
 # Default location on test and production machines.  Can also export IL_PREFIX in worker profile script (typically id.sh).
 if [ -z "$IL_PREFIX" ]
 then
   if [ "$(uname)" == "Darwin" ]
   then
-    export IL_PREFIX=/Volumes/Spare/Projects/MouseLight/Classifier/ilastik/ilastik-1.1.8-OSX.app/Contents/ilastik-release
+    IL_PREFIX=/Volumes/Spare/Projects/MouseLight/Classifier/ilastik/ilastik-1.1.8-OSX.app/Contents/ilastik-release
   else
-    export IL_PREFIX=/groups/mousebrainmicro/mousebrainmicro/cluster/software/ilastik-1.1.9-Linux
+    IL_PREFIX=/groups/mousebrainmicro/mousebrainmicro/cluster/software/ilastik-1.1.9-Linux
   fi
 fi
 
-cmd1="${IL_PREFIX}/bin/python ${IL_PREFIX}/ilastik-meta/ilastik/ilastik.py --logfile=${log_file_1} --headless --cutout_subregion=\"[(None,None,None,0),(None,None,None,1)]\" --project=\"$ilastik_project\" --output_filename_format=\"$output_file1\" --output_format=\"compressed hdf5\" \"$input_file1\""
-cmd2="${IL_PREFIX}/bin/python ${IL_PREFIX}/ilastik-meta/ilastik/ilastik.py --logfile=${log_file_2} --headless --cutout_subregion=\"[(None,None,None,0),(None,None,None,1)]\" --project=\"$ilastik_project\" --output_filename_format=\"$output_file2\" --output_format=\"compressed hdf5\" \"$input_file2\""
+cmd1="${IL_PREFIX}/bin/python ${IL_PREFIX}/ilastik-meta/ilastik/ilastik.py --logfile=${log_file_1} --headless --cutout_subregion=\"[(None,None,None,0),(None,None,None,1)]\" --project=\"${ilastik_project}\" --output_filename_format=\"${output_file1}\" --output_format=\"${output_format}\" \"$input_file1\""
+cmd2="${IL_PREFIX}/bin/python ${IL_PREFIX}/ilastik-meta/ilastik/ilastik.py --logfile=${log_file_2} --headless --cutout_subregion=\"[(None,None,None,0),(None,None,None,1)]\" --project=\"${ilastik_project}\" --output_filename_format=\"${output_file2}\" --output_format=\"${output_format}\" \"$input_file2\""
 
 if [ ${is_cluster_job} -eq 0 ]
 then

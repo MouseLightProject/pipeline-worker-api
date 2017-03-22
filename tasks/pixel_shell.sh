@@ -23,9 +23,9 @@ if [ -z "$IL_PREFIX" ]
 then
   if [ "$(uname)" == "Darwin" ]
   then
-    export IL_PREFIX=/Volumes/Spare/Projects/MouseLight/Classifier/ilastik/ilastik-1.1.8-OSX.app/Contents/ilastik-release
+    IL_PREFIX=/Volumes/Spare/Projects/MouseLight/Classifier/ilastik/ilastik-1.1.8-OSX.app/Contents/ilastik-release
   else
-    export IL_PREFIX=/groups/mousebrainmicro/mousebrainmicro/Software/ilastik-1.1.8.post1-Linux
+    IL_PREFIX=/groups/mousebrainmicro/mousebrainmicro/Software/ilastik-1.1.8.post1-Linux
   fi
 fi
 
