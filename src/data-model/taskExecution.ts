@@ -1,5 +1,5 @@
 import {ITableModelRow, TableModel} from "./tableModel";
-import * as uuid from "node-uuid";
+import {v4} from "uuid";
 const ChildProcess = require("child_process");
 
 import {knex} from "../data-access/knexConnector";
@@ -218,7 +218,7 @@ async function _createTaskFromDefinition(taskDefinition: ITaskDefinition, script
     const worker = await Workers.Instance().worker();
 
     return {
-        id: uuid.v4(),
+        id: v4(),
         machine_id: worker.id,
         task_id: taskDefinition.id,
         work_units: taskDefinition.work_units,

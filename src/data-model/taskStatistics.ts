@@ -1,5 +1,5 @@
 import {knex} from "../data-access/knexConnector";
-import * as uuid from "node-uuid";
+import {v4} from "uuid";
 const AsyncLock = require("async");
 
 import {ITableModelRow, TableModel} from "./tableModel";
@@ -108,7 +108,7 @@ export class TaskStatistics extends TableModel<ITaskStatistics> {
 
 function create(taskId: string) {
     return {
-        id: uuid.v4(),
+        id: v4(),
         task_id: taskId,
         num_execute: 0,
         num_complete: 0,

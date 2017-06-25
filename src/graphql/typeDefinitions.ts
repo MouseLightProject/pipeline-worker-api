@@ -1,4 +1,4 @@
-let typeDefinitions = `    
+let typeDefinitions = `
 interface ITimestamps {
   created_at: String
   updated_at: String
@@ -131,15 +131,15 @@ type Query {
   workUnitCapacity: Float
 }
 
-type Mutation {  
+type Mutation {
   updateTaskDefinition(taskDefinition: TaskDefinitionInput): TaskDefinition
   updateWorker(worker: WorkerInput): Worker
-  
+
   startTask(taskDefinitionId: String!, scriptArgs: [String!]): TaskExecution
   stopTask(taskExecutionId: String!): TaskExecution
-  
+
   removeCompletedExecutionsWithCode(code: Int): Int
-  
+
   resetStatistics(taskId: String): Int
 }
 

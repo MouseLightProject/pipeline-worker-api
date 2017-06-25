@@ -1,15 +1,15 @@
-import * as apolloServer  from "apollo-server";
+import { graphqlExpress, graphiqlExpress } from "graphql-server-express";
 
 import {schema} from "./schema";
 import {GraphQLAppContext} from "./graphQLContext";
 import {IApiServiceConfiguration} from "../../config/server.config";
 
 export function graphQLMiddleware() {
-    return apolloServer.apolloExpress(graphqlRequestHandler);
+    return graphqlExpress(graphqlRequestHandler);
 }
 
 export function graphiQLMiddleware(configuration: IApiServiceConfiguration) {
-    return apolloServer.graphiqlExpress({endpointURL: configuration.graphQlEndpoint});
+    return graphiqlExpress({endpointURL: configuration.graphQlEndpoint});
 }
 
 function graphqlRequestHandler(req) {
