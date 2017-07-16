@@ -98,16 +98,6 @@ type Worker implements ITimestamps {
   deleted_at: String
 }
 
-input TaskDefinitionInput {
-  id: String
-  name: String
-  description: String
-  script: String
-  interpreter: String
-  args: String
-  work_units: Float
-}
-
 input WorkerInput {
   id: String
   preferred_network_interface_id: String
@@ -132,7 +122,6 @@ type Query {
 }
 
 type Mutation {
-  updateTaskDefinition(taskDefinition: TaskDefinitionInput): TaskDefinition
   updateWorker(worker: WorkerInput): Worker
 
   startTask(taskDefinitionId: String!, scriptArgs: [String!]): TaskExecution

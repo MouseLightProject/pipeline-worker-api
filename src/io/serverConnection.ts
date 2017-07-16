@@ -2,7 +2,7 @@ import * as socket_io from "socket.io-client";
 
 const debug = require("debug")("mouselight:worker-api:socket.io");
 
-import {IServerConfig, IApiServiceConfiguration} from "../../config/server.config";
+import {IServerConfig, IApiServiceConfiguration} from "../config/server.config";
 import {TaskExecutions, ITaskExecution} from "../data-model/taskExecution";
 import {IWorker, Workers} from "../data-model/worker";
 

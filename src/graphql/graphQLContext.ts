@@ -1,6 +1,6 @@
 import {taskManager, ITaskManager} from "../task-management/taskManager";
-import readServerConfiguration from "../../config/server.config";
-import {IServerConfig} from "../../config/server.config";
+import readServerConfiguration from "../config/server.config";
+import {IServerConfig} from "../config/server.config";
 
 const debug = require("debug")("mouselight:worker-api:graphql-context");
 

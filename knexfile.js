@@ -3,6 +3,6 @@
  */
 require('babel-register');
 
-const databaseConfiguration = require("./config/database.config.js").default();
+const databaseConfiguration = require("./src/config/database.config.js").default();
 
 module.exports = databaseConfiguration;

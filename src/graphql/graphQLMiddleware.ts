@@ -2,7 +2,7 @@ import { graphqlExpress, graphiqlExpress } from "graphql-server-express";
 
 import {schema} from "./schema";
 import {GraphQLAppContext} from "./graphQLContext";
-import {IApiServiceConfiguration} from "../../config/server.config";
+import {IApiServiceConfiguration} from "../config/server.config";
 
 export function graphQLMiddleware() {
     return graphqlExpress(graphqlRequestHandler);

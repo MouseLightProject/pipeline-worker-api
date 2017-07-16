@@ -3,10 +3,10 @@ import {v4} from "uuid";
 const ChildProcess = require("child_process");
 
 import {knex} from "../data-access/knexConnector";
-import {ITaskDefinition} from "./taskDefinition";
 import {IProcessInfo, ExecutionStatus} from "../task-management/pm2-async";
 import {updateStatisticsForTaskId, ISystemProcessStatistics} from "./taskStatistics";
 import {Workers} from "./worker";
+import {ITaskDefinition} from "./sequelize/taskDefinition";
 
 const debug = require("debug")("mouselight:worker-api:tasks");
 

@@ -1,13 +1,12 @@
-import * as path from "path";
-
 const debug = require("debug")("mouselight:worker-api:task-manager");
 
-import {ITaskDefinition, TaskDefinitions, ITaskDefinitionInput} from "../data-model/taskDefinition";
 import {ITaskExecution, TaskExecutions, ExecutionStatusCode, CompletionStatusCode} from "../data-model/taskExecution";
 import {IProcessInfo, ExecutionStatus} from "./pm2-async";
 import {ITaskStatistics, taskStatisticsInstance} from "../data-model/taskStatistics";
 import * as ProcessManager from "./pm2-async";
 import {Workers, IWorker, IWorkerInput} from "../data-model/worker";
+import {PersistentStorageManager} from "../data-access/sequelize/databaseConnector";
+import {ITaskDefinition} from "../data-model/sequelize/taskDefinition";
 
 export interface IPageInfo {
     endCursor: string,
@@ -46,7 +45,6 @@ export interface ITaskManager extends ProcessManager.IPM2MonitorDelegate {
     statisticsForTask(id: string): Promise<ITaskStatistics>;
     getRunningTasks(): Promise<ITaskExecution[]>;
 
-    updateTaskDefinition(taskDefinition: ITaskDefinitionInput): Promise<ITaskDefinition> ;
     updateWorker(worker: IWorkerInput): Promise<IWorker>;
 
     startTask(taskDefinitionId: string, scriptArgs: Array<string>): Promise<ITaskExecution>;
@@ -57,6 +55,8 @@ export interface ITaskManager extends ProcessManager.IPM2MonitorDelegate {
 }
 
 export class TaskManager implements ITaskManager {
+    private _persistentStorageManager: PersistentStorageManager = PersistentStorageManager.Instance();
+
     public async connect() {
         await ProcessManager.connect();
 
@@ -67,7 +67,6 @@ export class TaskManager implements ITaskManager {
         }, 0);
     }
 
-    private _taskDefinitions = new TaskDefinitions();
     private _taskExecutions = new TaskExecutions();
 
     private refreshAllTasks() {
@@ -87,11 +86,11 @@ export class TaskManager implements ITaskManager {
     }
 
     public getTaskDefinitions(): Promise<ITaskDefinition[]> {
-        return this._taskDefinitions.getAll();
+        return this._persistentStorageManager.TaskDefinitions.findAll({});
     }
 
     public getTaskDefinition(id: string): Promise<ITaskDefinition> {
-        return this._taskDefinitions.get(id);
+        return this._persistentStorageManager.TaskDefinitions.findById(id);
     }
 
     public getTask(id: string): Promise<ITaskExecution> {
@@ -177,10 +176,6 @@ export class TaskManager implements ITaskManager {
         return taskStatisticsInstance.getForTaskId(id);
     }
 
-    public updateTaskDefinition(taskDefinition: ITaskDefinitionInput): Promise<ITaskDefinition> {
-        return this._taskDefinitions.updateFromInput(taskDefinition);
-    }
-
     public updateWorker(worker: IWorkerInput): Promise<IWorker> {
         return Workers.Instance().updateFromInput(worker);
     }
@@ -199,7 +194,7 @@ export class TaskManager implements ITaskManager {
     // a bug where a process gets kicked off, but the initial save to database fails at creation.
 
     public async startTask(taskDefinitionId: string, scriptArgs: Array<string>) {
-        const taskDefinition = await this._taskDefinitions.get(taskDefinitionId);
+        const taskDefinition = await this._persistentStorageManager.TaskDefinitions.findById(taskDefinitionId);
 
         let customArgs = [];
 
@@ -252,7 +247,8 @@ export class TaskManager implements ITaskManager {
     }
 
     private async _startTask(taskExecution: ITaskExecution, taskDefinition: ITaskDefinition, argsArray: string[]) {
-        taskExecution.resolved_script = path.normalize(path.isAbsolute(taskDefinition.script) ? taskDefinition.script : (process.cwd() + "/" + taskDefinition.script));
+        taskExecution.resolved_script = await taskDefinition.getFullScriptPath();
+
         taskExecution.resolved_interpreter = taskDefinition.interpreter;
 
         let opts = {

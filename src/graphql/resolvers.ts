@@ -1,9 +1,9 @@
 import {IGraphQLAppContext} from "./graphQLContext";
 import {ITaskExecution, CompletionStatusCode} from "../data-model/taskExecution";
-import {ITaskDefinition, ITaskDefinitionInput} from "../data-model/taskDefinition";
 import {ITaskStatistics} from "../data-model/taskStatistics";
 import {Workers, IWorker, IWorkerInput} from "../data-model/worker";
 import {IPaginationConnections, ISimplePage} from "../task-management/taskManager";
+import {ITaskDefinition} from "../data-model/sequelize/taskDefinition";
 
 const debug = require("debug")("mouselight:worker-api:resolvers");
 
@@ -26,10 +26,6 @@ interface IRunTaskArguments {
 interface ICancelTaskArguments {
     taskExecutionId: string;
     forceIfNeeded: boolean;
-}
-
-interface IUpdateTaskDefinitionArguments {
-    taskDefinition: ITaskDefinitionInput;
 }
 
 interface IUpdateWorkerArguments {
@@ -93,9 +89,6 @@ let resolvers = {
         }
     },
     Mutation: {
-        updateTaskDefinition(_, args: IUpdateTaskDefinitionArguments, context: IGraphQLAppContext): Promise<ITaskDefinition> {
-            return context.taskManager.updateTaskDefinition(args.taskDefinition);
-        },
         updateWorker(_, args: IUpdateWorkerArguments, context: IGraphQLAppContext): Promise<IWorker> {
             return context.taskManager.updateWorker(args.worker);
         },

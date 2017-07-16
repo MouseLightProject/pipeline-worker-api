@@ -12,6 +12,7 @@
   "license": "Janelia",
   "dependencies": {
     "async": "^2.1.4",
+    "babel-register": "^6.24.1",
     "body-parser": "^1.15.2",
     "debug": "^2.6.1",
     "express": "^4.14.0",
@@ -21,7 +22,9 @@
     "graphql-tools": "^1.0.0",
     "knex": "^0.12.6",
     "mime": "^1.3.4",
+    "pg": "^6.4.1",
     "pm2": "^2.0.18",
+    "sequelize": "^4.3.2",
     "serve-static": "^1.11.1",
     "socket.io-client": "^1.5.1",
     "sqlite3": "^3.1.8",
@@ -37,6 +40,7 @@
     "@types/knex": "0.0.35",
     "@types/koa": "^2.0.33",
     "@types/mime": "0.0.29",
+    "@types/sequelize": "^4.0.65",
     "@types/serve-static": "^1.7.31",
     "@types/socket.io-client": "^1.4.28",
     "@types/uuid": "^3.0.0"
