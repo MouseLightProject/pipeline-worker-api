@@ -17,36 +17,6 @@ interface IDatabaseConfig {
 }
 
 const configurations: IConfiguration<IDatabaseConfig> = {
-    development: {
-        client: "sqlite3",
-        connection: {
-            filename: path.join(internalDataPath, "system-data-dev.sqlite3")
-        },
-        useNullAsDefault: true,
-        migrations: {
-            tableName: "knex_migrations"
-        }
-    },
-    test: {
-        client: "sqlite3",
-        connection: {
-            filename: path.join(internalDataPath, "system-data-test.sqlite3")
-        },
-        useNullAsDefault: true,
-        migrations: {
-            tableName: "knex_migrations"
-        }
-    },
-    staging: {
-        client: "sqlite3",
-        connection: {
-            filename: path.join(internalDataPath, "system-data-production.sqlite3")
-        },
-        useNullAsDefault: true,
-        migrations: {
-            tableName: "knex_migrations"
-        }
-    },
     production: {
         client: "sqlite3",
         connection: {
@@ -60,7 +30,6 @@ const configurations: IConfiguration<IDatabaseConfig> = {
 };
 
 export default function () {
-    let env = process.env.NODE_ENV || "development";
 
-    return configurations[env];
+    return configurations.production;
 }
