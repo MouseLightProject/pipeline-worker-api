@@ -35,76 +35,7 @@ export interface IServerConfig {
     managementService: IManagementServiceConfiguration;
 }
 
-const configurations: IConfiguration<IServerConfig> = {
-    development: {
-        apiService: {
-            name: "",
-            networkInterface: "",
-            networkAddress: "",
-            networkPort: 3001,
-            graphQlEndpoint: "/graphql",
-            graphiQlEndpoint: "/graphiql",
-            machineProperties: {
-                osType: "",
-                platform: "",
-                arch: "",
-                release: "",
-                cpuCount: 0,
-                totalMemory: 0
-            }
-        },
-        managementService: {
-            host: "localhost",
-            port: 3000,
-            graphQLEndpoint: "/graphql"
-        }
-    },
-    test: {
-        apiService: {
-            name: "",
-            networkInterface: "",
-            networkAddress: "",
-            networkPort: 3001,
-            graphQlEndpoint: "/graphql",
-            graphiQlEndpoint: "/graphiql",
-            machineProperties: {
-                osType: "",
-                platform: "",
-                arch: "",
-                release: "",
-                cpuCount: 0,
-                totalMemory: 0
-            }
-        },
-        managementService: {
-            host: "localhost",
-            port: 3000,
-            graphQLEndpoint: "/graphql"
-        }
-    },
-    staging: {
-        apiService: {
-            name: "",
-            networkInterface: "",
-            networkAddress: "",
-            networkPort: 3051,
-            graphQlEndpoint: "/graphql",
-            graphiQlEndpoint: "/graphiql",
-            machineProperties: {
-                osType: "",
-                platform: "",
-                arch: "",
-                release: "",
-                cpuCount: 0,
-                totalMemory: 0
-            }
-        },
-        managementService: {
-            host: "localhost",
-            port: 3050,
-            graphQLEndpoint: "/graphql"
-        }
-    },
+const configurations = {
     production: {
         apiService: {
             name: "",
@@ -149,9 +80,7 @@ let localServerConfiguration = null;
 
 export default function readServerConfiguration(): IServerConfig {
     if (localServerConfiguration === null) {
-        let env = process.env.NODE_ENV || "development";
-
-        localServerConfiguration = overrideDefaults(configurations[env]);
+        localServerConfiguration = overrideDefaults(configurations.production);
     }
 
     return localServerConfiguration;
