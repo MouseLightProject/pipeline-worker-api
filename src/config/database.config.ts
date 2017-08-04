@@ -16,7 +16,7 @@ interface IDatabaseConfig {
     useNullAsDefault: boolean;
 }
 
-const configurations: IConfiguration<IDatabaseConfig> = {
+const configurations = {
     production: {
         client: "sqlite3",
         connection: {
