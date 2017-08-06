@@ -5,7 +5,7 @@
   "main": "pipelineWorkerApp.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "DEBUG=mouselight* node $NODE_DEBUG_OPTION src/pipelineWorkerApp.js",
+    "dev": "DEBUG=pipeline* node $NODE_DEBUG_OPTION src/pipelineWorkerApp.js",
     "start": "node src/pipelineWorkerApp.js"
   },
   "author": "Patrick Edson <pedson@leapscientific.com> (http://github.com/pedson)",

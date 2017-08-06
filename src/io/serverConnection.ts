@@ -1,6 +1,6 @@
 import * as socket_io from "socket.io-client";
 
-const debug = require("debug")("mouselight:worker-api:socket.io");
+const debug = require("debug")("pipeline:worker-api:socket.io");
 
 import {IServerConfig, IApiServiceConfiguration} from "../config/server.config";
 import {TaskExecutions, ITaskExecution} from "../data-model/taskExecution";
@@ -101,8 +101,6 @@ export class SocketIoClient {
         }
 
         const worker = await Workers.Instance().worker();
-
-        debug(`heartbeat (${taskLoad} task load)`);
 
         this._socket.emit("heartBeat", {
             worker: worker,

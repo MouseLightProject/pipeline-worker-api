@@ -1,6 +1,6 @@
 import * as pm2 from "pm2";
 
-const debug = require("debug")("mouselight:worker-api:pm2");
+const debug = require("debug")("pipeline:worker-api:pm2");
 
 export enum ExecutionMode {
     Unknown = 0,

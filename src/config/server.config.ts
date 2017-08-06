@@ -1,6 +1,6 @@
 const os = require("os");
 
-const debug = require("debug")("mouselight:worker-api:configuration");
+const debug = require("debug")("pipeline:worker-api:configuration");
 
 import {IConfiguration} from "./configuration";
 

@@ -5,7 +5,7 @@ import {Workers, IWorker, IWorkerInput} from "../data-model/worker";
 import {IPaginationConnections, ISimplePage} from "../task-management/taskManager";
 import {ITaskDefinition} from "../data-model/sequelize/taskDefinition";
 
-const debug = require("debug")("mouselight:worker-api:resolvers");
+const debug = require("debug")("pipeline:worker-api:resolvers");
 
 interface IIdOnlyArguments {
     id: string;
@@ -45,38 +45,30 @@ interface IConnectionArguments {
 let resolvers = {
     Query: {
         taskDefinition(_, args: IIdOnlyArguments, context: IGraphQLAppContext): Promise<ITaskDefinition> {
-            // debug(`get task ${args.id}`);
             return context.taskManager.getTaskDefinition(args.id);
         },
         taskDefinitions(_, __, context: IGraphQLAppContext): Promise<ITaskDefinition[]> {
-            // debug("get all task definitions");
             return context.taskManager.getTaskDefinitions();
         },
         taskExecution(_, args: IIdOnlyArguments, context: IGraphQLAppContext): Promise<ITaskExecution> {
-            // debug(`get task ${args.id}`);
             return context.taskManager.getTask(args.id);
         },
         taskExecutions(_, __, context: IGraphQLAppContext): Promise<ITaskExecution[]> {
-            // debug("get all tasks");
-            return context.taskManager.getTasks();
+             return context.taskManager.getTasks();
         },
         taskExecutionPage(_, args: IPageArguments, context: IGraphQLAppContext): Promise<ISimplePage<ITaskExecution>> {
-            debug(`execution page ${args.offset} ${args.limit}`);
             return context.taskManager.getExecutionPage(args.offset, args.limit);
         },
         taskExecutionConnections(_, args: IConnectionArguments, context: IGraphQLAppContext): Promise<IPaginationConnections<ITaskExecution>> {
             return context.taskManager.getExecutionConnections(args.first, args.after);
         },
         taskStatistics(_, __, context: IGraphQLAppContext): Promise<ITaskStatistics[]> {
-            // debug(`get all task statistics`);
             return context.taskManager.getStatistics();
         },
         statisticsForTask(_, args: IIdOnlyArguments, context: IGraphQLAppContext): Promise<ITaskStatistics> {
-            // debug(`get task statistics for ${args.id}`);
             return context.taskManager.statisticsForTask(args.id);
         },
         runningTasks(_, __, context: IGraphQLAppContext): Promise<ITaskExecution[]> {
-            // debug("get all running tasks");
             return context.taskManager.getRunningTasks();
         },
         worker(_, __, context: IGraphQLAppContext): Promise<IWorker> {
@@ -93,7 +85,6 @@ let resolvers = {
             return context.taskManager.updateWorker(args.worker);
         },
         startTask(_, args: IRunTaskArguments, context: IGraphQLAppContext): Promise<ITaskExecution> {
-            // debug(`start task with definition ${args.taskDefinitionId}`);
             return context.taskManager.startTask(args.taskDefinitionId, args.scriptArgs);
         },
         stopTask(_, args: ICancelTaskArguments, context: IGraphQLAppContext): Promise<ITaskExecution> {

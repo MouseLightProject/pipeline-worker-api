@@ -8,7 +8,7 @@ import {updateStatisticsForTaskId, ISystemProcessStatistics} from "./taskStatist
 import {Workers} from "./worker";
 import {ITaskDefinition} from "./sequelize/taskDefinition";
 
-const debug = require("debug")("mouselight:worker-api:tasks");
+const debug = require("debug")("pipeline:worker-api:tasks");
 
 export enum ExecutionStatusCode {
     Undefined = 0,

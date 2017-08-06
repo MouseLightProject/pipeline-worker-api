@@ -1,4 +1,4 @@
-const debug = require("debug")("mouselight:worker-api:task-manager");
+const debug = require("debug")("pipeline:worker-api:task-manager");
 
 import {ITaskExecution, TaskExecutions, ExecutionStatusCode, CompletionStatusCode} from "../data-model/taskExecution";
 import {IProcessInfo, ExecutionStatus} from "./pm2-async";

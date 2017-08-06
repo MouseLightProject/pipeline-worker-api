@@ -1,7 +1,7 @@
 import * as express from "express";
 import * as bodyParser from "body-parser";
 
-const debug = require("debug")("mouselight:worker-api:server");
+const debug = require("debug")("pipeline:worker-api:server");
 
 import readServerConfiguration from "./config/server.config";
 import {graphQLMiddleware, graphiQLMiddleware} from "./graphql/graphQLMiddleware";

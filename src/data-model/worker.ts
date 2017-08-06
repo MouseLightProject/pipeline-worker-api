@@ -1,6 +1,6 @@
 import {v4} from "uuid";
 
-const debug = require("debug")("mouselight:worker-api:worker-model");
+const debug = require("debug")("pipeline:worker-api:worker-model");
 
 import {ITableModelRow, TableModel} from "./tableModel";
 
@@ -80,15 +80,7 @@ export class Workers extends TableModel<IWorker> {
     }
 
     public async updateFromInput(worker: IWorkerInput): Promise<IWorker> {
-        if (!worker.id || worker.id.length === 0) {
-            return null;
-        }
-
-        let row = await this.get(worker.id);
-
-        if (!row) {
-            return null;
-        }
+        const row = this._worker;
 
         row.preferred_network_interface_id = worker.preferred_network_interface_id || row.preferred_network_interface_id;
         row.display_name = worker.display_name || row.display_name;
