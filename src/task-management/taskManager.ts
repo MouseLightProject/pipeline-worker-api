@@ -34,23 +34,31 @@ export interface ISimplePage<T> {
 
 export interface ITaskManager extends ProcessManager.IPM2MonitorDelegate {
     getTaskDefinition(id: string): Promise<ITaskDefinition>;
+
     getTaskDefinitions(): Promise<ITaskDefinition[]>;
 
     getTask(id: string): Promise<ITaskExecution>;
+
     getTasks(): Promise<ITaskExecution[]>;
+
     getExecutionPage(reqOffset: number, reqLimit: number): Promise<ISimplePage<ITaskExecution>> ;
+
     getExecutionConnections(first: number, after: string): Promise<IPaginationConnections<ITaskExecution>>;
 
     getStatistics(): Promise<ITaskStatistics[]>;
+
     statisticsForTask(id: string): Promise<ITaskStatistics>;
+
     getRunningTasks(): Promise<ITaskExecution[]>;
 
     updateWorker(worker: IWorkerInput): Promise<IWorker>;
 
     startTask(taskDefinitionId: string, scriptArgs: Array<string>): Promise<ITaskExecution>;
+
     stopTask(taskExecutionId: string): Promise<ITaskExecution>;
 
     removeCompletedExecutionsWithCode(code: CompletionStatusCode): Promise<number>;
+
     resetStatistics(taskId: string): Promise<number>;
 }
 
@@ -271,8 +279,12 @@ export class TaskManager implements ITaskManager {
             // Not using returned processInfo - using bus messages to get start/online events.  Handling directly here
             // is a race condition with start/exit events for a fast completion process.
 
+            // debug(opts);
+
             await ProcessManager.start(opts);
-        } catch (_) {
+        } catch (err) {
+            debug(err);
+
             taskExecution.completed_at = new Date();
             taskExecution.execution_status_code = ExecutionStatusCode.Completed;
             taskExecution.completion_status_code = CompletionStatusCode.Error;

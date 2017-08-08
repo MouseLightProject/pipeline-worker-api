@@ -61,13 +61,15 @@ export function sequelizeImport(sequelize, DataTypes) {
 
     TaskDefinition.associate = models => {
         TaskDefinition.belongsTo(models.TaskRepositories, {foreignKey: "task_repository_id"});
+
+        TaskRepositories = models.TaskRepositories;
     };
 
     TaskDefinition.prototype.getFullScriptPath = async function(): Promise<string> {
         let scriptPath = this.script;
 
         if (this.task_repository_id) {
-            const repo = await TaskRepositories(this.task_repository_id);
+            const repo = await TaskRepositories.findById(this.task_repository_id);
 
             scriptPath = path.join(repo.location, scriptPath);
         } else {
