@@ -1,7 +1,7 @@
 import * as Knex from "knex";
 
-import databaseConfiguration from "../options/knexOptions";
+import {KnexDatabaseConfiguration} from "../options/knexOptions";
 
-let knex = Knex(databaseConfiguration());
+let knex = Knex(KnexDatabaseConfiguration);
 
 export {knex};
