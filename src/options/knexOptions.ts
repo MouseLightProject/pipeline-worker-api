@@ -1,27 +1,32 @@
 const path = require("path");
 const fs = require("fs-extra");
 
-import {IConfiguration} from "./configuration";
-
 export const internalDataPath = path.join(process.cwd(), "internal-data");
 
 if (!fs.existsSync(internalDataPath)) {
     fs.mkdirSync(internalDataPath);
 }
 
-interface IDatabaseConfig {
+export interface IKnexOptions {
     client: string;
     connection: any;
     migrations: any;
+    seeds?: any;
+    acquireConnectionTimeout: number
     useNullAsDefault: boolean;
 }
 
-const configurations = {
+interface IKnexEnvs {
+    production: IKnexOptions;
+}
+
+const configurations: IKnexEnvs = {
     production: {
         client: "sqlite3",
         connection: {
             filename: path.join(internalDataPath, "system-data-production.sqlite3")
         },
+        acquireConnectionTimeout: 180000,
         useNullAsDefault: true,
         migrations: {
             tableName: "knex_migrations"
@@ -29,7 +34,8 @@ const configurations = {
     }
 };
 
-export default function () {
-
+function loadConfiguration () {
     return configurations.production;
 }
+
+export const KnexDatabaseConfiguration = loadConfiguration();
