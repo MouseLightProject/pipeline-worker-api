@@ -2,8 +2,6 @@ const os = require("os");
 
 const debug = require("debug")("pipeline:worker-api:configuration");
 
-import {IConfiguration} from "./configuration";
-
 export interface IIMachineProperties {
     osType: string;
     platform: string;
@@ -41,7 +39,7 @@ const configurations = {
             name: "",
             networkInterface: "",
             networkAddress: "",
-            networkPort: 3001,
+            networkPort: 3500,
             graphQlEndpoint: "/graphql",
             graphiQlEndpoint: "/graphiql",
             machineProperties: {
@@ -54,7 +52,7 @@ const configurations = {
             }
         },
         managementService: {
-            host: "localhost",
+            host: "pipeline-api",
             port: 3000,
             graphQLEndpoint: "/graphql"
         }
@@ -70,8 +68,8 @@ function overrideDefaults(config: IServerConfig): IServerConfig {
 
     config.apiService.machineProperties = readMachineProperties();
 
-    config.managementService.host = process.env.SERVER_HOST || config.managementService.host;
-    config.managementService.port = process.env.SERVER_PORT || config.managementService.port;
+    config.managementService.host = process.env.PIPELINE_API_HOST || config.managementService.host;
+    config.managementService.port = parseInt(process.env.PIPELINE_API_PORT) || config.managementService.port;
 
     return config;
 }
@@ -93,10 +91,10 @@ interface INetworkProperties {
 
 function readHostProperties(config: IApiServiceConfiguration, networkProperties: INetworkProperties): IApiServiceConfiguration {
     return {
-        name: process.env.WORKER_NAME || os.hostname(),
+        name: process.env.PIPELINE_WORKER_NAME || os.hostname(),
         networkInterface: networkProperties.interfaceName,
         networkAddress: networkProperties.networkAddress,
-        networkPort: process.env.WORKER_API_PORT || config.networkPort,
+        networkPort: parseInt(process.env.PIPELINE_WORKER_API_PORT) || config.networkPort,
         graphQlEndpoint: config.graphQlEndpoint,
         graphiQlEndpoint: config.graphiQlEndpoint,
         machineProperties: config.machineProperties

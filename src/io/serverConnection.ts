@@ -2,7 +2,7 @@ import * as socket_io from "socket.io-client";
 
 const debug = require("debug")("pipeline:worker-api:socket.io");
 
-import {IServerConfig, IApiServiceConfiguration} from "../config/server.config";
+import {IServerConfig, IApiServiceConfiguration} from "../options/serviceConfig";
 import {TaskExecutions, ITaskExecution} from "../data-model/taskExecution";
 import {IWorker, Workers} from "../data-model/worker";
 

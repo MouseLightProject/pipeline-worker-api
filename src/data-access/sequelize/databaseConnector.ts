@@ -4,7 +4,7 @@ const Sequelize = require("sequelize");
 const debug = require("debug")("pipeline:worker-api:database-connector");
 
 import {loadModels} from "./modelLoader";
-import {SequelizeOptions} from "../../config/sequelizeOptions";
+import {SequelizeOptions} from "../../options/sequelizeOptions";
 
 
 export interface IPipelineModels {

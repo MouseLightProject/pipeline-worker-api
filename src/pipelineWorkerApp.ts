@@ -3,7 +3,7 @@ import * as bodyParser from "body-parser";
 
 const debug = require("debug")("pipeline:worker-api:server");
 
-import readServerConfiguration from "./config/server.config";
+import readServerConfiguration from "./options/serviceConfig";
 import {graphQLMiddleware, graphiQLMiddleware} from "./graphql/graphQLMiddleware";
 import {SocketIoClient} from "./io/serverConnection";
 import {Workers} from "./data-model/worker";
@@ -26,7 +26,7 @@ async function start() {
 
     app.use(serverConfiguration.apiService.graphQlEndpoint, graphQLMiddleware());
 
-    app.use(serverConfiguration.apiService.graphiQlEndpoint, graphiQLMiddleware(serverConfiguration.apiService));
+    app.use(["/", serverConfiguration.apiService.graphiQlEndpoint], graphiQLMiddleware(serverConfiguration.apiService));
 
     SocketIoClient.use(worker, serverConfiguration);
 

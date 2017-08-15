@@ -1,16 +1,15 @@
 #!/usr/bin/env bash
 
-if [ "$#" -gt 1 ]; then
-    source ${1}
-else
-    if [ -a "id.sh" ]; then
-        source "id.sh"
-    fi
+if [ -a "options.sh" ]; then
+    source "options.sh"
 fi
 
-if [ -z "$SERVER_HOST" ]; then
-    echo "SERVER_HOST must be set or a script provided that sets it as the second argument."
+# Default is "pipeline-api" which is mostly guaranteed to not be correct when running standalone.
+if [ -z "${PIPELINE_API_HOST}" ]; then
+    echo "PIPELINE_API_HOST must be set."
     exit 1
 fi
 
-nohup npm run dev &
+./migrate.sh
+
+nohup npm run devel &

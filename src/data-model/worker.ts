@@ -54,7 +54,7 @@ export class Workers extends TableModel<IWorker> {
             debug(`creating initial worker entry`);
 
             const worker = {
-                id: process.env.MACHINE_ID || v4(),
+                id: process.env.PIPELINE_WORKER_ID || v4(),
                 preferred_network_interface_id: null,
                 display_name: "",
                 work_capacity: 0,

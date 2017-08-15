@@ -1,23 +1,15 @@
-FROM node:7
+FROM node:7.10
 
 WORKDIR /app
 
-# Bundle app source
+RUN yarn global add typescript@2.3.4 sequelize-cli knex@0.13.0
+
 COPY . .
 
-# Have native modules - get rid of current platform, if present
-RUN rm -rf node_modules
+RUN yarn install
 
-# Local/build misc
-RUN rm -rf .idea .git .DS_Store internal-data
-
-# Build tools
-RUN npm install -g typescript@2.1.6 knex && npm cache clean
-
-# Install app dependencies
-RUN npm install && npm cache clean
-
-# Compile
 RUN tsc
 
-EXPOSE  3001
+CMD ["./docker-entry.sh"]
+
+EXPOSE  3500

@@ -29,7 +29,7 @@ const configurations: IKnexEnvs = {
         acquireConnectionTimeout: 180000,
         useNullAsDefault: true,
         migrations: {
-            tableName: "knex_migrations"
+            directory: "knex-migrations"
         }
     }
 };
