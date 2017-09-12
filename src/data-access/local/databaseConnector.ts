@@ -1,15 +1,17 @@
 import * as path from "path";
+
 const Sequelize = require("sequelize");
 
 const debug = require("debug")("pipeline:worker-api:database-connector");
 
-import {loadModels} from "./modelLoader";
+import {IPersistentStorageManager, loadModel} from "../modelLoader";
 import {SequelizeOptions} from "../../options/sequelizeOptions";
+import {Sequelize} from "sequelize";
 
 
 export interface IPipelineModels {
-    TaskDefinitions?: any;
-    TaskRepositories?: any;
+    Workers?: any;
+    TaskExecutions?: any;
 }
 
 export interface ISequelizeDatabase<T> {
@@ -18,28 +20,24 @@ export interface ISequelizeDatabase<T> {
     isConnected: boolean;
 }
 
-export class PersistentStorageManager {
+export class LocalPersistentStorageManager implements IPersistentStorageManager {
 
     private pipelineDatabase: ISequelizeDatabase<IPipelineModels>;
 
-    public static Instance(): PersistentStorageManager {
+    public static Instance(): LocalPersistentStorageManager {
         return _manager;
     }
 
-    public get IsConnected() {
+    public get IsConnected(): boolean {
         return this.pipelineDatabase && this.pipelineDatabase.isConnected;
     }
 
-    public get PipelineConnection() {
+    public get Connection(): Sequelize {
         return this.pipelineDatabase.connection;
     }
 
-    public get TaskRepositories() {
-        return this.pipelineDatabase.models.TaskRepositories;
-    }
-
-    public get TaskDefinitions() {
-        return this.pipelineDatabase.models.TaskDefinitions;
+    public get TaskExecutions() {
+        return this.pipelineDatabase.models.TaskExecutions;
     }
 
     public async initialize() {
@@ -54,7 +52,7 @@ async function authenticate(database, name) {
 
         database.isConnected = true;
 
-        debug(`successful database connection: ${name}`);
+        debug(`successful local database connection: ${name}`);
 
         Object.keys(database.models).map(modelName => {
             if (database.models[modelName].prepareContents) {
@@ -70,7 +68,7 @@ async function authenticate(database, name) {
 }
 
 async function createConnection<T>(models: T) {
-    let databaseConfig = SequelizeOptions;
+    let databaseConfig = SequelizeOptions.local;
 
     let db: ISequelizeDatabase<T> = {
         connection: null,
@@ -80,10 +78,10 @@ async function createConnection<T>(models: T) {
 
     db.connection = new Sequelize(databaseConfig.database, databaseConfig.username, databaseConfig.password, databaseConfig);
 
-    return await loadModels(db, path.normalize(path.join(__dirname, "..", "..", "data-model", "sequelize")));
+    return await loadModel(db, path.normalize(path.join(__dirname, "..", "..", "data-model", "sequelize", "taskExecution.js")));
 }
 
-const _manager: PersistentStorageManager = new PersistentStorageManager();
+const _manager: LocalPersistentStorageManager = new LocalPersistentStorageManager();
 
 _manager.initialize().then(() => {
 });

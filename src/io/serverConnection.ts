@@ -3,8 +3,9 @@ import * as socket_io from "socket.io-client";
 const debug = require("debug")("pipeline:worker-api:socket.io");
 
 import {IServerConfig, IApiServiceConfiguration} from "../options/serviceConfig";
-import {TaskExecutions, ITaskExecution} from "../data-model/taskExecution";
 import {IWorker, Workers} from "../data-model/worker";
+import {ITaskExecution} from "../data-model/sequelize/taskExecution";
+import {LocalPersistentStorageManager} from "../data-access/local/databaseConnector";
 
 export enum ServerConnectionStatus {
     Uninitialized,
@@ -33,7 +34,7 @@ export class SocketIoClient {
 
     private _connectionStatus = ServerConnectionStatus.Creating;
 
-    private _taskExecutions = new TaskExecutions();
+    private _localStorageManager = LocalPersistentStorageManager.Instance();
 
     private constructor(worker: IWorker, config: IServerConfig) {
         this._socket = socket_io(`http://${config.managementService.host}:${config.managementService.port}`);
@@ -92,7 +93,7 @@ export class SocketIoClient {
 
         let taskLoad = -1;
 
-        let tasks: ITaskExecution[] = await this._taskExecutions.getRunningTasks();
+        let tasks: ITaskExecution[] = await this._localStorageManager.TaskExecutions.findRunning();
 
         if (tasks != null) {
             taskLoad = tasks.reduce((total: number, task) => {

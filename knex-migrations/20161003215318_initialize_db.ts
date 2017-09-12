@@ -1,19 +1,9 @@
 exports.up = function (knex, Promise) {
     return knex.schema
-        .createTable("TaskDefinition", (table) =>{
+        .createTable("TaskExecutions", (table) => {
             table.uuid("id").primary().unique();
-            table.string("name");
-            table.string("description");
-            table.string("script");
-            table.string("interpreter");
-            table.string("args");
-            table.float("work_units");
-            table.timestamp("deleted_at");
-            table.timestamps();
-        }).createTable("TaskExecution", (table) => {
-            table.uuid("id").primary().unique();
-            table.uuid("machine_id");
-            table.uuid("task_id");
+            table.uuid("worker_id");
+            table.uuid("task_definition_id");
             table.float("work_units");
             table.string("resolved_script");
             table.string("resolved_interpreter");
@@ -26,9 +16,10 @@ exports.up = function (knex, Promise) {
             table.integer("exit_code");
             table.timestamp("started_at");
             table.timestamp("completed_at");
+            table.integer("sync_status");
+            table.timestamp("synchronized_at");
             table.timestamp("deleted_at");
             table.timestamps();
-            table.foreign("task_id").references("TaskDefinition.id");
         }).createTable("TaskStatistic", (table) => {
             table.uuid("id").primary().unique();
             table.integer("num_execute");
@@ -44,8 +35,22 @@ exports.up = function (knex, Promise) {
             table.float("memory_average");
             table.float("memory_high");
             table.float("memory_low");
-            table.uuid("task_id");
-            table.foreign("task_id").references("TaskDefinition.id");
+            table.uuid("task_definition_id");
+            table.timestamp("deleted_at");
+            table.timestamps();
+        }).createTable("Worker", (table) => {
+            table.uuid("id").primary().unique();
+            table.uuid("preferred_network_interface_id");
+            table.string("display_name");
+            table.float("work_capacity");
+            table.boolean("is_cluster_proxy");
+            table.boolean("is_accepting_jobs");
+            table.foreign("preferred_network_interface_id").references("NetworkInterface.id");
+            table.timestamp("deleted_at");
+            table.timestamps();
+        }).createTable("NetworkInterface", (table) => {
+            table.uuid("id").primary().unique();
+            table.string("name");
             table.timestamp("deleted_at");
             table.timestamps();
         });
@@ -53,7 +58,8 @@ exports.up = function (knex, Promise) {
 
 exports.down = function (knex, Promise) {
     return knex.schema
-        .dropTable("TaskDefinition")
-        .dropTable("TaskExecution")
-        .dropTable("TaskStatistic");
+        .dropTable("TaskExecutions")
+        .dropTable("TaskStatistic")
+        .dropTable("Worker")
+        .dropTable("NetworkInterface");
 };

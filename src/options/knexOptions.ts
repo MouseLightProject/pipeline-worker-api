@@ -24,7 +24,7 @@ const configurations: IKnexEnvs = {
     production: {
         client: "sqlite3",
         connection: {
-            filename: path.join(internalDataPath, "system-data-production.sqlite3")
+            filename: path.join(internalDataPath, "worker-system-data.sqlite3")
         },
         acquireConnectionTimeout: 180000,
         useNullAsDefault: true,

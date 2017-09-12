@@ -1,9 +1,4 @@
 let typeDefinitions = `
-interface ITimestamps {
-  created_at: String
-  updated_at: String
-  deleted_at: String
-}
 
 type PageInfo {
     endCursor: String
@@ -29,7 +24,7 @@ type ExecutionPage {
     items: [TaskExecution]
 }
 
-type TaskDefinition implements ITimestamps {
+type TaskDefinition {
   id: String!
   name: String!
   description: String!
@@ -37,15 +32,15 @@ type TaskDefinition implements ITimestamps {
   interpreter: String!
   args: String!
   work_units: Float!
-  created_at: String
-  updated_at: String
-  deleted_at: String
+  created_at: Float
+  updated_at: Float
+  deleted_at: Float
 }
 
-type TaskExecution implements ITimestamps {
+type TaskExecution {
   id: String!
-  machine_id: String
-  task_id: String
+  worker_id: String
+  task_definition_id: String
   task: TaskDefinition
   work_units: Float
   resolved_script: String
@@ -57,16 +52,16 @@ type TaskExecution implements ITimestamps {
   max_memory: Float
   max_cpu: Float
   exit_code: Int
-  started_at: String
-  completed_at: String
-  created_at: String
-  updated_at: String
-  deleted_at: String
+  started_at: Float
+  completed_at: Float
+  created_at: Float
+  updated_at: Float
+  deleted_at: Float
 }
 
-type TaskStatistics implements ITimestamps {
+type TaskStatistics {
   id: String!
-  task_id: String
+  task_definition_id: String
   task: TaskDefinition
   num_execute: Int
   num_complete: Int
@@ -86,7 +81,7 @@ type TaskStatistics implements ITimestamps {
   deleted_at: String
 }
 
-type Worker implements ITimestamps {
+type Worker {
   id: String
   preferred_network_interface_id: String
   display_name: String

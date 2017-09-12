@@ -3,7 +3,7 @@ import {v4} from "uuid";
 const AsyncLock = require("async");
 
 import {ITableModelRow, TableModel} from "./tableModel";
-import {CompletionStatusCode, ITaskExecution} from "./taskExecution";
+import {CompletionStatusCode, ITaskExecution} from "./sequelize/taskExecution";
 
 export interface ISystemProcessStatistics {
     memory_mb: number;
@@ -11,7 +11,7 @@ export interface ISystemProcessStatistics {
 }
 
 export interface ITaskStatistics extends ITableModelRow {
-    task_id: string;
+    task_definition_id: string;
     num_execute: number;
     num_complete: number;
     num_error: number;
@@ -47,7 +47,7 @@ export class TaskStatistics extends TableModel<ITaskStatistics> {
     }
 
     public async getForTaskId(taskId: string): Promise<ITaskStatistics> {
-        let objList = await knex(this.tableName).select(this.idKey).where({task_id: taskId});
+        let objList = await knex(this.tableName).select(this.idKey).where({task_definition_id: taskId});
 
         let idList = <string[]>objList.map(obj => obj.id);
 
@@ -96,7 +96,7 @@ export class TaskStatistics extends TableModel<ITaskStatistics> {
 
     public async reset(taskId: string, now: boolean = false) {
         if (now) {
-            return await knex(this.tableName).where({task_id: taskId}).del();
+            return await knex(this.tableName).where({task_definition_id: taskId}).del();
         } else {
             queue.push({taskId: taskId, action: UpdateQueueAction.Reset}, (err) => {
             });
@@ -109,7 +109,7 @@ export class TaskStatistics extends TableModel<ITaskStatistics> {
 function create(taskId: string) {
     return {
         id: v4(),
-        task_id: taskId,
+        task_definition_id: taskId,
         num_execute: 0,
         num_complete: 0,
         num_error: 0,
@@ -178,7 +178,7 @@ export function updateStatisticsForTaskId(taskExecution: ITaskExecution) {
     }
 
     queue.push({
-        taskId: taskExecution.task_id,
+        taskId: taskExecution.task_definition_id,
         action: UpdateQueueAction.Update,
         status: taskExecution.completion_status_code,
         cpu: taskExecution.max_cpu,

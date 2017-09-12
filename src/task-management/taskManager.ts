@@ -1,55 +1,23 @@
+const ChildProcess = require("child_process");
+import * as ProcessManager from "./pm2-async";
+
 const debug = require("debug")("pipeline:worker-api:task-manager");
 
-import {ITaskExecution, TaskExecutions, ExecutionStatusCode, CompletionStatusCode} from "../data-model/taskExecution";
 import {IProcessInfo, ExecutionStatus} from "./pm2-async";
-import {ITaskStatistics, taskStatisticsInstance} from "../data-model/taskStatistics";
-import * as ProcessManager from "./pm2-async";
+import {
+    ISystemProcessStatistics, ITaskStatistics, taskStatisticsInstance,
+    updateStatisticsForTaskId
+} from "../data-model/taskStatistics";
 import {Workers, IWorker, IWorkerInput} from "../data-model/worker";
-import {PersistentStorageManager} from "../data-access/sequelize/databaseConnector";
+import {RemotePersistentStorageManager} from "../data-access/remote/databaseConnector";
 import {ITaskDefinition} from "../data-model/sequelize/taskDefinition";
-
-export interface IPageInfo {
-    endCursor: string,
-    hasNextPage: boolean;
-}
-
-export interface IPaginationEdge<T> {
-    node: T,
-    cursor: string;
-}
-
-export interface IPaginationConnections<T> {
-    totalCount: number;
-    pageInfo: IPageInfo;
-    edges: IPaginationEdge<T>[];
-}
-
-export interface ISimplePage<T> {
-    offset: number;
-    limit: number;
-    totalCount: number;
-    hasNextPage: boolean;
-    items: T[]
-}
+import {CompletionStatusCode, ExecutionStatusCode, ITaskExecution} from "../data-model/sequelize/taskExecution";
+import {LocalPersistentStorageManager} from "../data-access/local/databaseConnector";
 
 export interface ITaskManager extends ProcessManager.IPM2MonitorDelegate {
-    getTaskDefinition(id: string): Promise<ITaskDefinition>;
-
-    getTaskDefinitions(): Promise<ITaskDefinition[]>;
-
-    getTask(id: string): Promise<ITaskExecution>;
-
-    getTasks(): Promise<ITaskExecution[]>;
-
-    getExecutionPage(reqOffset: number, reqLimit: number): Promise<ISimplePage<ITaskExecution>> ;
-
-    getExecutionConnections(first: number, after: string): Promise<IPaginationConnections<ITaskExecution>>;
-
     getStatistics(): Promise<ITaskStatistics[]>;
 
     statisticsForTask(id: string): Promise<ITaskStatistics>;
-
-    getRunningTasks(): Promise<ITaskExecution[]>;
 
     updateWorker(worker: IWorkerInput): Promise<IWorker>;
 
@@ -57,13 +25,13 @@ export interface ITaskManager extends ProcessManager.IPM2MonitorDelegate {
 
     stopTask(taskExecutionId: string): Promise<ITaskExecution>;
 
-    removeCompletedExecutionsWithCode(code: CompletionStatusCode): Promise<number>;
-
     resetStatistics(taskId: string): Promise<number>;
 }
 
 export class TaskManager implements ITaskManager {
-    private _persistentStorageManager: PersistentStorageManager = PersistentStorageManager.Instance();
+    private _remotePersistentStorageManager: RemotePersistentStorageManager = RemotePersistentStorageManager.Instance();
+
+    private _localStorageManager: LocalPersistentStorageManager = LocalPersistentStorageManager.Instance();
 
     public async connect() {
         await ProcessManager.connect();
@@ -74,8 +42,6 @@ export class TaskManager implements ITaskManager {
             this.refreshAllTasks();
         }, 0);
     }
-
-    private _taskExecutions = new TaskExecutions();
 
     private refreshAllTasks() {
         this.refreshTasksFromProcessManager().then(() => {
@@ -93,89 +59,6 @@ export class TaskManager implements ITaskManager {
         debug("pm2 delegate acknowledge kill event");
     }
 
-    public getTaskDefinitions(): Promise<ITaskDefinition[]> {
-        return this._persistentStorageManager.TaskDefinitions.findAll({});
-    }
-
-    public getTaskDefinition(id: string): Promise<ITaskDefinition> {
-        return this._persistentStorageManager.TaskDefinitions.findById(id);
-    }
-
-    public getTask(id: string): Promise<ITaskExecution> {
-        return this._taskExecutions.get(id);
-    }
-
-    public getTasks(): Promise<ITaskExecution[]> {
-        return this._taskExecutions.getAll();
-    }
-
-    public async getExecutionPage(reqOffset: number, reqLimit: number): Promise<ISimplePage<ITaskExecution>> {
-        let offset = 0;
-        let limit = 10;
-
-        if (reqOffset !== null && reqOffset !== undefined) {
-            offset = reqOffset;
-        }
-
-        if (reqLimit !== null && reqLimit !== undefined) {
-            limit = reqLimit;
-        }
-
-        const count = await this._taskExecutions.count();
-
-        if (offset > count) {
-            return {
-                offset: offset,
-                limit: limit,
-                totalCount: count,
-                hasNextPage: false,
-                items: []
-            };
-        }
-
-        const nodes: ITaskExecution[] = await this._taskExecutions.getPage(offset, limit);
-
-        return {
-            offset: offset,
-            limit: limit,
-            totalCount: count,
-            hasNextPage: offset + limit < count,
-            items: nodes
-        };
-    }
-
-    public async getExecutionConnections(first: number, after: string): Promise<IPaginationConnections<ITaskExecution>> {
-        let offset = 0;
-        let limit = 10;
-
-        if (first) {
-            limit = first;
-        }
-
-        if (after) {
-            offset = decodeObj64(after)["offset"] + 1;
-        }
-
-        const count = await this._taskExecutions.count();
-
-        const nodes: ITaskExecution[] = await this._taskExecutions.getPage(offset, limit);
-
-        return {
-            totalCount: count,
-            pageInfo: {
-                endCursor: encodeObj64({offset: offset + limit - 1}),
-                hasNextPage: offset + limit < count
-            },
-            edges: nodes.map((node, index) => {
-                return {node: node, cursor: encodeObj64({offset: offset + index})}
-            })
-        }
-    }
-
-    public getRunningTasks(): Promise<ITaskExecution[]> {
-        return this._taskExecutions.getRunningTasks();
-    }
-
     public getStatistics(): Promise<ITaskStatistics[]> {
         return taskStatisticsInstance.getAll();
     }
@@ -188,10 +71,6 @@ export class TaskManager implements ITaskManager {
         return Workers.Instance().updateFromInput(worker);
     }
 
-    public removeCompletedExecutionsWithCode(code: CompletionStatusCode): Promise<number> {
-        return this._taskExecutions.removeCompletedExecutionsWithCode(code);
-    }
-
     public resetStatistics(taskId: string): Promise<number> {
         return taskStatisticsInstance.reset(taskId);
     }
@@ -202,7 +81,7 @@ export class TaskManager implements ITaskManager {
     // a bug where a process gets kicked off, but the initial save to database fails at creation.
 
     public async startTask(taskDefinitionId: string, scriptArgs: Array<string>) {
-        const taskDefinition = await this._persistentStorageManager.TaskDefinitions.findById(taskDefinitionId);
+        const taskDefinition = await this._remotePersistentStorageManager.TaskDefinitions.findById(taskDefinitionId);
 
         let customArgs = [];
 
@@ -216,23 +95,23 @@ export class TaskManager implements ITaskManager {
 
         const combinedArgs = scriptArgs.concat([isClusterProxy]).concat(customArgs);
 
-        const taskExecution = await this._taskExecutions.createTask(taskDefinition, combinedArgs);
+        const taskExecution = await this._localStorageManager.TaskExecutions.createTask(worker.id, taskDefinition, combinedArgs);
 
         return this._startTask(taskExecution, taskDefinition, combinedArgs);
     }
 
-    public async stopTask(taskExecutionId: string) {
-        let taskExecution = await this._taskExecutions.get(taskExecutionId);
+    public async stopTask(taskExecutionId: string): Promise<ITaskExecution> {
+        let taskExecution = await this._localStorageManager.TaskExecutions.findById(taskExecutionId);
 
         if (taskExecution.completion_status_code < CompletionStatusCode.Cancel) {
             taskExecution.completion_status_code = CompletionStatusCode.Cancel;
         }
 
-        await this._taskExecutions.save(taskExecution);
+        await taskExecution.save();
 
         await ProcessManager.stop(taskExecutionId);
 
-        return await this._taskExecutions.get(taskExecutionId);
+        return this._localStorageManager.TaskExecutions.findById(taskExecutionId);
     }
 
     private async refreshTasksFromProcessManager() {
@@ -242,10 +121,10 @@ export class TaskManager implements ITaskManager {
     }
 
     private async refreshOneTaskForProcess(processInfo: IProcessInfo, manually: boolean = false): Promise<void> {
-        const taskExecution = await this._taskExecutions.get(processInfo.name);
+        const taskExecution = await this._localStorageManager.TaskExecutions.findById(processInfo.name);
 
         if (taskExecution) {
-            await this._taskExecutions.update(taskExecution, processInfo, manually);
+            await _update(taskExecution, processInfo, manually);
 
             if (taskExecution.execution_status_code === ExecutionStatusCode.Completed && processInfo.status === ExecutionStatus.Stopped) {
                 debug(`removing completed process (${processInfo.managerId}) from process manager`);
@@ -274,7 +153,7 @@ export class TaskManager implements ITaskManager {
         try {
             taskExecution.execution_status_code = ExecutionStatusCode.Running;
 
-            await this._taskExecutions.save(taskExecution);
+            await taskExecution.save();
 
             // Not using returned processInfo - using bus messages to get start/online events.  Handling directly here
             // is a race condition with start/exit events for a fast completion process.
@@ -289,11 +168,12 @@ export class TaskManager implements ITaskManager {
             taskExecution.execution_status_code = ExecutionStatusCode.Completed;
             taskExecution.completion_status_code = CompletionStatusCode.Error;
 
-            await this._taskExecutions.save(taskExecution);
+            await taskExecution.save();
         }
 
-        return taskExecution;
+        return this._localStorageManager.TaskExecutions.findById(taskExecution.id);
     }
+
 }
 
 export const taskManager = new TaskManager();
@@ -302,18 +182,98 @@ taskManager.connect().catch(err => {
     debug("failed to connect to process manager from graphql context.");
 });
 
-function encodeObj64(obj: any) {
-    return encode64(JSON.stringify(obj));
+async function _update(taskExecution: ITaskExecution, processInfo: IProcessInfo, manually: boolean) {
+    if (taskExecution == null || processInfo == null) {
+        debug(`skipping update for null task execution (${taskExecution == null}) or process info (${processInfo == null})`);
+        return;
+    }
+
+    if (processInfo.processId && processInfo.processId > 0) {
+        let stats = await readProcessStatistics(processInfo.processId);
+
+        if (!isNaN(stats.memory_mb) && (stats.memory_mb > taskExecution.max_memory || isNaN(taskExecution.max_memory))) {
+            taskExecution.max_memory = stats.memory_mb;
+        }
+
+        if (!isNaN(stats.cpu_percent) && (stats.cpu_percent > taskExecution.max_cpu || isNaN(taskExecution.max_cpu))) {
+            taskExecution.max_cpu = stats.cpu_percent;
+        }
+    }
+
+    // Have a real status from the process manager (e.g, PM2).
+    if (processInfo.status > taskExecution.last_process_status_code) {
+        taskExecution.last_process_status_code = processInfo.status;
+    }
+
+    // Stop/Exit/Delete
+    if (processInfo.status >= ExecutionStatus.Stopped) {
+        if (taskExecution.completed_at == null) {
+            // debug(`marking complete for task execution ${taskExecution.id}`);
+
+            taskExecution.completed_at = new Date();
+            taskExecution.execution_status_code = ExecutionStatusCode.Completed;
+
+            if (taskExecution.completion_status_code < CompletionStatusCode.Cancel) {
+                // Do not have control on how PM2 fires events.  Can't assumed we didn't get an exit code already.
+                taskExecution.completion_status_code = CompletionStatusCode.Unknown;
+            }
+        }
+    }
+
+    // PM2 is not uniform on when its "process object" includes an exit code.  Handle outside of the formal
+    // completion code above.
+    if (processInfo.exitCode != null) {
+        // May already be set if cancelled.
+        if (taskExecution.completion_status_code < CompletionStatusCode.Cancel) {
+            taskExecution.completion_status_code = (processInfo.exitCode === 0) ? CompletionStatusCode.Success : CompletionStatusCode.Error;
+        }
+
+        if (taskExecution.exit_code === null) {
+            taskExecution.exit_code = processInfo.exitCode;
+
+            updateStatisticsForTaskId(taskExecution);
+        }
+    }
+
+    await taskExecution.save();
 }
 
-function decodeObj64(str: string) {
-    return JSON.parse(decode64(str));
-}
+function readProcessStatistics(processId): Promise<ISystemProcessStatistics> {
+    return new Promise<ISystemProcessStatistics>((resolve, reject) => {
+        ChildProcess.exec(`ps -A -o pid,pgid,rss,%cpu | grep ${processId}`, (err, stdout, stderr) => {
+            if (err || stderr) {
+                reject(err);
+            }
+            else {
+                let stats: ISystemProcessStatistics = {
+                    memory_mb: NaN,
+                    cpu_percent: NaN
+                };
 
-function encode64(str: string) {
-    return (new Buffer(str, "ascii")).toString("base64");
-}
+                stdout = stdout.split(/\n/).filter(Boolean);
 
-function decode64(str: string) {
-    return (new Buffer(str, "base64")).toString("ascii");
+                let statsArray: Array<ISystemProcessStatistics> = stdout.map(obj => {
+                    let parts = obj.split(/[\s+]/).filter(Boolean);
+
+                    if (parts && parts.length === 4) {
+                        return {
+                            memory_mb: parseInt(parts[2]) / 1024,
+                            cpu_percent: parseFloat(parts[3])
+                        };
+                    } else {
+                        return null;
+                    }
+                }).filter(Boolean);
+
+                stats = statsArray.reduce((prev, stats) => {
+                    return {
+                        memory_mb: isNaN(prev.memory_mb) ? stats.memory_mb : prev.memory_mb + stats.memory_mb,
+                        cpu_percent: isNaN(prev.cpu_percent) ? stats.cpu_percent : prev.cpu_percent + stats.cpu_percent
+                    };
+                }, stats);
+
+                resolve(stats);
+            }
+        });
+    });
 }
