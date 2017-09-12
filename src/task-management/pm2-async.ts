@@ -186,8 +186,11 @@ export function deleteTask(pid: any): Promise<IProcessInfo[]> {
     return new Promise<IProcessInfo[]>((resolve, reject) => {
         pm2.delete(pid, (err, processList) => {
             if (err) {
-                debug(err);
-                reject(err);
+                if (err.message.toLocaleLowerCase() !== "process not found") {
+                    debug(err);
+                    reject(err);
+                }
+                resolve(null);
             } else {
                 // debug(`delete returned ${processList.length} process descriptions`);
                 let result: IProcessInfo[] = [];
@@ -227,7 +230,6 @@ function _lookupExecMode(str: string): ExecutionMode {
     } else if (str === "undefined" || !str) {
         return ExecutionMode.Undefined;
     } else {
-        console.log(`Unexpected PM2 execution mode string (${str}).`);
         return ExecutionMode.Undefined;
     }
 }
@@ -239,7 +241,7 @@ function _lookupExecStatus(str: string): ExecutionStatus {
         return ExecutionStatus.Online;
     } else if (str === "restart") {
         return ExecutionStatus.Restarted;
-    } else if (str === "restart overlimit") {
+    } else if (str === "restart over limit") {
         return ExecutionStatus.RestartOverLimit;
     } else if (str === "stopping") {
         return ExecutionStatus.Stopping;
@@ -252,7 +254,6 @@ function _lookupExecStatus(str: string): ExecutionStatus {
     } else if (str === "undefined") {
         return ExecutionStatus.Undefined;
     } else {
-        console.log(`Unexpected PM2 execution status string (${str}).`);
-        return null;
+        return ExecutionStatus.Undefined;
     }
 }

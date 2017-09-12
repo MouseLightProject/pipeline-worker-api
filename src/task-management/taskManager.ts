@@ -1,3 +1,5 @@
+import {isNullOrUndefined} from "util";
+
 const ChildProcess = require("child_process");
 import * as ProcessManager from "./pm2-async";
 
@@ -13,6 +15,7 @@ import {RemotePersistentStorageManager} from "../data-access/remote/databaseConn
 import {ITaskDefinition} from "../data-model/sequelize/taskDefinition";
 import {CompletionStatusCode, ExecutionStatusCode, ITaskExecution} from "../data-model/sequelize/taskExecution";
 import {LocalPersistentStorageManager} from "../data-access/local/databaseConnector";
+import {synchronizeTaskExecutions} from "../data-access/synchronize";
 
 export interface ITaskManager extends ProcessManager.IPM2MonitorDelegate {
     getStatistics(): Promise<ITaskStatistics[]>;
@@ -38,15 +41,37 @@ export class TaskManager implements ITaskManager {
 
         await ProcessManager.monitor(this);
 
-        setTimeout(() => {
-            this.refreshAllTasks();
+        setTimeout(async () => {
+            await this.refreshAllTasks();
         }, 0);
+
+        setTimeout(async () => {
+            await this.synchronizeUnsuccessfulTasks();
+        }, 0)
     }
 
-    private refreshAllTasks() {
-        this.refreshTasksFromProcessManager().then(() => {
+    private async refreshAllTasks() {
+        try {
+            await this.refreshTasksFromProcessManager();
+
             setTimeout(() => this.refreshAllTasks(), 60000);
-        });
+        } catch (err) {
+            debug(err);
+        }
+    }
+
+    private async synchronizeUnsuccessfulTasks() {
+        try {
+            const worker = await Workers.Instance().worker();
+
+            if (!isNullOrUndefined(worker)) {
+                await synchronizeTaskExecutions(worker.id, CompletionStatusCode.Error);
+            }
+
+            setTimeout(async () => await this.synchronizeUnsuccessfulTasks(), 15000);
+        } catch (err) {
+            debug(err);
+        }
     }
 
     public async processEvent(name: string, processInfo: IProcessInfo, manually: boolean): Promise<void> {

@@ -11,8 +11,21 @@ const debug = require("debug")("pipeline:worker-api:synchronize");
 let workerId = process.argv.length > 2 ? process.argv[2] : null;
 let completionCode = process.argv.length > 3 ? process.argv[3] : null;
 
+const remoteStorageManager = RemotePersistentStorageManager.Instance();
+const localStorageManager = LocalPersistentStorageManager.Instance();
+
 if (workerId && completionCode) {
-    synchronizeTaskExecutions(workerId, parseInt(completionCode)).then((result) => {
+    runAsIndependentTask(workerId, parseInt(completionCode));
+}
+
+function runAsIndependentTask(workerId: string, completionCode: CompletionStatusCode) {
+    if (!localStorageManager.IsConnected || !remoteStorageManager.IsConnected) {
+        debug("one or both databases not connected");
+        setTimeout(() => runAsIndependentTask(workerId, completionCode), 1000);
+        return;
+    }
+
+    synchronizeTaskExecutions(workerId, completionCode).then((result) => {
         if (result) {
             process.exit(0);
         } else {
@@ -24,9 +37,6 @@ if (workerId && completionCode) {
     });
 }
 
-const remoteStorageManager = RemotePersistentStorageManager.Instance();
-const localStorageManager = LocalPersistentStorageManager.Instance();
-
 export async function watchdogInProgressSync(workerId: string) {
     const tenMinutesAgo = new Date();
 
@@ -35,7 +45,7 @@ export async function watchdogInProgressSync(workerId: string) {
     const suspects = await localStorageManager.TaskExecutions.findAll({
         where: {
             sync_status: SyncStatus.InProgress,
-            sync_completed_at: {$lt: tenMinutesAgo}
+            synchronized_at: {$lt: tenMinutesAgo}
         }
     });
 
@@ -46,7 +56,6 @@ export async function watchdogInProgressSync(workerId: string) {
 }
 
 export async function synchronizeTaskExecutions(workerId: string, completionCode: CompletionStatusCode, isFork = false) {
-
     try {
         await watchdogInProgressSync(workerId);
 
@@ -68,29 +77,44 @@ export async function synchronizeTaskExecutions(workerId: string, completionCode
 
         const inserting = _.differenceBy<ITaskExecution>(local, remote, "id");
 
-        await setSyncStatus(inserting, SyncStatus.InProgress);
+        if (inserting.length > 0) {
+            debug(`inserting ${inserting.length} ${completionCode} task execution(s)`);
 
-        await insertRemote(inserting);
+            await setSyncStatus(inserting, SyncStatus.InProgress);
 
-        await setSyncStatus(inserting, SyncStatus.Complete);
+            await insertRemote(inserting);
+
+            await setSyncStatus(inserting, SyncStatus.Complete);
+        }
 
         const updating = _.intersectionBy(local, remote, "id");
 
-        await setSyncStatus(updating, SyncStatus.InProgress);
+        if (updating.length > 0) {
+            debug(`updating ${updating.length} ${completionCode} task execution(s)`);
 
-        await updateRemote(updating);
+            await setSyncStatus(updating, SyncStatus.InProgress);
 
-        await setSyncStatus(updating, SyncStatus.Complete);
+            await updateRemote(updating);
+
+            await setSyncStatus(updating, SyncStatus.Complete);
+        }
     }
     catch (err) {
         debug(err);
+        return false;
     }
+
+    return true;
 }
 
 async function setSyncStatus(tasks: ITaskExecution[], syncStatus: SyncStatus) {
     await localStorageManager.Connection.transaction(t => {
         return Promise.all(tasks.map(task => {
             task.sync_status = syncStatus;
+
+            if (syncStatus === SyncStatus.Complete) {
+                task.synchronized_at = new Date();
+            }
 
             return task.save({transaction: t});
         }))
@@ -115,12 +139,19 @@ async function updateRemote(tasks: ITaskExecution[]) {
         return Promise.all(tasks.map(async (task) => {
             const obj = task.get({plain: true});
 
-            obj.sync_status = SyncStatus.Never;
-            obj.synchronized_at = null;
-
             const remote = await remoteStorageManager.TaskExecutions.findById(obj.id);
 
-            remote.update(obj);
-        }))
+            if (remote.synchronized_at === null) {
+                obj.sync_status = SyncStatus.Never;
+            } else {
+                obj.sync_status = SyncStatus.Expired;
+            }
+
+            if (obj.sync_status !== remote.sync_status) {
+                return remote.update(obj);
+            } else {
+                return Promise.resolve();
+            }
+        }));
     });
 }
