@@ -19,6 +19,8 @@ interface IRemoveCompletedArguments {
 
 interface IRunTaskArguments {
     taskDefinitionId: string;
+    pipelineStageId: string;
+    tileId: string;
     scriptArgs: Array<string>;
 }
 
@@ -85,7 +87,7 @@ let resolvers = {
             return context.taskManager.updateWorker(args.worker);
         },
         startTask(_, args: IRunTaskArguments, context: GraphQLAppContext): Promise<ITaskExecution> {
-            return context.taskManager.startTask(args.taskDefinitionId, args.scriptArgs);
+            return context.taskManager.startTask(args.taskDefinitionId, args.pipelineStageId, args.tileId, args.scriptArgs);
         },
         stopTask(_, args: ICancelTaskArguments, context: GraphQLAppContext): Promise<ITaskExecution> {
             debug(`stop task ${args.taskExecutionId}`);

@@ -59,23 +59,26 @@ export async function synchronizeTaskExecutions(workerId: string, completionCode
     try {
         await watchdogInProgressSync(workerId);
 
-        // The array of all local failed, canceled, etc tasks.
+        // The array of all local failed, or canceled, etc tasks independent of sync status
         const local = await localStorageManager.TaskExecutions.findAll({
             where: {
                 execution_status_code: ExecutionStatusCode.Completed,
-                completion_status_code: completionCode,
-                $or: [{sync_status: SyncStatus.Never}, {sync_status: SyncStatus.Expired}]
+                completion_status_code: completionCode
             }
         });
 
-        // Find any in that batch that may have been sync'd in some other status.
+        const localUnSynced = local.filter(t => t.sync_status === SyncStatus.Never || t.sync_status === SyncStatus.Expired);
+
+        // The array of all remote associated with this worker and completion code.
         const remote = await remoteStorageManager.TaskExecutions.findAll({
             where: {
-                id: {$in: local.map(t => t.id)}
+                // id: {$in: local.map(t => t.id)}
+                worker_id: workerId,
+                completion_status_code: completionCode
             }
         });
 
-        const inserting = _.differenceBy<ITaskExecution>(local, remote, "id");
+        const inserting = _.differenceBy<ITaskExecution>(localUnSynced, remote, "id");
 
         if (inserting.length > 0) {
             debug(`inserting ${inserting.length} ${completionCode} task execution(s)`);
@@ -87,7 +90,7 @@ export async function synchronizeTaskExecutions(workerId: string, completionCode
             await setSyncStatus(inserting, SyncStatus.Complete);
         }
 
-        const updating = _.intersectionBy(local, remote, "id");
+        const updating = _.intersectionBy(localUnSynced, remote, "id");
 
         if (updating.length > 0) {
             debug(`updating ${updating.length} ${completionCode} task execution(s)`);
@@ -97,6 +100,15 @@ export async function synchronizeTaskExecutions(workerId: string, completionCode
             await updateRemote(updating);
 
             await setSyncStatus(updating, SyncStatus.Complete);
+        }
+
+        // Anything on the remote system that no longer exists locally.
+        const removing = _.differenceBy<ITaskExecution>(remote, local, "id");
+
+        if (removing.length > 0) {
+            debug(`removing ${removing.length} ${completionCode} task execution(s)`);
+
+            await removeRemote(removing);
         }
     }
     catch (err) {
@@ -148,10 +160,22 @@ async function updateRemote(tasks: ITaskExecution[]) {
             }
 
             if (obj.sync_status !== remote.sync_status) {
-                return remote.update(obj);
+                return remote.update(obj, {transaction: t});
             } else {
                 return Promise.resolve();
             }
         }));
     });
+}
+
+async function removeRemote(tasks: ITaskExecution[]) {
+    await remoteStorageManager.Connection.transaction(t => {
+        return remoteStorageManager.TaskExecutions.destroy({
+                where: {
+                    id: {$in: tasks.map(task => task.id)}
+                }
+            },
+            {transaction: t}
+        )
+    })
 }

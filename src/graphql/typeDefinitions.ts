@@ -119,7 +119,7 @@ type Query {
 type Mutation {
   updateWorker(worker: WorkerInput): Worker
 
-  startTask(taskDefinitionId: String!, scriptArgs: [String!]): TaskExecution
+  startTask(taskDefinitionId: String!,pipelineStageId: String!, tileId: String!, scriptArgs: [String!]): TaskExecution
   stopTask(taskExecutionId: String!): TaskExecution
 
   removeCompletedExecutionsWithCode(code: Int): Int

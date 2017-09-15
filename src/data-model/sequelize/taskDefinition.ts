@@ -7,6 +7,7 @@ export interface ITaskDefinition {
     script: string;
     interpreter: string;
     args: string;
+    expected_exit_code: number;
     work_units: number;
     task_repository_id: string;
     created_at: Date;
@@ -46,6 +47,10 @@ export function sequelizeImport(sequelize, DataTypes) {
         args: {
             type: DataTypes.TEXT,
             defaultValue: ""
+        },
+        expected_exit_code: {
+            type: DataTypes.INTEGER,
+            defaultValue: 0
         },
         work_units: {
             type: DataTypes.INTEGER,

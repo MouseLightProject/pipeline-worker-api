@@ -24,7 +24,7 @@ export interface ITaskManager extends ProcessManager.IPM2MonitorDelegate {
 
     updateWorker(worker: IWorkerInput): Promise<IWorker>;
 
-    startTask(taskDefinitionId: string, scriptArgs: Array<string>): Promise<ITaskExecution>;
+    startTask(taskDefinitionId: string, pipelineStageId: string, tileId: string, scriptArgs: Array<string>): Promise<ITaskExecution>;
 
     stopTask(taskExecutionId: string): Promise<ITaskExecution>;
 
@@ -66,6 +66,8 @@ export class TaskManager implements ITaskManager {
 
             if (!isNullOrUndefined(worker)) {
                 await synchronizeTaskExecutions(worker.id, CompletionStatusCode.Error);
+                await synchronizeTaskExecutions(worker.id, CompletionStatusCode.Cancel);
+                await synchronizeTaskExecutions(worker.id, CompletionStatusCode.Resubmitted);
             }
 
             setTimeout(async () => await this.synchronizeUnsuccessfulTasks(), 15000);
@@ -105,7 +107,7 @@ export class TaskManager implements ITaskManager {
     // this interface than the only ones that should exist that we"d care about should be known to us, unless there is
     // a bug where a process gets kicked off, but the initial save to database fails at creation.
 
-    public async startTask(taskDefinitionId: string, scriptArgs: Array<string>) {
+    public async startTask(taskDefinitionId: string, pipelineStageId: string, tileId: string, scriptArgs: Array<string>) {
         const taskDefinition = await this._remotePersistentStorageManager.TaskDefinitions.findById(taskDefinitionId);
 
         let customArgs = [];
@@ -118,9 +120,9 @@ export class TaskManager implements ITaskManager {
 
         const isClusterProxy = worker.is_cluster_proxy ? "1" : "0";
 
-        const combinedArgs = scriptArgs.concat([isClusterProxy]).concat(customArgs);
+        const combinedArgs = scriptArgs.concat(taskDefinition.expected_exit_code).concat([isClusterProxy]).concat(customArgs);
 
-        const taskExecution = await this._localStorageManager.TaskExecutions.createTask(worker.id, taskDefinition, combinedArgs);
+        const taskExecution = await this._localStorageManager.TaskExecutions.createTask(worker.id, taskDefinition, pipelineStageId, tileId, combinedArgs);
 
         return this._startTask(taskExecution, taskDefinition, combinedArgs);
     }
@@ -250,7 +252,7 @@ async function _update(taskExecution: ITaskExecution, processInfo: IProcessInfo,
     if (processInfo.exitCode != null) {
         // May already be set if cancelled.
         if (taskExecution.completion_status_code < CompletionStatusCode.Cancel) {
-            taskExecution.completion_status_code = (processInfo.exitCode === 0) ? CompletionStatusCode.Success : CompletionStatusCode.Error;
+            taskExecution.completion_status_code = (processInfo.exitCode === taskExecution.expected_exit_code) ? CompletionStatusCode.Success : CompletionStatusCode.Error;
         }
 
         if (taskExecution.exit_code === null) {

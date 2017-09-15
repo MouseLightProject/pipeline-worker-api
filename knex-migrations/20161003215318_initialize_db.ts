@@ -3,11 +3,14 @@ exports.up = function (knex, Promise) {
         .createTable("TaskExecutions", (table) => {
             table.uuid("id").primary().unique();
             table.uuid("worker_id");
+            table.uuid("tile_id");
             table.uuid("task_definition_id");
+            table.uuid("pipeline_stage_id");
             table.float("work_units");
             table.string("resolved_script");
             table.string("resolved_interpreter");
             table.text("resolved_args");
+            table.integer("expected_exit_code");
             table.integer("execution_status_code"); // General status of execution
             table.integer("completion_status_code");
             table.integer("last_process_status_code"); // Last process-manager specific status observed

@@ -129,7 +129,7 @@ export class GraphQLAppContext {
     }
 
     public removeTaskExecutionsWithCompletionCode(code: CompletionStatusCode): Promise<number> {
-        return this.localStorageManager.TaskExecutions.removeCompletedExecutionsWithCode(code);
+        return this.localStorageManager.TaskExecutions.removeWithCompletionCode(code);
     }
 }
 

@@ -15,7 +15,8 @@ export enum CompletionStatusCode {
     Incomplete = 1,
     Cancel = 2,
     Success = 3,
-    Error = 4
+    Error = 4,
+    Resubmitted = 5
 }
 
 export enum SyncStatus {
@@ -28,11 +29,14 @@ export enum SyncStatus {
 export interface ITaskExecution {
     id?: string;
     worker_id: string;
+    tile_id: string;
     task_definition_id: string;
+    pipeline_stage_id: string;
     work_units: number;
     resolved_script: string;
     resolved_interpreter: string;
     resolved_args: string;
+    expected_exit_code: number;
     execution_status_code: ExecutionStatusCode;
     completion_status_code: CompletionStatusCode;
     last_process_status_code: number;
@@ -63,7 +67,13 @@ export function sequelizeImport(sequelize, DataTypes) {
         worker_id: {
             type: DataTypes.UUID,
         },
+        tile_id: {
+            type: DataTypes.TEXT
+        },
         task_definition_id: {
+            type: DataTypes.UUID,
+        },
+        pipeline_stage_id: {
             type: DataTypes.UUID,
         },
         work_units: {
@@ -80,6 +90,9 @@ export function sequelizeImport(sequelize, DataTypes) {
         resolved_args: {
             type: DataTypes.TEXT,
             defaultValue: ""
+        },
+        expected_exit_code: {
+            type: DataTypes.INTEGER,
         },
         execution_status_code: {
             type: DataTypes.INTEGER
@@ -151,8 +164,8 @@ export function sequelizeImport(sequelize, DataTypes) {
         return TaskExecution.destroy({where: {completion_status_code: code}});
     };
 
-    TaskExecution.createTask = async function (workerId: string, taskDefinition: ITaskDefinition, scriptArgs: Array<string>): Promise<ITaskExecution> {
-        let taskExecution = createTaskFromDefinition(workerId, taskDefinition, scriptArgs);
+    TaskExecution.createTask = async function (workerId: string, taskDefinition: ITaskDefinition, pipelineStageId: string, tileId: string, scriptArgs: Array<string>): Promise<ITaskExecution> {
+        let taskExecution = createTaskFromDefinition(workerId, taskDefinition, pipelineStageId, tileId, scriptArgs);
 
         return this.create(taskExecution);
     };
@@ -160,15 +173,18 @@ export function sequelizeImport(sequelize, DataTypes) {
     return TaskExecution;
 }
 
-function createTaskFromDefinition(workerId: string, taskDefinition: ITaskDefinition, scriptArgs: Array<string>): ITaskExecution {
+function createTaskFromDefinition(workerId: string, taskDefinition: ITaskDefinition, pipelineStageId: string, tileId: string, scriptArgs: Array<string>): ITaskExecution {
 
     return {
         worker_id: workerId,
+        tile_id: tileId,
         task_definition_id: taskDefinition.id,
+        pipeline_stage_id: pipelineStageId,
         work_units: taskDefinition.work_units,
         resolved_script: null,
         resolved_interpreter: null,
         resolved_args: scriptArgs ? scriptArgs.join(", ") : "",
+        expected_exit_code: taskDefinition.expected_exit_code,
         execution_status_code: ExecutionStatusCode.Initializing,
         completion_status_code: CompletionStatusCode.Incomplete,
         last_process_status_code: null,
