@@ -32,3 +32,5 @@ dist
 
 # Development databases
 *.sqlite3
+
+options.sh
