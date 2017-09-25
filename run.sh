@@ -13,3 +13,5 @@ fi
 ./migrate.sh
 
 nohup npm run devel &
+
+chmod 664 nohup.out
