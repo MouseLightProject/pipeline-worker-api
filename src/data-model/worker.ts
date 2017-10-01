@@ -3,6 +3,7 @@ import {v4} from "uuid";
 const debug = require("debug")("pipeline:worker-api:worker-model");
 
 import {ITableModelRow, TableModel} from "./tableModel";
+import {isNullOrUndefined} from "util";
 
 export interface IWorkerInput {
     id: string;
@@ -85,7 +86,8 @@ export class Workers extends TableModel<IWorker> {
         row.preferred_network_interface_id = worker.preferred_network_interface_id || row.preferred_network_interface_id;
         row.display_name = worker.display_name || row.display_name;
         row.work_capacity = worker.work_capacity || row.work_capacity;
-        row.is_cluster_proxy = worker.is_cluster_proxy || row.is_cluster_proxy;
+        row.is_cluster_proxy = isNullOrUndefined(worker.is_cluster_proxy) ?
+            row.is_cluster_proxy : worker.is_cluster_proxy;
         row.is_accepting_jobs = worker.is_accepting_jobs || row.is_accepting_jobs;
 
         this._worker = await this.save(row);
