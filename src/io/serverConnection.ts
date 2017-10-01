@@ -91,17 +91,22 @@ export class SocketIoClient {
 
     private async emitHeartBeat() {
 
+        const worker = await Workers.Instance().worker();
+
         let taskLoad = -1;
 
         let tasks: ITaskExecution[] = await this._localStorageManager.TaskExecutions.findRunning();
 
         if (tasks != null) {
-            taskLoad = tasks.reduce((total: number, task) => {
-                return task.work_units + total;
-            }, 0);
+            // Cluster capacity is measured by number of jobs.
+            if (worker.is_cluster_proxy) {
+                taskLoad = tasks.length;
+            } else {
+                taskLoad = tasks.reduce((total: number, task) => {
+                    return task.work_units + total;
+                }, 0);
+            }
         }
-
-        const worker = await Workers.Instance().worker();
 
         this._socket.emit("heartBeat", {
             worker: worker,
