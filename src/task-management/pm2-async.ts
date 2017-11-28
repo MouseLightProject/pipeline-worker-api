@@ -110,7 +110,7 @@ export function stop(options): Promise<IProcessInfo> {
         pm2.stop(options, (err, processInfo) => {
             if (err) {
                 debug(err);
-                reject(err);
+                reject(null);
             } else {
                 debug(`stopped process`);
                 let result = _mapProcessInfo(processInfo);

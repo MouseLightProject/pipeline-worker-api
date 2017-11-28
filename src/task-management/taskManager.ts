@@ -132,11 +132,15 @@ export class TaskManager implements ITaskManager {
 
         if (taskExecution.completion_status_code < CompletionStatusCode.Cancel) {
             taskExecution.completion_status_code = CompletionStatusCode.Cancel;
+            await taskExecution.save();
         }
 
-        await taskExecution.save();
+        const info = await ProcessManager.stop(taskExecutionId);
 
-        await ProcessManager.stop(taskExecutionId);
+        if (info === null) {
+            taskExecution.execution_status_code = ExecutionStatusCode.Orphaned;
+            await taskExecution.save();
+        }
 
         return this._localStorageManager.TaskExecutions.findById(taskExecutionId);
     }
