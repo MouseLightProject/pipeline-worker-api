@@ -138,6 +138,7 @@ export class TaskManager implements ITaskManager {
         const info = await ProcessManager.stop(taskExecutionId);
 
         if (info === null) {
+            taskExecution = await this._localStorageManager.TaskExecutions.findById(taskExecutionId);
             taskExecution.execution_status_code = ExecutionStatusCode.Orphaned;
             await taskExecution.save();
         }
