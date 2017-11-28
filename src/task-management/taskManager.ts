@@ -128,22 +128,27 @@ export class TaskManager implements ITaskManager {
     }
 
     public async stopTask(taskExecutionId: string): Promise<ITaskExecution> {
-        let taskExecution = await this._localStorageManager.TaskExecutions.findById(taskExecutionId);
+        try {
+            let taskExecution = await this._localStorageManager.TaskExecutions.findById(taskExecutionId);
 
-        if (taskExecution.completion_status_code < CompletionStatusCode.Cancel) {
-            taskExecution.completion_status_code = CompletionStatusCode.Cancel;
+            if (taskExecution.completion_status_code < CompletionStatusCode.Cancel) {
+                taskExecution.execution_status_code = ExecutionStatusCode.Orphaned;
+                // Assume orphaned unless the process manager sends a completion event from stop() below.
+                taskExecution.completion_status_code = CompletionStatusCode.Cancel;
+            }
+
             await taskExecution.save();
+
+            await ProcessManager.stop(taskExecutionId);
+
+            return this._localStorageManager.TaskExecutions.findById(taskExecutionId);
+        } catch (err) {
+            // Null error means error in ProcessManager.stop() and already reported.
+            if (err !== null) {
+                debug(err);
+            }
+            return null;
         }
-
-        const info = await ProcessManager.stop(taskExecutionId);
-
-        if (info === null) {
-            taskExecution = await this._localStorageManager.TaskExecutions.findById(taskExecutionId);
-            taskExecution.execution_status_code = ExecutionStatusCode.Orphaned;
-            await taskExecution.save();
-        }
-
-        return this._localStorageManager.TaskExecutions.findById(taskExecutionId);
     }
 
     private async refreshTasksFromProcessManager() {

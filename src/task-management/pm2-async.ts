@@ -107,15 +107,21 @@ export function start(options): Promise<IProcessInfo> {
 
 export function stop(options): Promise<IProcessInfo> {
     return new Promise<IProcessInfo>((resolve, reject) => {
-        pm2.stop(options, (err, processInfo) => {
+        pm2.describe(options, (err, processDescription) => {
             if (err) {
                 debug(err);
                 reject(null);
-            } else {
-                debug(`stopped process`);
-                let result = _mapProcessInfo(processInfo);
-                resolve(result);
             }
+            pm2.stop(options, (err, processInfo) => {
+                if (err) {
+                    debug(err);
+                    reject(null);
+                } else {
+                    debug(`stopped process`);
+                    let result = _mapProcessInfo(processInfo);
+                    resolve(result);
+                }
+            });
         });
     });
 }
