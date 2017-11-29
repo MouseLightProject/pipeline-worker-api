@@ -2,15 +2,6 @@ const os = require("os");
 
 const debug = require("debug")("pipeline:worker-api:configuration");
 
-export interface IIMachineProperties {
-    osType: string;
-    platform: string;
-    arch: string;
-    release: string;
-    cpuCount: number;
-    totalMemory: number;
-}
-
 export interface IApiServiceConfiguration {
     name: string;
     networkInterface: string;
@@ -18,7 +9,6 @@ export interface IApiServiceConfiguration {
     networkPort: number;
     graphQlEndpoint: string;
     graphiQlEndpoint: string;
-    machineProperties: IIMachineProperties;
 }
 
 // To establish socket.io, graphql, and any other connections.  In place of having a general discovery service.
@@ -41,15 +31,7 @@ const configurations = {
             networkAddress: "",
             networkPort: 3500,
             graphQlEndpoint: "/graphql",
-            graphiQlEndpoint: "/graphiql",
-            machineProperties: {
-                osType: "",
-                platform: "",
-                arch: "",
-                release: "",
-                cpuCount: 0,
-                totalMemory: 0
-            }
+            graphiQlEndpoint: "/graphiql"
         },
         managementService: {
             host: "pipeline-api",
@@ -66,8 +48,6 @@ function overrideDefaults(config: IServerConfig): IServerConfig {
 
     config.apiService = readHostProperties(config.apiService, networkProperties);
 
-    config.apiService.machineProperties = readMachineProperties();
-
     config.managementService.host = process.env.PIPELINE_API_HOST || config.managementService.host;
     config.managementService.port = parseInt(process.env.PIPELINE_API_PORT) || config.managementService.port;
 
@@ -76,7 +56,7 @@ function overrideDefaults(config: IServerConfig): IServerConfig {
 
 let localServerConfiguration = null;
 
-export default function readServerConfiguration(): IServerConfig {
+export function ServerConfiguration(): IServerConfig {
     if (localServerConfiguration === null) {
         localServerConfiguration = overrideDefaults(configurations.production);
     }
@@ -96,19 +76,7 @@ function readHostProperties(config: IApiServiceConfiguration, networkProperties:
         networkAddress: networkProperties.networkAddress,
         networkPort: parseInt(process.env.PIPELINE_WORKER_API_PORT) || config.networkPort,
         graphQlEndpoint: config.graphQlEndpoint,
-        graphiQlEndpoint: config.graphiQlEndpoint,
-        machineProperties: config.machineProperties
-    };
-}
-
-function readMachineProperties(): IIMachineProperties {
-    return {
-        osType: os.type(),
-        platform: os.platform(),
-        arch: os.arch(),
-        release: os.release(),
-        cpuCount: os.cpus().length,
-        totalMemory: os.totalmem()
+        graphiQlEndpoint: config.graphiQlEndpoint
     };
 }
 

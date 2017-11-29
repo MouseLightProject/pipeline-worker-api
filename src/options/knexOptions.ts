@@ -34,7 +34,7 @@ const configurations: IKnexEnvs = {
     }
 };
 
-function loadConfiguration () {
+function loadConfiguration () {;
     return configurations.production;
 }
 

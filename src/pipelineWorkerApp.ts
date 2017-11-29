@@ -3,10 +3,10 @@ import * as bodyParser from "body-parser";
 
 const debug = require("debug")("pipeline:worker-api:server");
 
-import readServerConfiguration from "./options/serviceConfig";
 import {graphQLMiddleware, graphiQLMiddleware} from "./graphql/graphQLMiddleware";
 import {SocketIoClient} from "./io/serverConnection";
 import {Workers} from "./data-model/worker";
+import {ServerConfiguration} from "./options/serviceConfig";
 
 start().then(() => {
 });
@@ -14,7 +14,7 @@ start().then(() => {
 async function start() {
     const worker = await Workers.Instance().worker();
 
-    const serverConfiguration = readServerConfiguration();
+    const serverConfiguration = ServerConfiguration();
 
     const PORT = serverConfiguration.apiService.networkPort;
 

@@ -37,6 +37,9 @@ export interface ITaskExecution {
     resolved_interpreter: string;
     resolved_args: string;
     expected_exit_code: number;
+    queue_type: number,
+    job_id: number,
+    job_name: string,
     execution_status_code: ExecutionStatusCode;
     completion_status_code: CompletionStatusCode;
     last_process_status_code: number;
@@ -47,6 +50,7 @@ export interface ITaskExecution {
     completed_at: Date;
     sync_status?: SyncStatus;
     synchronized_at?: Date;
+    registered_at?: Date;
     created_at: Date;
     updated_at: Date;
     deleted_at: Date;
@@ -65,19 +69,19 @@ export function sequelizeImport(sequelize, DataTypes) {
             defaultValue: DataTypes.UUIDV4
         },
         worker_id: {
-            type: DataTypes.UUID,
+            type: DataTypes.UUID
         },
         tile_id: {
             type: DataTypes.TEXT
         },
         task_definition_id: {
-            type: DataTypes.UUID,
+            type: DataTypes.UUID
         },
         pipeline_stage_id: {
-            type: DataTypes.UUID,
+            type: DataTypes.UUID
         },
         work_units: {
-            type: DataTypes.INTEGER,
+            type: DataTypes.INTEGER
         },
         resolved_script: {
             type: DataTypes.TEXT,
@@ -92,7 +96,16 @@ export function sequelizeImport(sequelize, DataTypes) {
             defaultValue: ""
         },
         expected_exit_code: {
-            type: DataTypes.INTEGER,
+            type: DataTypes.INTEGER
+        },
+        queue_type: {
+            type: DataTypes.INTEGER
+        },
+        job_id: {
+            type: DataTypes.INTEGER
+        },
+        job_name: {
+            type: DataTypes.TEXT
         },
         execution_status_code: {
             type: DataTypes.INTEGER
@@ -115,13 +128,16 @@ export function sequelizeImport(sequelize, DataTypes) {
         started_at: {
             type: DataTypes.DATE
         },
-        completed_at: {
-            type: DataTypes.DATE
-        },
         sync_status: {
             type: DataTypes.INTEGER
         },
+        completed_at: {
+            type: DataTypes.DATE
+        },
         synchronized_at: {
+            type: DataTypes.DATE
+        },
+        registered_at: {
             type: DataTypes.DATE
         }
     }, {
@@ -185,6 +201,9 @@ function createTaskFromDefinition(workerId: string, taskDefinition: ITaskDefinit
         resolved_interpreter: null,
         resolved_args: scriptArgs ? scriptArgs.join(", ") : "",
         expected_exit_code: taskDefinition.expected_exit_code,
+        queue_type: null,
+        job_id: null,
+        job_name: null,
         execution_status_code: ExecutionStatusCode.Initializing,
         completion_status_code: CompletionStatusCode.Incomplete,
         last_process_status_code: null,
@@ -195,6 +214,7 @@ function createTaskFromDefinition(workerId: string, taskDefinition: ITaskDefinit
         completed_at: null,
         sync_status: SyncStatus.Never,
         synchronized_at: null,
+        registered_at: null,
         created_at: null,
         updated_at: null,
         deleted_at: null

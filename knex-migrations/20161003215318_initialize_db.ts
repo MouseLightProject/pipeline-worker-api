@@ -1,6 +1,6 @@
 exports.up = function (knex, Promise) {
     return knex.schema
-        .createTable("TaskExecutions", (table) => {
+        .createTableIfNotExists("TaskExecutions", (table) => {
             table.uuid("id").primary().unique();
             table.uuid("worker_id");
             table.uuid("tile_id");
@@ -11,19 +11,23 @@ exports.up = function (knex, Promise) {
             table.string("resolved_interpreter");
             table.text("resolved_args");
             table.integer("expected_exit_code");
+            table.integer("queue_type");
+            table.integer("job_id");
+            table.text("job_name");
             table.integer("execution_status_code"); // General status of execution
             table.integer("completion_status_code");
             table.integer("last_process_status_code"); // Last process-manager specific status observed
             table.float("max_memory");
             table.float("max_cpu");
             table.integer("exit_code");
+            table.integer("sync_status");
             table.timestamp("started_at");
             table.timestamp("completed_at");
-            table.integer("sync_status");
-            table.timestamp("synchronized_at");
+            table.timestamp("synchronized_at"); // Task execution is fully synchronized to server
+            table.timestamp("registered_at"); // Task execution has been marked complete on coordinator
             table.timestamp("deleted_at");
             table.timestamps();
-        }).createTable("TaskStatistic", (table) => {
+        }).createTableIfNotExists("TaskStatistic", (table) => {
             table.uuid("id").primary().unique();
             table.integer("num_execute");
             table.integer("num_complete");
@@ -41,7 +45,7 @@ exports.up = function (knex, Promise) {
             table.uuid("task_definition_id");
             table.timestamp("deleted_at");
             table.timestamps();
-        }).createTable("Worker", (table) => {
+        }).createTableIfNotExists("Worker", (table) => {
             table.uuid("id").primary().unique();
             table.uuid("preferred_network_interface_id");
             table.string("display_name");
@@ -51,7 +55,7 @@ exports.up = function (knex, Promise) {
             table.foreign("preferred_network_interface_id").references("NetworkInterface.id");
             table.timestamp("deleted_at");
             table.timestamps();
-        }).createTable("NetworkInterface", (table) => {
+        }).createTableIfNotExists("NetworkInterface", (table) => {
             table.uuid("id").primary().unique();
             table.string("name");
             table.timestamp("deleted_at");

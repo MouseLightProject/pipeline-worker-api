@@ -38,7 +38,7 @@ export class Workers extends TableModel<IWorker> {
     }
 
     public async worker(): Promise<IWorker> {
-        if (this._worker) {
+        if (this._worker !== null) {
             return this._worker;
         }
 
@@ -49,38 +49,37 @@ export class Workers extends TableModel<IWorker> {
                 debug(`found existing worker entry with id ${workers[0].id}`);
 
                 this._worker = workers[0];
-                this._worker.process_id = process.pid;
+            } else {
 
-                return this._worker;
+                debug(`creating initial worker entry`);
+
+                const worker = {
+                    id: process.env.PIPELINE_WORKER_ID || v4(),
+                    preferred_network_interface_id: null,
+                    display_name: "",
+                    work_capacity: 0,
+                    is_cluster_proxy: false,
+                    is_accepting_jobs: false,
+                    created_at: null,
+                    updated_at: null,
+                    deleted_at: null
+                };
+
+                await this.save(worker);
+
+                debug(`created worker entry with id `);
+
+                this._worker = await this.get(worker.id);
             }
-
-            debug(`creating initial worker entry`);
-
-            const worker = {
-                id: process.env.PIPELINE_WORKER_ID || v4(),
-                preferred_network_interface_id: null,
-                display_name: "",
-                work_capacity: 0,
-                is_cluster_proxy: false,
-                is_accepting_jobs: false,
-                created_at: null,
-                updated_at: null,
-                deleted_at: null
-            };
-
-            await this.save(worker);
-
-            debug(`created worker entry with id `);
-
-            this._worker = await this.get(worker.id);
-            this._worker.process_id = process.pid;
-
-            return this._worker;
         } catch (err) {
             debug(err);
         }
 
-        return null;
+        if (this._worker !== null) {
+            this._worker.process_id = process.pid;
+        }
+
+        return this._worker;
     }
 
     public async updateFromInput(worker: IWorkerInput): Promise<IWorker> {

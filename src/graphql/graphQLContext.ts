@@ -1,12 +1,11 @@
 import {taskManager, ITaskManager} from "../task-management/taskManager";
-import readServerConfiguration from "../options/serviceConfig";
-import {IServerConfig} from "../options/serviceConfig";
+import {IServerConfig, ServerConfiguration} from "../options/serviceConfig";
 import {RemotePersistentStorageManager} from "../data-access/remote/databaseConnector";
 import {LocalPersistentStorageManager} from "../data-access/local/databaseConnector";
 import {ITaskDefinition} from "../data-model/sequelize/taskDefinition";
 import {CompletionStatusCode, ITaskExecution} from "../data-model/sequelize/taskExecution";
 
-const serverConfiguration = readServerConfiguration();
+const serverConfiguration = ServerConfiguration();
 
 export interface IPageInfo {
     endCursor: string,
