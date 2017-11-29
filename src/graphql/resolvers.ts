@@ -75,11 +75,6 @@ let resolvers = {
         },
         worker(_, __, context: GraphQLAppContext): Promise<IWorker> {
             return Workers.Instance().worker();
-        },
-        async workUnitCapacity(_, __, context: GraphQLAppContext): Promise<number> {
-            const worker = await Workers.Instance().worker();
-
-            return worker.work_capacity;
         }
     },
     Mutation: {

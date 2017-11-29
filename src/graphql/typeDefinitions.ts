@@ -83,6 +83,7 @@ type TaskStatistics {
 
 type Worker {
   id: String
+  process_id: Int
   preferred_network_interface_id: String
   display_name: String
   work_capacity: Float
@@ -113,7 +114,6 @@ type Query {
   statisticsForTask(id: String): TaskStatistics
   runningTasks: [TaskExecution!]!
   worker: Worker
-  workUnitCapacity: Float
 }
 
 type Mutation {

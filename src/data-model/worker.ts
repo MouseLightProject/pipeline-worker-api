@@ -16,6 +16,7 @@ export interface IWorkerInput {
 
 export interface IWorker extends ITableModelRow {
     id: string;
+    process_id?: number;
     preferred_network_interface_id: string;
     display_name: string;
     work_capacity: number;
@@ -48,6 +49,7 @@ export class Workers extends TableModel<IWorker> {
                 debug(`found existing worker entry with id ${workers[0].id}`);
 
                 this._worker = workers[0];
+                this._worker.process_id = process.pid;
 
                 return this._worker;
             }
@@ -71,6 +73,7 @@ export class Workers extends TableModel<IWorker> {
             debug(`created worker entry with id `);
 
             this._worker = await this.get(worker.id);
+            this._worker.process_id = process.pid;
 
             return this._worker;
         } catch (err) {
@@ -91,6 +94,7 @@ export class Workers extends TableModel<IWorker> {
         row.is_accepting_jobs = worker.is_accepting_jobs || row.is_accepting_jobs;
 
         this._worker = await this.save(row);
+        this._worker.process_id = process.pid;
 
         return this._worker;
     }
