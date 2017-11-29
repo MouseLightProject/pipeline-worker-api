@@ -25,12 +25,18 @@ export class JobInformation {
 
 updateJobInfo();
 
-function updateJobInfo() {
-    exec(`ssh login1 "bjobs -d -W -noheader"`, {maxBuffer: 10000 * 400}, (error, stdout, stderr) => {
+function parseJobInfoOutput(output: string) {
+    const lines = output.split("\n");
+
+    console.log(lines.length);
+}
+
+function updateJobInfo(jobArray: string[] = []) {
+    exec(`ssh login1 "bjobs -d -W -noheader ${jobArray.join("")}"`, {maxBuffer: 10000 * 400}, (error, stdout, stderr) => {
         if (error) {
             console.log(error);
         } else {
-            console.log(stdout);
+            parseJobInfoOutput(stdout);
         }
     });
 }
