@@ -92,6 +92,9 @@ export class Workers extends TableModel<IWorker> {
             row.is_cluster_proxy : worker.is_cluster_proxy;
         row.is_accepting_jobs = worker.is_accepting_jobs || row.is_accepting_jobs;
 
+        // Knex is not as nice as sequelize about ignoring properties.
+        delete row.process_id;
+
         this._worker = await this.save(row);
         this._worker.process_id = process.pid;
 

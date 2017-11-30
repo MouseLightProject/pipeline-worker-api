@@ -20,7 +20,15 @@ enum JobAttributes {
 }
 
 export class JobInformation {
+    private _jobId: number;
 
+    public get JobId() {
+        return this._jobId;
+    }
+
+    public set JobId(id: number) {
+        this._jobId = id;
+    }
 }
 
 updateJobInfo();
@@ -28,11 +36,33 @@ updateJobInfo();
 function parseJobInfoOutput(output: string) {
     const lines = output.split("\n");
 
-    console.log(lines.length);
+    const header = lines.shift();
+
+    const columns = header.split(" ");
+
+    const jobs = lines.map(line => {
+        const jobInfo = new JobInformation();
+
+        const parts = line.split(" ");
+
+        columns.map((c, idx) =>{
+            switch (c) {
+                case JobAttributes.JobId:
+                    jobInfo.JobId = parseInt(parts[idx]);
+                    break;
+            }
+        });
+
+        return jobInfo
+    });
+
+    console.log(jobs[0]);
+
+    console.log(jobs);
 }
 
 function updateJobInfo(jobArray: string[] = []) {
-    exec(`ssh login1 "bjobs -d -W -noheader ${jobArray.join("")}"`, {maxBuffer: 10000 * 400}, (error, stdout, stderr) => {
+    exec(`ssh login1 "bjobs -d -W ${jobArray.join("")}"`, {maxBuffer: 10000 * 400}, (error, stdout, stderr) => {
         if (error) {
             console.log(error);
         } else {
