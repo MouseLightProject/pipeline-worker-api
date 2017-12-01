@@ -43,7 +43,7 @@ function parseJobInfoOutput(output: string): IProcessId[] {
 
     const columns = header.split(" ");
 
-    const jobs = lines.map(line => {
+    const jobs = lines.filter(line => line.length > 0).map(line => {
         const jobInfo: IProcessId = {
             id: null,
             status: ExecutionStatus.Unknown,
@@ -51,8 +51,6 @@ function parseJobInfoOutput(output: string): IProcessId[] {
         };
 
         const parts = line.split(" ");
-
-        console.log(parts);
 
         columns.map((c, idx) => {
             switch (c) {
