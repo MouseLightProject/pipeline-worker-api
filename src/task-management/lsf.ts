@@ -52,6 +52,8 @@ function parseJobInfoOutput(output: string): IProcessId[] {
 
         const parts = line.split(" ");
 
+        console.log(parts);
+
         columns.map((c, idx) => {
             switch (c) {
                 case JobAttributes.JobId:
@@ -85,9 +87,11 @@ export function updateJobInfo(jobArray: string[] = []): Promise<IProcessId[]> {
             });
 
             queueStatus.on("close", (code) => {
+                console.log(response);
                 resolve(parseJobInfoOutput(response));
             });
         } catch (err) {
+            console.log(err);
             console.log(err);
             reject([]);
         }
