@@ -21,14 +21,22 @@ enum JobAttributes {
     Slots = "SLOTS"
 }
 
-const StatusMap = new Map<string, ExecutionStatus>();
+const statusMap = new Map<string, ExecutionStatus>();
 
-StatusMap.set("PEND", ExecutionStatus.Pending);
-StatusMap.set("RUN", ExecutionStatus.Online);
-StatusMap.set("DONE", ExecutionStatus.Stopped);
-StatusMap.set("EXIT", ExecutionStatus.Exited);
+function StatusMap() {
+    if (statusMap.size === 0) {
+        statusMap.set("PEND", ExecutionStatus.Pending);
+        statusMap.set("RUN", ExecutionStatus.Online);
+        statusMap.set("DONE", ExecutionStatus.Stopped);
+        statusMap.set("EXIT", ExecutionStatus.Exited);
+    }
+
+    return statusMap;
+}
 
 function parseJobInfoOutput(output: string): IProcessId[] {
+    const map = StatusMap();
+
     const lines = output.split("\n");
 
     const header = lines.shift();
@@ -50,8 +58,8 @@ function parseJobInfoOutput(output: string): IProcessId[] {
                     jobInfo.id = parseInt(parts[idx]);
                     break;
                 case JobAttributes.Status:
-                    if (StatusMap.has(parts[idx])) {
-                        jobInfo.status = StatusMap.get(parts[idx]);
+                    if (map.has(parts[idx])) {
+                        jobInfo.status = map.get(parts[idx]);
                     }
                     break;
                 case JobAttributes.ExitCode:
