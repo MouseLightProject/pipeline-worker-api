@@ -95,7 +95,7 @@ export function updateJobInfo(jobArray: string[] = []): Promise<IProcessId[]> {
                 if (error) {
                     console.log(error);
                 } else {
-                    parseJobInfoOutput(stdout);
+                    resolve(parseJobInfoOutput(stdout));
                 }
             });
 
