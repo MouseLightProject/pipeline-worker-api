@@ -74,7 +74,11 @@ export class LocalTaskManager implements ITaskUpdateSource, ProcessManager.IPM2M
             let stats = null;
 
             if (processInfo.processId && processInfo.processId > 0) {
-                stats = await readProcessStatistics(processInfo.processId);
+                try {
+                    stats = await readProcessStatistics(processInfo.processId);
+                } catch (err) {
+                    debug(err);
+                }
             }
 
             if (this.TaskUpdateDelegate) {
