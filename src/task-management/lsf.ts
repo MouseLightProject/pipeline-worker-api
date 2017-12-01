@@ -53,7 +53,8 @@ function parseJobInfoOutput(output: string): IProcessId[] {
         const parts = line.split(" ");
 
         columns.map((c, idx) => {
-            switch (c) {
+            console.log(`:${c}:`);
+            switch (c.trim()) {
                 case JobAttributes.JobId:
                     jobInfo.id = parseInt(parts[idx]);
                     break;
