@@ -10,6 +10,7 @@ import {Workers} from "../data-model/worker";
 import {ITaskDefinition} from "../data-model/sequelize/taskDefinition";
 import {synchronizeTaskExecutions} from "../data-access/synchronize";
 import {updateStatisticsForTaskId} from "../data-model/taskStatistics";
+import {LSFTaskManager} from "./lsfManager";
 
 export enum QueueType {
     Local = 0,
@@ -68,6 +69,8 @@ export class TaskSupervisor implements ITaskSupervisor, ITaskUpdateDelegate {
     public constructor() {
         localTaskManager.TaskUpdateDelegate = this;
 
+        LSFTaskManager.Instance.TaskUpdateDelegate = this;
+
         setTimeout(async () => {
             await this.synchronizeUnsuccessfulTasks();
         }, 0)
@@ -109,9 +112,9 @@ export class TaskSupervisor implements ITaskSupervisor, ITaskUpdateDelegate {
             // debug(opts);
 
             if (worker.is_cluster_proxy) {
-                await localTaskManager._startTask(taskExecution, taskDefinition, combinedArgs);
+                await  LSFTaskManager.Instance.startTask(taskExecution, taskDefinition, combinedArgs);
             } else {
-                await localTaskManager._startTask(taskExecution, taskDefinition, combinedArgs);
+                await localTaskManager.startTask(taskExecution, taskDefinition, combinedArgs);
             }
         } catch (err) {
             debug(err);
@@ -139,9 +142,9 @@ export class TaskSupervisor implements ITaskSupervisor, ITaskUpdateDelegate {
             }
 
             if (taskExecution.queue_type === QueueType.Local) {
-                await localTaskManager._stopTask(taskExecutionId);
+                await localTaskManager.stopTask(taskExecutionId);
             } else {
-                await localTaskManager._stopTask(taskExecutionId);
+                await  LSFTaskManager.Instance.stopTask(taskExecutionId);
             }
 
             return this._localStorageManager.TaskExecutions.findById(taskExecutionId);
@@ -181,7 +184,7 @@ async function _update(taskExecution: ITaskExecution, processInfo: IProcessId, s
         return;
     }
 
-    if (stats) {
+    if (!isNullOrUndefined(stats)) {
         if (!isNullOrUndefined(stats.memoryGB) && (stats.memoryGB > taskExecution.max_memory || isNaN(taskExecution.max_memory))) {
             taskExecution.max_memory = stats.memoryGB;
         }
@@ -191,10 +194,12 @@ async function _update(taskExecution: ITaskExecution, processInfo: IProcessId, s
         }
     }
 
+    if (!isNullOrUndefined(processInfo.status))
+
     // Have a real status from the process manager (e.g, PM2).
-    if (processInfo.status > taskExecution.last_process_status_code) {
-        taskExecution.last_process_status_code = processInfo.status;
-    }
+        if (processInfo.status > taskExecution.last_process_status_code) {
+            taskExecution.last_process_status_code = processInfo.status;
+        }
 
     // Stop/Exit/Delete
     if (processInfo.status >= ExecutionStatus.Stopped) {
@@ -211,9 +216,8 @@ async function _update(taskExecution: ITaskExecution, processInfo: IProcessId, s
         }
     }
 
-    // PM2 is not uniform on when its "process object" includes an exit code.  Handle outside of the formal
-    // completion code above.
-    if (processInfo.exitCode != null) {
+    // Exit code may arrive separately from status change of done/exit.
+    if (!isNullOrUndefined(processInfo.exitCode)) {
         // May already be set if cancelled.
         if (taskExecution.completion_status_code < CompletionStatusCode.Cancel) {
             taskExecution.completion_status_code = (processInfo.exitCode === taskExecution.expected_exit_code) ? CompletionStatusCode.Success : CompletionStatusCode.Error;

@@ -3,7 +3,7 @@ import {isNullOrUndefined} from "util";
 const ChildProcess = require("child_process");
 import * as ProcessManager from "./pm2-async";
 
-const debug = require("debug")("pipeline:worker-api:task-manager");
+const debug = require("debug")("pipeline:worker-api:local-manager");
 
 import {IProcessInfo} from "./pm2-async";
 import {ITaskDefinition} from "../data-model/sequelize/taskDefinition";
@@ -92,7 +92,7 @@ export class LocalTaskManager implements ITaskUpdateSource, ProcessManager.IPM2M
         }
     }
 
-    public async _startTask(taskExecution: ITaskExecution, taskDefinition: ITaskDefinition, argsArray: string[]) {
+    public async startTask(taskExecution: ITaskExecution, taskDefinition: ITaskDefinition, argsArray: string[]) {
         let opts = {
             name: taskExecution.id,
             script: taskExecution.resolved_script,
@@ -106,7 +106,7 @@ export class LocalTaskManager implements ITaskUpdateSource, ProcessManager.IPM2M
         await ProcessManager.start(opts);
     }
 
-    public async _stopTask(taskExecutionId: string) {
+    public async stopTask(taskExecutionId: string) {
         await ProcessManager.stop(taskExecutionId);
     }
 }

@@ -1,10 +1,12 @@
-const exec = require("child_process").exec;
+import {spawn} from "child_process";
+import {ExecutionStatus, IProcessId} from "./taskSupervisor";
 
 enum JobAttributes {
     JobId = "JOBID",
     User = "USER",
     Status = "STAT",
     Queue = "QUEUE",
+    ExitCode = "EXIT_CODE",
     FromHost = "FROM_HOST",
     ExecHost = "EXEC_HOST",
     JobName = "JOB_NAME",
@@ -19,21 +21,14 @@ enum JobAttributes {
     Slots = "SLOTS"
 }
 
-export class JobInformation {
-    private _jobId: number;
+const StatusMap = new Map<string, ExecutionStatus>();
 
-    public get JobId() {
-        return this._jobId;
-    }
+StatusMap.set("PEND", ExecutionStatus.Pending);
+StatusMap.set("RUN", ExecutionStatus.Online);
+StatusMap.set("DONE", ExecutionStatus.Stopped);
+StatusMap.set("EXIT", ExecutionStatus.Exited);
 
-    public set JobId(id: number) {
-        this._jobId = id;
-    }
-}
-
-updateJobInfo();
-
-function parseJobInfoOutput(output: string) {
+function parseJobInfoOutput(output: string): IProcessId[] {
     const lines = output.split("\n");
 
     const header = lines.shift();
@@ -41,27 +36,56 @@ function parseJobInfoOutput(output: string) {
     const columns = header.split(" ");
 
     const jobs = lines.map(line => {
-        const jobInfo = new JobInformation();
+        const jobInfo: IProcessId = {
+            id: null,
+            status: ExecutionStatus.Unknown,
+            exitCode: null
+        };
 
         const parts = line.split(" ");
 
-        columns.map((c, idx) =>{
+        columns.map((c, idx) => {
             switch (c) {
                 case JobAttributes.JobId:
-                    jobInfo.JobId = parseInt(parts[idx]);
+                    jobInfo.id = parseInt(parts[idx]);
                     break;
+                case JobAttributes.Status:
+                    if (StatusMap.has(parts[idx])) {
+                        jobInfo.status = StatusMap.get(parts[idx]);
+                    }
+                    break;
+                case JobAttributes.ExitCode:
+                    jobInfo.exitCode = parseInt(parts[idx]);
             }
         });
 
         return jobInfo
     });
 
-    console.log(jobs[0]);
-
-    console.log(jobs);
+    return jobs;
 }
 
-function updateJobInfo(jobArray: string[] = []) {
+export function updateJobInfo(jobArray: string[] = []): Promise<IProcessId[]> {
+    return new Promise<IProcessId[]>((resolve, reject) => {
+        try {
+            let response = "";
+
+            const queueStatus = spawn("ssh", ["login1", `"bjobs -d -W ${jobArray.join("")}"`]);
+
+            queueStatus.stdout.on("data", (data) => {
+                response += data;
+            });
+
+            queueStatus.on("close", (code) => {
+                resolve(parseJobInfoOutput(response));
+            });
+        } catch (err) {
+            console.log(err);
+            reject([]);
+        }
+    });
+
+    /*
     exec(`ssh login1 "bjobs -d -W ${jobArray.join("")}"`, {maxBuffer: 10000 * 400}, (error, stdout, stderr) => {
         if (error) {
             console.log(error);
@@ -69,4 +93,5 @@ function updateJobInfo(jobArray: string[] = []) {
             parseJobInfoOutput(stdout);
         }
     });
+    */
 }
