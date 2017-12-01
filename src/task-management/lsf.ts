@@ -1,4 +1,4 @@
-import {spawn} from "child_process";
+import {exec} from "child_process";
 import {ExecutionStatus, IProcessId} from "./taskSupervisor";
 
 enum JobAttributes {
@@ -78,6 +78,7 @@ function parseJobInfoOutput(output: string): IProcessId[] {
 export function updateJobInfo(jobArray: string[] = []): Promise<IProcessId[]> {
     return new Promise<IProcessId[]>((resolve, reject) => {
         try {
+            /*
             let response = "";
 
             const queueStatus = spawn("ssh", ["login1", `"bjobs -d -W ${jobArray.join("")}"`]);
@@ -90,20 +91,19 @@ export function updateJobInfo(jobArray: string[] = []): Promise<IProcessId[]> {
                 console.log(response);
                 resolve(parseJobInfoOutput(response));
             });
+            */
+
+            exec(`ssh login1 "bjobs -d -W ${jobArray.join("")}"`, {maxBuffer: 10000 * 400}, (error, stdout, stderr) => {
+                if (error) {
+                    console.log(error);
+                } else {
+                    parseJobInfoOutput(stdout);
+                }
+            });
+
         } catch (err) {
-            console.log(err);
             console.log(err);
             reject([]);
         }
     });
-
-    /*
-    exec(`ssh login1 "bjobs -d -W ${jobArray.join("")}"`, {maxBuffer: 10000 * 400}, (error, stdout, stderr) => {
-        if (error) {
-            console.log(error);
-        } else {
-            parseJobInfoOutput(stdout);
-        }
-    });
-    */
 }
