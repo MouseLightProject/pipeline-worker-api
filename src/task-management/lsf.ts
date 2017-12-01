@@ -1,5 +1,6 @@
 import {exec} from "child_process";
 import {ExecutionStatus, IProcessId} from "./taskSupervisor";
+import {isNull} from "util";
 
 enum JobAttributes {
     JobId = "JOBID",
@@ -50,7 +51,12 @@ function parseJobInfoOutput(output: string): IProcessId[] {
             exitCode: null
         };
 
-        const parts = line.split(" ");
+        const parts = line.split(" ").map(c => c.trim()).filter(c => c.length > 0);
+
+        if (parts.length !== columns.length) {
+            console.log(`parts and columns lengths do not match`);
+            return jobInfo;
+        }
 
         columns.map((c, idx) => {
             switch (c) {
@@ -72,7 +78,7 @@ function parseJobInfoOutput(output: string): IProcessId[] {
         return jobInfo
     });
 
-    return jobs;
+    return jobs.filter(j => !isNull(j.id));
 }
 
 export function updateJobInfo(jobArray: string[] = []): Promise<IProcessId[]> {
