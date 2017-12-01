@@ -41,7 +41,7 @@ function parseJobInfoOutput(output: string): IProcessId[] {
 
     const header = lines.shift();
 
-    const columns = header.split(" ");
+    const columns = header.split(" ").map(c => c.trim()).filter(c => c.length > 0);
 
     const jobs = lines.filter(line => line.length > 0).map(line => {
         const jobInfo: IProcessId = {
@@ -53,14 +53,15 @@ function parseJobInfoOutput(output: string): IProcessId[] {
         const parts = line.split(" ");
 
         columns.map((c, idx) => {
-            console.log(`:${c}:`);
-            switch (c.trim()) {
+            switch (c) {
                 case JobAttributes.JobId:
                     jobInfo.id = parseInt(parts[idx]);
                     break;
                 case JobAttributes.Status:
                     if (map.has(parts[idx])) {
                         jobInfo.status = map.get(parts[idx]);
+                    } else {
+                        console.log(`didn't find status :${parts[idx]}: in map.`)
                     }
                     break;
                 case JobAttributes.ExitCode:
