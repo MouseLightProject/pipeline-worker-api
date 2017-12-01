@@ -1,4 +1,5 @@
 import * as pm2 from "pm2";
+import {ExecutionStatus} from "./taskSupervisor";
 
 const debug = require("debug")("pipeline:worker-api:pm2");
 
@@ -7,19 +8,6 @@ export enum ExecutionMode {
     Fork = 1,
     Cluster = 2,
     Undefined = 3
-}
-
-export enum ExecutionStatus {
-    Undefined = -1,
-    Unknown = 0,
-    Started = 1,
-    Online = 2,
-    Restarted = 3,
-    RestartOverLimit = 4,
-    Stopping = 5,
-    Stopped = 6,
-    Exited = 7,
-    Deleted = 8
 }
 
 export interface IProcessInfo {

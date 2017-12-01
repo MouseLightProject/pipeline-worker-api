@@ -1,6 +1,7 @@
 import {FindOptions, InstanceSaveOptions} from "sequelize";
 import {isNullOrUndefined} from "util";
 import {ITaskDefinition} from "./taskDefinition";
+import {QueueType} from "../../task-management/taskSupervisor";
 
 export enum ExecutionStatusCode {
     Undefined = 0,
@@ -180,8 +181,8 @@ export function sequelizeImport(sequelize, DataTypes) {
         return TaskExecution.destroy({where: {completion_status_code: code}});
     };
 
-    TaskExecution.createTask = async function (workerId: string, taskDefinition: ITaskDefinition, pipelineStageId: string, tileId: string, scriptArgs: Array<string>): Promise<ITaskExecution> {
-        let taskExecution = createTaskFromDefinition(workerId, taskDefinition, pipelineStageId, tileId, scriptArgs);
+    TaskExecution.createTask = async function (workerId: string, queueType: QueueType, taskDefinition: ITaskDefinition, pipelineStageId: string, tileId: string, scriptArgs: Array<string>): Promise<ITaskExecution> {
+        let taskExecution = createTaskFromDefinition(workerId, queueType, taskDefinition, pipelineStageId, tileId, scriptArgs);
 
         return this.create(taskExecution);
     };
@@ -189,8 +190,7 @@ export function sequelizeImport(sequelize, DataTypes) {
     return TaskExecution;
 }
 
-function createTaskFromDefinition(workerId: string, taskDefinition: ITaskDefinition, pipelineStageId: string, tileId: string, scriptArgs: Array<string>): ITaskExecution {
-
+function createTaskFromDefinition(workerId: string, queueType: QueueType, taskDefinition: ITaskDefinition, pipelineStageId: string, tileId: string, scriptArgs: Array<string>): ITaskExecution {
     return {
         worker_id: workerId,
         tile_id: tileId,
@@ -201,7 +201,7 @@ function createTaskFromDefinition(workerId: string, taskDefinition: ITaskDefinit
         resolved_interpreter: null,
         resolved_args: scriptArgs ? scriptArgs.join(", ") : "",
         expected_exit_code: taskDefinition.expected_exit_code,
-        queue_type: null,
+        queue_type: queueType,
         job_id: null,
         job_name: null,
         execution_status_code: ExecutionStatusCode.Initializing,

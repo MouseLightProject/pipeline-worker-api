@@ -1,0 +1,161 @@
+import {isNullOrUndefined} from "util";
+
+const ChildProcess = require("child_process");
+import * as ProcessManager from "./pm2-async";
+
+const debug = require("debug")("pipeline:worker-api:task-manager");
+
+import {IProcessInfo} from "./pm2-async";
+import {ITaskDefinition} from "../data-model/sequelize/taskDefinition";
+import {ExecutionStatusCode, ITaskExecution} from "../data-model/sequelize/taskExecution";
+import {LocalPersistentStorageManager} from "../data-access/local/databaseConnector";
+import {
+    ExecutionStatus, IExecutionStatistics, ITaskUpdateDelegate,
+    ITaskUpdateSource
+} from "./taskSupervisor";
+
+export class LocalTaskManager implements ITaskUpdateSource, ProcessManager.IPM2MonitorDelegate {
+    private _localStorageManager: LocalPersistentStorageManager = LocalPersistentStorageManager.Instance();
+
+    private _taskUpdateDelegate: ITaskUpdateDelegate;
+
+    public async connect() {
+        await ProcessManager.connect();
+
+        await ProcessManager.monitor(this);
+
+        // Occasionally look for anything not captured through PM2 events.
+        setTimeout(async () => {
+            await this.refreshAllTasks();
+        }, 0);
+    }
+
+    public get TaskUpdateDelegate(): ITaskUpdateDelegate {
+        return this._taskUpdateDelegate;
+    }
+
+    public set TaskUpdateDelegate(delegate: ITaskUpdateDelegate) {
+        this._taskUpdateDelegate = delegate;
+    }
+
+    public async processEvent(name: string, processInfo: IProcessInfo, manually: boolean): Promise<void> {
+        return this.refreshOneTaskForProcess(processInfo);
+    }
+
+    public pm2Killed() {
+        debug("pm2 delegate acknowledge kill event");
+    }
+
+    private async refreshAllTasks() {
+        try {
+            await this.refreshTasksFromProcessManager();
+
+            setTimeout(() => this.refreshAllTasks(), 60000);
+        } catch (err) {
+            debug(err);
+        }
+    }
+
+    // TODO Need a function to refresh what the database thinks are running tasks (find orphans, update stats, etc).
+    // Should it be merged with refreshing the list from the process manager?  If we are only going to start through
+    // this interface than the only ones that should exist that we"d care about should be known to us, unless there is
+    // a bug where a process gets kicked off, but the initial save to database fails at creation.
+
+    private async refreshTasksFromProcessManager() {
+        const processList: IProcessInfo[] = await ProcessManager.list();
+
+        await Promise.all(processList.map(processInfo => this.refreshOneTaskForProcess(processInfo)));
+    }
+
+    private async refreshOneTaskForProcess(processInfo: IProcessInfo): Promise<void> {
+        const taskExecution = await this._localStorageManager.TaskExecutions.findById(processInfo.name);
+
+        if (taskExecution) {
+            let stats = null;
+
+            if (processInfo.processId && processInfo.processId > 0) {
+                stats = await readProcessStatistics(processInfo.processId);
+            }
+
+            if (this.TaskUpdateDelegate) {
+                await this.TaskUpdateDelegate.update(taskExecution, {
+                    id: processInfo.processId,
+                    status: processInfo.status,
+                    exitCode: processInfo.exitCode
+                }, stats);
+            }
+
+            if (taskExecution.execution_status_code === ExecutionStatusCode.Completed && processInfo.status === ExecutionStatus.Stopped) {
+                debug(`removing completed process (${processInfo.managerId}) from process manager`);
+                await ProcessManager.deleteTask(processInfo.managerId);
+            }
+        }
+    }
+
+    public async _startTask(taskExecution: ITaskExecution, taskDefinition: ITaskDefinition, argsArray: string[]) {
+        let opts = {
+            name: taskExecution.id,
+            script: taskExecution.resolved_script,
+            args: argsArray,
+            interpreter: taskDefinition.interpreter,
+            exec_mode: "fork",
+            autorestart: false,
+            watch: false
+        };
+
+        await ProcessManager.start(opts);
+    }
+
+    public async _stopTask(taskExecutionId: string) {
+        await ProcessManager.stop(taskExecutionId);
+    }
+}
+
+export const localTaskManager = new LocalTaskManager();
+
+localTaskManager.connect().catch(err => {
+    debug("failed to connect to process manager from graphql context.");
+});
+
+function readProcessStatistics(processId): Promise<IExecutionStatistics> {
+    return new Promise<IExecutionStatistics>((resolve, reject) => {
+        ChildProcess.exec(`ps -A -o pid,pgid,rss,%cpu | grep ${processId}`, (err, stdout, stderr) => {
+            if (err || stderr) {
+                reject(err);
+            }
+            else {
+                let stats: IExecutionStatistics = {
+                    cpuPercent: null,
+                    cpuTime: null,
+                    memoryGB: null,
+                };
+
+                stdout = stdout.split(/\n/).filter(Boolean);
+
+                let statsArray: Array<IExecutionStatistics> = stdout.map(obj => {
+                    let parts = obj.split(/[\s+]/).filter(Boolean);
+
+                    if (parts && parts.length === 4) {
+                        return {
+                            cpuPercent: parseFloat(parts[3]),
+                            cpuTime: null,
+                            memoryGB: parseInt(parts[2]) / 1024 / 1024
+                        };
+                    } else {
+                        return null;
+                    }
+                }).filter(Boolean);
+
+                stats = statsArray.reduce((prev, stats) => {
+                    return {
+                        cpuPercent: isNullOrUndefined(prev.cpuPercent) ? stats.cpuPercent : prev.cpuPercent + stats.cpuPercent,
+                        cpuTime: null,
+                        memoryGB: isNullOrUndefined(prev.memoryGB) ? stats.memoryGB : prev.memoryGB + stats.memoryGB
+                    };
+                }, stats);
+
+                resolve(stats);
+            }
+        });
+    });
+}

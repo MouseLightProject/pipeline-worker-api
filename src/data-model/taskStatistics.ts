@@ -5,11 +5,6 @@ const AsyncLock = require("async");
 import {ITableModelRow, TableModel} from "./tableModel";
 import {CompletionStatusCode, ITaskExecution} from "./sequelize/taskExecution";
 
-export interface ISystemProcessStatistics {
-    memory_mb: number;
-    cpu_percent: number;
-}
-
 export interface ITaskStatistics extends ITableModelRow {
     task_definition_id: string;
     num_execute: number;

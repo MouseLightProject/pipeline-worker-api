@@ -1,9 +1,9 @@
-import {taskManager, ITaskManager} from "../task-management/taskManager";
 import {IServerConfig, ServerConfiguration} from "../options/serviceConfig";
 import {RemotePersistentStorageManager} from "../data-access/remote/databaseConnector";
 import {LocalPersistentStorageManager} from "../data-access/local/databaseConnector";
 import {ITaskDefinition} from "../data-model/sequelize/taskDefinition";
 import {CompletionStatusCode, ITaskExecution} from "../data-model/sequelize/taskExecution";
+import {ITaskSupervisor, TaskSupervisor} from "../task-management/taskSupervisor";
 
 const serverConfiguration = ServerConfiguration();
 
@@ -35,13 +35,13 @@ export class GraphQLAppContext {
     readonly serverConfiguration: IServerConfig;
     readonly remoteStorageManager: RemotePersistentStorageManager;
     readonly localStorageManager: LocalPersistentStorageManager;
-    readonly taskManager: ITaskManager;
+    readonly taskManager: ITaskSupervisor;
 
     constructor() {
         this.serverConfiguration = serverConfiguration;
         this.remoteStorageManager = RemotePersistentStorageManager.Instance();
         this.localStorageManager = LocalPersistentStorageManager.Instance();
-        this.taskManager = taskManager;
+        this.taskManager = TaskSupervisor.Instance;
     }
 
     public getTaskDefinition(id: string): Promise<ITaskDefinition> {

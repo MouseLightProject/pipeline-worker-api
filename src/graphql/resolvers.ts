@@ -1,5 +1,5 @@
 import {GraphQLAppContext, IPaginationConnections, ISimplePage} from "./graphQLContext";
-import {ITaskStatistics} from "../data-model/taskStatistics";
+import {ITaskStatistics, taskStatisticsInstance} from "../data-model/taskStatistics";
 import {Workers, IWorker, IWorkerInput} from "../data-model/worker";
 import {ITaskDefinition} from "../data-model/sequelize/taskDefinition";
 import {CompletionStatusCode, ITaskExecution} from "../data-model/sequelize/taskExecution";
@@ -65,10 +65,10 @@ let resolvers = {
             return context.getTaskExecutionsConnection(args.first, args.after);
         },
         taskStatistics(_, __, context: GraphQLAppContext): Promise<ITaskStatistics[]> {
-            return context.taskManager.getStatistics();
+            return taskStatisticsInstance.getAll();
         },
         statisticsForTask(_, args: IIdOnlyArguments, context: GraphQLAppContext): Promise<ITaskStatistics> {
-            return context.taskManager.statisticsForTask(args.id);
+            return taskStatisticsInstance.getForTaskId(args.id);
         },
         runningTasks(_, __, context: GraphQLAppContext): Promise<ITaskExecution[]> {
             return context.getRunningTaskExecutions();
@@ -79,7 +79,7 @@ let resolvers = {
     },
     Mutation: {
         updateWorker(_, args: IUpdateWorkerArguments, context: GraphQLAppContext): Promise<IWorker> {
-            return context.taskManager.updateWorker(args.worker);
+            return  Workers.Instance().updateFromInput(args.worker);
         },
         startTask(_, args: IRunTaskArguments, context: GraphQLAppContext): Promise<ITaskExecution> {
             return context.taskManager.startTask(args.taskDefinitionId, args.pipelineStageId, args.tileId, args.scriptArgs);
@@ -92,7 +92,7 @@ let resolvers = {
             return context.removeTaskExecutionsWithCompletionCode(args.code);
         },
         resetStatistics(_, args: ITaskIdArguments, context: GraphQLAppContext) {
-            return context.taskManager.resetStatistics(args.taskId);
+            return taskStatisticsInstance.reset(args.taskId);
         }
     },
     TaskStatistics: {
