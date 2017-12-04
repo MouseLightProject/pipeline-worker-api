@@ -7,10 +7,10 @@ const debug = require("debug")("pipeline:worker-api:local-manager");
 
 import {IProcessInfo} from "./pm2-async";
 import {ITaskDefinition} from "../data-model/sequelize/taskDefinition";
-import {ExecutionStatusCode, ITaskExecution} from "../data-model/sequelize/taskExecution";
+import {ExecutionStatus, ITaskExecution} from "../data-model/sequelize/taskExecution";
 import {LocalPersistentStorageManager} from "../data-access/local/databaseConnector";
 import {
-    ExecutionStatus, IExecutionStatistics, ITaskUpdateDelegate,
+    JobStatus, IJobStatistics, ITaskUpdateDelegate,
     ITaskUpdateSource
 } from "./taskSupervisor";
 
@@ -85,11 +85,12 @@ export class LocalTaskManager implements ITaskUpdateSource, ProcessManager.IPM2M
                 await this.TaskUpdateDelegate.update(taskExecution, {
                     id: processInfo.processId,
                     status: processInfo.status,
-                    exitCode: processInfo.exitCode
-                }, stats);
+                    exitCode: processInfo.exitCode,
+                    statistics: stats
+                });
             }
 
-            if (taskExecution.execution_status_code === ExecutionStatusCode.Completed && processInfo.status === ExecutionStatus.Stopped) {
+            if (taskExecution.execution_status_code === ExecutionStatus.Completed && processInfo.status === JobStatus.Stopped) {
                 debug(`removing completed process (${processInfo.managerId}) from process manager`);
                 await ProcessManager.deleteTask(processInfo.managerId);
             }
@@ -121,14 +122,14 @@ localTaskManager.connect().catch(err => {
     debug("failed to connect to process manager from graphql context.");
 });
 
-function readProcessStatistics(processId): Promise<IExecutionStatistics> {
-    return new Promise<IExecutionStatistics>((resolve, reject) => {
+function readProcessStatistics(processId): Promise<IJobStatistics> {
+    return new Promise<IJobStatistics>((resolve, reject) => {
         ChildProcess.exec(`ps -A -o pid,pgid,rss,%cpu | grep ${processId}`, (err, stdout, stderr) => {
             if (err || stderr) {
                 reject(err);
             }
             else {
-                let stats: IExecutionStatistics = {
+                let stats: IJobStatistics = {
                     cpuPercent: null,
                     cpuTime: null,
                     memoryGB: null,
@@ -136,7 +137,7 @@ function readProcessStatistics(processId): Promise<IExecutionStatistics> {
 
                 stdout = stdout.split(/\n/).filter(Boolean);
 
-                let statsArray: Array<IExecutionStatistics> = stdout.map(obj => {
+                let statsArray: Array<IJobStatistics> = stdout.map(obj => {
                     let parts = obj.split(/[\s+]/).filter(Boolean);
 
                     if (parts && parts.length === 4) {

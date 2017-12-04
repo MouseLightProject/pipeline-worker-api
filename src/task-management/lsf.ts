@@ -1,5 +1,8 @@
 import {exec} from "child_process";
-import {ExecutionStatus, IProcessId} from "./taskSupervisor";
+
+const debug = require("debug")("pipeline:worker-api:lsf");
+
+import {JobStatus, IJobUpdate} from "./taskSupervisor";
 import {isNull} from "util";
 
 enum JobAttributes {
@@ -22,67 +25,73 @@ enum JobAttributes {
     Slots = "SLOTS"
 }
 
-const statusMap = new Map<string, ExecutionStatus>();
+const statusMap = new Map<string, JobStatus>();
 
 function StatusMap() {
     if (statusMap.size === 0) {
-        statusMap.set("PEND", ExecutionStatus.Pending);
-        statusMap.set("RUN", ExecutionStatus.Online);
-        statusMap.set("DONE", ExecutionStatus.Stopped);
-        statusMap.set("EXIT", ExecutionStatus.Exited);
+        statusMap.set("PEND", JobStatus.Pending);
+        statusMap.set("RUN", JobStatus.Online);
+        statusMap.set("DONE", JobStatus.Stopped);
+        statusMap.set("EXIT", JobStatus.Exited);
     }
 
     return statusMap;
 }
 
-function parseJobInfoOutput(output: string): IProcessId[] {
+function parseJobInfoOutput(output: string): IJobUpdate[] {
     const map = StatusMap();
 
-    const lines = output.split("\n");
+    try {
+        const lines = output.split("\n");
 
-    const header = lines.shift();
+        const header = lines.shift();
 
-    const columns = header.split(" ").map(c => c.trim()).filter(c => c.length > 0);
+        const columns = header.split(" ").map(c => c.trim()).filter(c => c.length > 0);
 
-    const jobs = lines.filter(line => line.length > 0).map(line => {
-        const jobInfo: IProcessId = {
-            id: null,
-            status: ExecutionStatus.Unknown,
-            exitCode: null
-        };
+        const jobs = lines.filter(line => line.length > 0).map(line => {
+            const jobInfo: IJobUpdate = {
+                id: null,
+                status: JobStatus.Unknown,
+                exitCode: null,
+                statistics: null
+            };
 
-        const parts = line.split(" ").map(c => c.trim()).filter(c => c.length > 0);
+            const parts = line.split(" ").map(c => c.trim()).filter(c => c.length > 0);
 
-        if (parts.length !== columns.length) {
-            console.log(`parts and columns lengths do not match`);
-            return jobInfo;
-        }
-
-        columns.map((c, idx) => {
-            switch (c) {
-                case JobAttributes.JobId:
-                    jobInfo.id = parseInt(parts[idx]);
-                    break;
-                case JobAttributes.Status:
-                    if (map.has(parts[idx])) {
-                        jobInfo.status = map.get(parts[idx]);
-                    } else {
-                        console.log(`didn't find status :${parts[idx]}: in map.`)
-                    }
-                    break;
-                case JobAttributes.ExitCode:
-                    jobInfo.exitCode = parseInt(parts[idx]);
+            if (parts.length !== columns.length) {
+                console.log(`parts and columns lengths do not match`);
+                return jobInfo;
             }
+
+            columns.map((c, idx) => {
+                switch (c) {
+                    case JobAttributes.JobId:
+                        jobInfo.id = parseInt(parts[idx]);
+                        break;
+                    case JobAttributes.Status:
+                        if (map.has(parts[idx])) {
+                            jobInfo.status = map.get(parts[idx]);
+                        } else {
+                            console.log(`didn't find status :${parts[idx]}: in map.`)
+                        }
+                        break;
+                    case JobAttributes.ExitCode:
+                        jobInfo.exitCode = parseInt(parts[idx]);
+                }
+            });
+
+            return jobInfo
         });
 
-        return jobInfo
-    });
-
-    return jobs.filter(j => !isNull(j.id));
+        return jobs.filter(j => !isNull(j.id));
+    } catch (err) {
+        debug(err);
+        return null;
+    }
 }
 
-export function updateJobInfo(jobArray: string[] = []): Promise<IProcessId[]> {
-    return new Promise<IProcessId[]>((resolve, reject) => {
+export function updateJobInfo(jobArray: string[] = []): Promise<IJobUpdate[]> {
+    return new Promise<IJobUpdate[]>((resolve, reject) => {
         try {
             /*
             let response = "";

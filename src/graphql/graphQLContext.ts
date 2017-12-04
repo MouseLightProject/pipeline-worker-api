@@ -2,7 +2,7 @@ import {IServerConfig, ServerConfiguration} from "../options/serviceConfig";
 import {RemotePersistentStorageManager} from "../data-access/remote/databaseConnector";
 import {LocalPersistentStorageManager} from "../data-access/local/databaseConnector";
 import {ITaskDefinition} from "../data-model/sequelize/taskDefinition";
-import {CompletionStatusCode, ITaskExecution} from "../data-model/sequelize/taskExecution";
+import {CompletionResult, ITaskExecution} from "../data-model/sequelize/taskExecution";
 import {ITaskSupervisor, TaskSupervisor} from "../task-management/taskSupervisor";
 
 const serverConfiguration = ServerConfiguration();
@@ -60,7 +60,7 @@ export class GraphQLAppContext {
         return this.localStorageManager.TaskExecutions.findAll({order: [["updated_at", "DESC"]]});
     }
 
-    public async getTaskExecutionsPage(reqOffset: number, reqLimit: number, completionStatus: CompletionStatusCode): Promise<ISimplePage<ITaskExecution>> {
+    public async getTaskExecutionsPage(reqOffset: number, reqLimit: number, completionStatus: CompletionResult): Promise<ISimplePage<ITaskExecution>> {
         let offset = 0;
         let limit = 10;
 
@@ -127,7 +127,7 @@ export class GraphQLAppContext {
         return this.localStorageManager.TaskExecutions.findRunning();
     }
 
-    public removeTaskExecutionsWithCompletionCode(code: CompletionStatusCode): Promise<number> {
+    public removeTaskExecutionsWithCompletionCode(code: CompletionResult): Promise<number> {
         return this.localStorageManager.TaskExecutions.removeWithCompletionCode(code);
     }
 }

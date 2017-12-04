@@ -43,7 +43,7 @@
     "@types/hapi": "^13.0.35",
     "@types/knex": "0.0.35",
     "@types/koa": "^2.0.33",
-    "@types/lodash": "^4.14.74",
+    "@types/lodash": "^4.14.86",
     "@types/mime": "0.0.29",
     "@types/sequelize": "^4.0.65",
     "@types/serve-static": "^1.7.31",

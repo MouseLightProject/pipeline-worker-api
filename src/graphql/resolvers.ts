@@ -2,7 +2,7 @@ import {GraphQLAppContext, IPaginationConnections, ISimplePage} from "./graphQLC
 import {ITaskStatistics, taskStatisticsInstance} from "../data-model/taskStatistics";
 import {Workers, IWorker, IWorkerInput} from "../data-model/worker";
 import {ITaskDefinition} from "../data-model/sequelize/taskDefinition";
-import {CompletionStatusCode, ITaskExecution} from "../data-model/sequelize/taskExecution";
+import {CompletionResult, ITaskExecution} from "../data-model/sequelize/taskExecution";
 
 const debug = require("debug")("pipeline:worker-api:resolvers");
 
@@ -14,7 +14,7 @@ interface ITaskIdArguments {
 }
 
 interface IRemoveCompletedArguments {
-    code: CompletionStatusCode;
+    code: CompletionResult;
 }
 
 interface IRunTaskArguments {
@@ -36,7 +36,7 @@ interface IUpdateWorkerArguments {
 interface IPageArguments {
     offset: number;
     limit: number;
-    status: CompletionStatusCode;
+    status: CompletionResult;
 }
 
 interface IConnectionArguments {

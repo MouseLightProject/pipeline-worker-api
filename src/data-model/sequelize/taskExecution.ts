@@ -3,15 +3,15 @@ import {isNullOrUndefined} from "util";
 import {ITaskDefinition} from "./taskDefinition";
 import {QueueType} from "../../task-management/taskSupervisor";
 
-export enum ExecutionStatusCode {
+export enum ExecutionStatus {
     Undefined = 0,
     Initializing = 1,
     Running = 2,
-    Orphaned = 3,   // Was marked initialized/running but can not longer find in process manager list
+    Zombie = 3,   // Was marked initialized/running but can not longer find in process manager list/cluster jobs
     Completed = 4
 }
 
-export enum CompletionStatusCode {
+export enum CompletionResult {
     Unknown = 0,
     Incomplete = 1,
     Cancel = 2,
@@ -41,8 +41,8 @@ export interface ITaskExecution {
     queue_type: number,
     job_id: number,
     job_name: string,
-    execution_status_code: ExecutionStatusCode;
-    completion_status_code: CompletionStatusCode;
+    execution_status_code: ExecutionStatus;
+    completion_status_code: CompletionResult;
     last_process_status_code: number;
     max_memory: number;
     max_cpu: number;
@@ -155,12 +155,12 @@ export function sequelizeImport(sequelize, DataTypes) {
 
     TaskExecution.findRunning = async function (): Promise<ITaskExecution[]> {
         return TaskExecution.findAll({
-            where: {execution_status_code: ExecutionStatusCode.Running},
+            where: {execution_status_code: ExecutionStatus.Running},
             order: [["started_at", "DESC"]]
         });
     };
 
-    TaskExecution.getPage = async function (reqOffset: number, reqLimit: number, completionCode: CompletionStatusCode): Promise<ITaskExecution[]> {
+    TaskExecution.getPage = async function (reqOffset: number, reqLimit: number, completionCode: CompletionResult): Promise<ITaskExecution[]> {
         const options: FindOptions<ITaskExecution> = {
             offset: reqOffset,
             limit: reqLimit
@@ -173,9 +173,9 @@ export function sequelizeImport(sequelize, DataTypes) {
         return TaskExecution.findAll(options);
     };
 
-    TaskExecution.removeWithCompletionCode = async function (code: CompletionStatusCode): Promise<number> {
+    TaskExecution.removeWithCompletionCode = async function (code: CompletionResult): Promise<number> {
         if (isNullOrUndefined(code)) {
-            code = CompletionStatusCode.Success;
+            code = CompletionResult.Success;
         }
 
         return TaskExecution.destroy({where: {completion_status_code: code}});
@@ -204,8 +204,8 @@ function createTaskFromDefinition(workerId: string, queueType: QueueType, taskDe
         queue_type: queueType,
         job_id: null,
         job_name: null,
-        execution_status_code: ExecutionStatusCode.Initializing,
-        completion_status_code: CompletionStatusCode.Incomplete,
+        execution_status_code: ExecutionStatus.Initializing,
+        completion_status_code: CompletionResult.Incomplete,
         last_process_status_code: null,
         max_memory: NaN,
         max_cpu: NaN,

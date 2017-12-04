@@ -3,7 +3,7 @@ import {v4} from "uuid";
 const AsyncLock = require("async");
 
 import {ITableModelRow, TableModel} from "./tableModel";
-import {CompletionStatusCode, ITaskExecution} from "./sequelize/taskExecution";
+import {CompletionResult, ITaskExecution} from "./sequelize/taskExecution";
 
 export interface ITaskStatistics extends ITableModelRow {
     task_definition_id: string;
@@ -30,7 +30,7 @@ enum UpdateQueueAction {
 interface IUpdateQueueTask {
     taskId: string;
     action: UpdateQueueAction;
-    status?: CompletionStatusCode;
+    status?: CompletionResult;
     cpu?: number;
     mem?: number;
     duration_ms?: number;
@@ -62,7 +62,7 @@ export class TaskStatistics extends TableModel<ITaskStatistics> {
         }
     }
 
-    public async updateForTaskId(taskId: string, status: CompletionStatusCode, cpu: number, mem: number, duration_ms: number) {
+    public async updateForTaskId(taskId: string, status: CompletionResult, cpu: number, mem: number, duration_ms: number) {
         let statisticsForTask = await this.getForTaskId(taskId);
 
         if (!statisticsForTask) {
@@ -70,13 +70,13 @@ export class TaskStatistics extends TableModel<ITaskStatistics> {
         }
 
         switch (status) {
-            case CompletionStatusCode.Cancel:
+            case CompletionResult.Cancel:
                 statisticsForTask.num_cancel++;
                 break;
-            case CompletionStatusCode.Error:
+            case CompletionResult.Error:
                 statisticsForTask.num_error++;
                 break;
-            case CompletionStatusCode.Success:
+            case CompletionResult.Success:
                 updatePerformanceStatistics(statisticsForTask, cpu, mem, duration_ms);
                 statisticsForTask.num_complete++;
                 break;

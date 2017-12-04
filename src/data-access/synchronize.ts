@@ -1,5 +1,5 @@
 import {
-    CompletionStatusCode, ExecutionStatusCode, ITaskExecution,
+    CompletionResult, ExecutionStatus, ITaskExecution,
     SyncStatus
 } from "../data-model/sequelize/taskExecution";
 import {RemotePersistentStorageManager} from "./remote/databaseConnector";
@@ -18,7 +18,7 @@ if (workerId && completionCode) {
     runAsIndependentTask(workerId, parseInt(completionCode));
 }
 
-function runAsIndependentTask(workerId: string, completionCode: CompletionStatusCode) {
+function runAsIndependentTask(workerId: string, completionCode: CompletionResult) {
     if (!localStorageManager.IsConnected || !remoteStorageManager.IsConnected) {
         debug("one or both databases not connected");
         setTimeout(() => runAsIndependentTask(workerId, completionCode), 1000);
@@ -55,14 +55,14 @@ export async function watchdogInProgressSync(workerId: string) {
     }));
 }
 
-export async function synchronizeTaskExecutions(workerId: string, completionCode: CompletionStatusCode, isFork = false) {
+export async function synchronizeTaskExecutions(workerId: string, completionCode: CompletionResult, isFork = false) {
     try {
         await watchdogInProgressSync(workerId);
 
         // The array of all local failed, or canceled, etc tasks independent of sync status
         const local = await localStorageManager.TaskExecutions.findAll({
             where: {
-                execution_status_code: ExecutionStatusCode.Completed,
+                execution_status_code: ExecutionStatus.Completed,
                 completion_status_code: completionCode
             }
         });

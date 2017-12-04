@@ -1,5 +1,5 @@
 import * as pm2 from "pm2";
-import {ExecutionStatus} from "./taskSupervisor";
+import {JobStatus} from "./taskSupervisor";
 
 const debug = require("debug")("pipeline:worker-api:pm2");
 
@@ -15,7 +15,7 @@ export interface IProcessInfo {
     managerId: number;
     processId: number;
     mode: ExecutionMode;
-    status: ExecutionStatus;
+    status: JobStatus;
     memory: number;
     cpu: number;
     interpreter: string;
@@ -228,26 +228,26 @@ function _lookupExecMode(str: string): ExecutionMode {
     }
 }
 
-function _lookupExecStatus(str: string): ExecutionStatus {
+function _lookupExecStatus(str: string): JobStatus {
     if (str === "start") {
-        return ExecutionStatus.Started;
+        return JobStatus.Started;
     } else if (str === "online") {
-        return ExecutionStatus.Online;
+        return JobStatus.Online;
     } else if (str === "restart") {
-        return ExecutionStatus.Restarted;
+        return JobStatus.Restarted;
     } else if (str === "restart over limit") {
-        return ExecutionStatus.RestartOverLimit;
+        return JobStatus.RestartOverLimit;
     } else if (str === "stopping") {
-        return ExecutionStatus.Stopping;
+        return JobStatus.Stopping;
     } else if (str === "stopped") {
-        return ExecutionStatus.Stopped;
+        return JobStatus.Stopped;
     } else if (str === "exit") {
-        return ExecutionStatus.Exited;
+        return JobStatus.Exited;
     } else if (str === "delete") {
-        return ExecutionStatus.Deleted;
+        return JobStatus.Deleted;
     } else if (str === "undefined") {
-        return ExecutionStatus.Undefined;
+        return JobStatus.Undefined;
     } else {
-        return ExecutionStatus.Undefined;
+        return JobStatus.Undefined;
     }
 }

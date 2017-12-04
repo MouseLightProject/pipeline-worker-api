@@ -5,7 +5,7 @@ const debug = require("debug")("pipeline:worker-api:task-supervisor");
 import {RemotePersistentStorageManager} from "../data-access/remote/databaseConnector";
 import {LocalPersistentStorageManager} from "../data-access/local/databaseConnector";
 import {localTaskManager} from "./localTaskManager";
-import {CompletionStatusCode, ExecutionStatusCode, ITaskExecution} from "../data-model/sequelize/taskExecution";
+import {CompletionResult, ExecutionStatus, ITaskExecution} from "../data-model/sequelize/taskExecution";
 import {Workers} from "../data-model/worker";
 import {ITaskDefinition} from "../data-model/sequelize/taskDefinition";
 import {synchronizeTaskExecutions} from "../data-access/synchronize";
@@ -20,7 +20,7 @@ export enum QueueType {
 /***
  * These are mapped from string values return from PM2 for local management and LSF for cluster management.
  ***/
-export enum ExecutionStatus {
+export enum JobStatus {
     Undefined = -1,
     Unknown = 0,
     Pending = 1,
@@ -34,16 +34,17 @@ export enum ExecutionStatus {
     Deleted = 9
 }
 
-export interface IProcessId {
-    id: number;
-    status: ExecutionStatus;
-    exitCode: number;
-}
-
-export interface IExecutionStatistics {
+export interface IJobStatistics {
     cpuPercent: number;
     cpuTime: number;
     memoryGB: number;
+}
+
+export interface IJobUpdate {
+    id: number;
+    status: JobStatus;
+    exitCode: number;
+    statistics: IJobStatistics;
 }
 
 export interface ITaskSupervisor {
@@ -56,7 +57,8 @@ export interface ITaskUpdateSource {
 }
 
 export interface ITaskUpdateDelegate {
-    update(taskExecution: ITaskExecution, processInfo: IProcessId, stats: IExecutionStatistics);
+    updateZombie(taskExecution: ITaskExecution);
+    update(taskExecution: ITaskExecution, processInfo: IJobUpdate);
 }
 
 export class TaskSupervisor implements ITaskSupervisor, ITaskUpdateDelegate {
@@ -102,7 +104,7 @@ export class TaskSupervisor implements ITaskSupervisor, ITaskUpdateDelegate {
         taskExecution.started_at = new Date();
 
         try {
-            taskExecution.execution_status_code = ExecutionStatusCode.Running;
+            taskExecution.execution_status_code = ExecutionStatus.Running;
 
             await taskExecution.save();
 
@@ -120,8 +122,8 @@ export class TaskSupervisor implements ITaskSupervisor, ITaskUpdateDelegate {
             debug(err);
 
             taskExecution.completed_at = new Date();
-            taskExecution.execution_status_code = ExecutionStatusCode.Completed;
-            taskExecution.completion_status_code = CompletionStatusCode.Error;
+            taskExecution.execution_status_code = ExecutionStatus.Completed;
+            taskExecution.completion_status_code = CompletionResult.Error;
 
             await taskExecution.save();
         }
@@ -129,22 +131,24 @@ export class TaskSupervisor implements ITaskSupervisor, ITaskUpdateDelegate {
         return this._localStorageManager.TaskExecutions.findById(taskExecution.id);
     }
 
-    public async stopTask(taskExecutionId: string): Promise<ITaskExecution> {
+    public async stopTask(taskExecutionId: string, isZombie = false): Promise<ITaskExecution> {
         try {
             let taskExecution: ITaskExecution = await this._localStorageManager.TaskExecutions.findById(taskExecutionId);
 
-            if (taskExecution.completion_status_code < CompletionStatusCode.Cancel) {
-                taskExecution.execution_status_code = ExecutionStatusCode.Orphaned;
+            if (taskExecution.completion_status_code < CompletionResult.Cancel) {
+                taskExecution.execution_status_code = ExecutionStatus.Zombie;
                 // Assume orphaned unless the process manager sends a completion event from stop() below.
-                taskExecution.completion_status_code = CompletionStatusCode.Cancel;
+                taskExecution.completion_status_code = CompletionResult.Cancel;
 
                 await taskExecution.save();
             }
 
-            if (taskExecution.queue_type === QueueType.Local) {
-                await localTaskManager.stopTask(taskExecutionId);
-            } else {
-                await  LSFTaskManager.Instance.stopTask(taskExecutionId);
+            if (!isZombie) {
+                if (taskExecution.queue_type === QueueType.Local) {
+                    await localTaskManager.stopTask(taskExecutionId);
+                } else {
+                    await  LSFTaskManager.Instance.stopTask(taskExecutionId);
+                }
             }
 
             return this._localStorageManager.TaskExecutions.findById(taskExecutionId);
@@ -157,8 +161,12 @@ export class TaskSupervisor implements ITaskSupervisor, ITaskUpdateDelegate {
         }
     }
 
-    public async update(taskExecution: ITaskExecution, processInfo: IProcessId, stats: IExecutionStatistics) {
-        await _update(taskExecution, processInfo, stats);
+    public async update(taskExecution: ITaskExecution, processInfo: IJobUpdate) {
+        await _update(taskExecution, processInfo);
+    }
+
+    public async updateZombie(taskExecution: ITaskExecution) {
+        await this.stopTask(taskExecution.id, true);
     }
 
     private async synchronizeUnsuccessfulTasks() {
@@ -166,9 +174,9 @@ export class TaskSupervisor implements ITaskSupervisor, ITaskUpdateDelegate {
             const worker = await Workers.Instance().worker();
 
             if (!isNullOrUndefined(worker)) {
-                await synchronizeTaskExecutions(worker.id, CompletionStatusCode.Error);
-                await synchronizeTaskExecutions(worker.id, CompletionStatusCode.Cancel);
-                await synchronizeTaskExecutions(worker.id, CompletionStatusCode.Resubmitted);
+                await synchronizeTaskExecutions(worker.id, CompletionResult.Error);
+                await synchronizeTaskExecutions(worker.id, CompletionResult.Cancel);
+                await synchronizeTaskExecutions(worker.id, CompletionResult.Resubmitted);
             }
 
             setTimeout(async () => await this.synchronizeUnsuccessfulTasks(), 15000);
@@ -178,55 +186,74 @@ export class TaskSupervisor implements ITaskSupervisor, ITaskUpdateDelegate {
     }
 }
 
-async function _update(taskExecution: ITaskExecution, processInfo: IProcessId, stats: IExecutionStatistics) {
-    if (taskExecution == null || processInfo == null) {
-        debug(`skipping update for null task execution (${taskExecution == null}) or process info (${processInfo == null})`);
+async function _update(taskExecution: ITaskExecution, jobUpdate: IJobUpdate) {
+    if (taskExecution == null || jobUpdate == null) {
+        debug(`skipping update for null task execution (${taskExecution == null}) or process info (${jobUpdate == null})`);
         return;
     }
 
-    if (!isNullOrUndefined(stats)) {
-        if (!isNullOrUndefined(stats.memoryGB) && (stats.memoryGB > taskExecution.max_memory || isNaN(taskExecution.max_memory))) {
-            taskExecution.max_memory = stats.memoryGB;
+    if (!isNullOrUndefined(jobUpdate.statistics)) {
+        if (!isNullOrUndefined(jobUpdate.statistics.memoryGB) && (jobUpdate.statistics.memoryGB > taskExecution.max_memory || isNaN(taskExecution.max_memory))) {
+            taskExecution.max_memory = jobUpdate.statistics.memoryGB;
         }
 
-        if (!isNullOrUndefined(stats.cpuPercent) && (stats.cpuPercent > taskExecution.max_cpu || isNaN(taskExecution.max_cpu))) {
-            taskExecution.max_cpu = stats.cpuPercent;
+        if (!isNullOrUndefined(jobUpdate.statistics.cpuPercent) && (jobUpdate.statistics.cpuPercent > taskExecution.max_cpu || isNaN(taskExecution.max_cpu))) {
+            taskExecution.max_cpu = jobUpdate.statistics.cpuPercent;
         }
     }
 
-    if (!isNullOrUndefined(processInfo.status))
-
-    // Have a real status from the process manager (e.g, PM2).
-        if (processInfo.status > taskExecution.last_process_status_code) {
-            taskExecution.last_process_status_code = processInfo.status;
+    if (!isNullOrUndefined(jobUpdate.status)) {
+        // Have a real status from the process manager (e.g, PM2).
+        if (jobUpdate.status > taskExecution.last_process_status_code) {
+            taskExecution.last_process_status_code = jobUpdate.status;
         }
 
-    // Stop/Exit/Delete
-    if (processInfo.status >= ExecutionStatus.Stopped) {
-        if (taskExecution.completed_at == null) {
-            // debug(`marking complete for task execution ${taskExecution.id}`);
+        // Stop/Exit/Delete
+        if (jobUpdate.status >= JobStatus.Stopped) {
+            if (taskExecution.completed_at == null) {
+                // debug(`marking complete for task execution ${taskExecution.id}`);
 
-            taskExecution.completed_at = new Date();
-            taskExecution.execution_status_code = ExecutionStatusCode.Completed;
+                taskExecution.completed_at = new Date();
+                taskExecution.execution_status_code = ExecutionStatus.Completed;
 
-            if (taskExecution.completion_status_code < CompletionStatusCode.Cancel) {
-                // Do not have control on how PM2 fires events.  Can't assume we didn't get an exit code already.
-                taskExecution.completion_status_code = CompletionStatusCode.Unknown;
+                if (taskExecution.completion_status_code < CompletionResult.Cancel) {
+                    // Do not have control on how PM2 fires events.  Can't assume we didn't get an exit code already.
+                    taskExecution.completion_status_code = CompletionResult.Unknown;
+                }
             }
         }
-    }
 
-    // Exit code may arrive separately from status change of done/exit.
-    if (!isNullOrUndefined(processInfo.exitCode)) {
-        // May already be set if cancelled.
-        if (taskExecution.completion_status_code < CompletionStatusCode.Cancel) {
-            taskExecution.completion_status_code = (processInfo.exitCode === taskExecution.expected_exit_code) ? CompletionStatusCode.Success : CompletionStatusCode.Error;
-        }
+        if (taskExecution.queue_type === QueueType.Local) {
+            // Exit code may arrive separately from status change of done/exit.
+            if (!isNullOrUndefined(jobUpdate.exitCode)) {
+                // May already be set if cancelled.
+                if (taskExecution.completion_status_code < CompletionResult.Cancel) {
+                    taskExecution.completion_status_code = (jobUpdate.exitCode === taskExecution.expected_exit_code) ? CompletionResult.Success : CompletionResult.Error;
+                }
 
-        if (taskExecution.exit_code === null) {
-            taskExecution.exit_code = processInfo.exitCode;
+                if (taskExecution.exit_code === null) {
+                    taskExecution.exit_code = jobUpdate.exitCode;
 
-            updateStatisticsForTaskId(taskExecution);
+                    updateStatisticsForTaskId(taskExecution);
+                }
+            }
+        } else {
+            if (taskExecution.completion_status_code < CompletionResult.Cancel) {
+                if (jobUpdate.status === JobStatus.Stopped) {
+                    taskExecution.completion_status_code = CompletionResult.Success;
+                } else if (jobUpdate.status === JobStatus.Exited) {
+                    taskExecution.completion_status_code = CompletionResult.Error;
+                }
+
+                if (!isNullOrUndefined(jobUpdate.exitCode) && isNullOrUndefined(taskExecution.exit_code)) {
+                    taskExecution.exit_code = jobUpdate.exitCode;
+
+                }
+
+                if (taskExecution.completion_status_code >= CompletionResult.Success) {
+                    updateStatisticsForTaskId(taskExecution);
+                }
+            }
         }
     }
 
