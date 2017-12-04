@@ -60,7 +60,7 @@ export async function synchronizeTaskExecutions(workerId: string, completionCode
         await watchdogInProgressSync(workerId);
 
         // The array of all local failed, or canceled, etc tasks independent of sync status
-        const local = await localStorageManager.TaskExecutions.findAll({
+        const local: ITaskExecution[] = await localStorageManager.TaskExecutions.findAll({
             where: {
                 execution_status_code: ExecutionStatus.Completed,
                 completion_status_code: completionCode
@@ -78,7 +78,7 @@ export async function synchronizeTaskExecutions(workerId: string, completionCode
             }
         });
 
-        const inserting = _.differenceBy<ITaskExecution>(localUnSynced, remote, "id");
+        const inserting: ITaskExecution[] = _.differenceBy(localUnSynced, remote, "id");
 
         if (inserting.length > 0) {
             debug(`inserting ${inserting.length} ${completionCode} task execution(s)`);
@@ -103,7 +103,7 @@ export async function synchronizeTaskExecutions(workerId: string, completionCode
         }
 
         // Anything on the remote system that no longer exists locally.
-        const removing = _.differenceBy<ITaskExecution>(remote, local, "id");
+        const removing: ITaskExecution[] = _.differenceBy(remote, local, "id");
 
         if (removing.length > 0) {
             debug(`removing ${removing.length} ${completionCode} task execution(s)`);
