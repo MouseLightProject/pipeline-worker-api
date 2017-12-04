@@ -29,3 +29,5 @@ function readMachineProperties(): IIMachineProperties {
         totalMemory: os.totalmem()
     };
 }
+
+export const MachineProperties = readMachineProperties();

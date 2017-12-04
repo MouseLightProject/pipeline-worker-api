@@ -30,8 +30,10 @@ type TaskDefinition {
   description: String!
   script: String!
   interpreter: String!
-  args: String!
-  work_units: Float!
+  script_args: String
+  cluster_args: String
+  work_units: Float
+  cluster_work_units: Float
   created_at: Float
   updated_at: Float
   deleted_at: Float

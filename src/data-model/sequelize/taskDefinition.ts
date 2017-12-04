@@ -6,9 +6,11 @@ export interface ITaskDefinition {
     description: string;
     script: string;
     interpreter: string;
-    args: string;
+    script_args: string;
+    cluster_args: string;
     expected_exit_code: number;
     work_units: number;
+    cluster_work_units: number;
     task_repository_id: string;
     created_at: Date;
     updated_at: Date;
@@ -44,7 +46,11 @@ export function sequelizeImport(sequelize, DataTypes) {
             type: DataTypes.TEXT,
             defaultValue: ""
         },
-        args: {
+        script_args: {
+            type: DataTypes.TEXT,
+            defaultValue: ""
+        },
+        cluster_args: {
             type: DataTypes.TEXT,
             defaultValue: ""
         },
@@ -53,7 +59,11 @@ export function sequelizeImport(sequelize, DataTypes) {
             defaultValue: 0
         },
         work_units: {
-            type: DataTypes.INTEGER,
+            type: DataTypes.DOUBLE,
+            defaultValue: 0
+        },
+        cluster_work_units: {
+            type: DataTypes.DOUBLE,
             defaultValue: 0
         }
     }, {

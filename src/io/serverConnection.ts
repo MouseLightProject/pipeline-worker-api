@@ -6,6 +6,7 @@ import {IServerConfig, IApiServiceConfiguration} from "../options/serviceConfig"
 import {IWorker, Workers} from "../data-model/worker";
 import {ITaskExecution} from "../data-model/sequelize/taskExecution";
 import {LocalPersistentStorageManager} from "../data-access/local/databaseConnector";
+import {MachineProperties} from "../system/systemProperties";
 
 export enum ServerConnectionStatus {
     Uninitialized,
@@ -86,7 +87,7 @@ export class SocketIoClient {
     }
 
     private emitHostInformation(worker: IWorker) {
-        this._socket.emit("workerApiService", {worker: worker, service: this._apiService});
+        this._socket.emit("workerApiService", {worker: worker, service: this._apiService, machine: MachineProperties});
     }
 
     private async emitHeartBeat() {

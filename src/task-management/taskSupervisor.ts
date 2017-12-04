@@ -85,8 +85,8 @@ export class TaskSupervisor implements ITaskSupervisor, ITaskUpdateDelegate {
 
         let customArgs = [];
 
-        if (taskDefinition.args) {
-            customArgs = taskDefinition.args.split(/[\s+]/).filter(Boolean);
+        if (taskDefinition.script_args) {
+            customArgs = taskDefinition.script_args.split(/[\s+]/).filter(Boolean);
         }
 
         const worker = await Workers.Instance().worker();
