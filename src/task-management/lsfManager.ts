@@ -94,6 +94,7 @@ export class LSFTaskManager implements ITaskUpdateSource {
 
         submit.on("close", (code) => {
             if (code > 0) {
+                debug(`submitted task id ${taskExecution.id} and received job id (exit code) ${code}`);
                 taskExecution.job_id = code;
             } else {
                 taskExecution.completed_at = new Date();

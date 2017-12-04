@@ -93,7 +93,7 @@ export class TaskSupervisor implements ITaskSupervisor, ITaskUpdateDelegate {
 
         const isClusterProxy = worker.is_cluster_proxy ? "1" : "0";
 
-        const combinedArgs = scriptArgs.concat(taskDefinition.expected_exit_code.toString()).concat([isClusterProxy]).concat(customArgs);
+        const combinedArgs = scriptArgs.concat(taskDefinition.expected_exit_code.toString()).concat(worker.id).concat([isClusterProxy]).concat(customArgs);
 
         const taskExecution = await this._localStorageManager.TaskExecutions.createTask(worker.id, worker.is_cluster_proxy ? QueueType.Cluster : QueueType.Local, taskDefinition, pipelineStageId, tileId, combinedArgs);
 
