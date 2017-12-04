@@ -44,6 +44,8 @@ export class LSFTaskManager implements ITaskUpdateSource {
     private async pollClusterJobStatus() {
         const jobInfo: IJobUpdate[] = await updateJobInfo();
 
+        debug(`received ${jobInfo.length} job status updates`);
+
         if (jobInfo && jobInfo.length > 0) {
             const map = new Map<number, IJobUpdate>();
 
@@ -56,6 +58,8 @@ export class LSFTaskManager implements ITaskUpdateSource {
             const toUpdate: ITaskExecution[] = _.intersectionWith(running, jobInfo, (r: ITaskExecution, j: IJobUpdate) => {
                 return r.job_id === j.id;
             });
+
+            debug(`matched ${toUpdate.length} known jobs for update`);
 
             if (this.TaskUpdateDelegate) {
                 await Promise.all(toUpdate.map(async (o) => {
@@ -76,6 +80,8 @@ export class LSFTaskManager implements ITaskUpdateSource {
             const zombie: ITaskExecution[] = _.differenceWith(running, jobInfo, (r: ITaskExecution, j: IJobUpdate) => {
                 return r.job_id === j.id;
             });
+
+            debug(`matched ${zombie.length} zombie jobs for removal`);
 
             await Promise.all(zombie.map(async (o) => {
                 await this.TaskUpdateDelegate.updateZombie(o);

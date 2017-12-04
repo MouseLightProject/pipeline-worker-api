@@ -238,6 +238,9 @@ async function _update(taskExecution: ITaskExecution, jobUpdate: IJobUpdate) {
                 }
             }
         } else {
+            debug(`checking completion for ${taskExecution.id}`);
+            debug(taskExecution);
+            debug(jobUpdate);
             if (taskExecution.completion_status_code < CompletionResult.Cancel) {
                 if (jobUpdate.status === JobStatus.Stopped) {
                     taskExecution.completion_status_code = CompletionResult.Success;

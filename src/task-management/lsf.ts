@@ -117,7 +117,7 @@ export function updateJobInfo(jobArray: string[] = []): Promise<IJobUpdate[]> {
             });
 
         } catch (err) {
-            console.log(err);
+            debug(err);
             reject([]);
         }
     });
