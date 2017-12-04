@@ -114,7 +114,8 @@ export class TaskSupervisor implements ITaskSupervisor, ITaskUpdateDelegate {
             // debug(opts);
 
             if (worker.is_cluster_proxy) {
-                await  LSFTaskManager.Instance.startTask(taskExecution, taskDefinition, combinedArgs);
+               //  await  LSFTaskManager.Instance.startTask(taskExecution, taskDefinition, combinedArgs);
+                await localTaskManager.startTask(taskExecution, taskDefinition, combinedArgs);
             } else {
                 await localTaskManager.startTask(taskExecution, taskDefinition, combinedArgs);
             }
@@ -147,7 +148,8 @@ export class TaskSupervisor implements ITaskSupervisor, ITaskUpdateDelegate {
                 if (taskExecution.queue_type === QueueType.Local) {
                     await localTaskManager.stopTask(taskExecutionId);
                 } else {
-                    await  LSFTaskManager.Instance.stopTask(taskExecutionId);
+                    await localTaskManager.stopTask(taskExecutionId);
+                    // await  LSFTaskManager.Instance.stopTask(taskExecutionId);
                 }
             }
 
@@ -223,7 +225,7 @@ async function _update(taskExecution: ITaskExecution, jobUpdate: IJobUpdate) {
             }
         }
 
-        if (taskExecution.queue_type === QueueType.Local) {
+        if (taskExecution.queue_type === QueueType.Local || taskExecution.queue_type === QueueType.Cluster) {
             // Exit code may arrive separately from status change of done/exit.
             if (!isNullOrUndefined(jobUpdate.exitCode)) {
                 // May already be set if cancelled.
