@@ -15,19 +15,35 @@ const dockerRepoImage = `${repo}/${imageName}`;
 const imageWithVersion = `${dockerRepoImage}:${version}`;
 const imageAsLatest = `${dockerRepoImage}:latest`;
 
-const buildCommand = `docker build --tag ${imageWithVersion} .`;
-const tagCommand = `docker tag ${imageWithVersion} ${imageAsLatest}`;
+const dockerBuildCommand = `docker build --tag ${imageWithVersion} .`;
+const dockerTagCommand = `docker tag ${imageWithVersion} ${imageAsLatest}`;
 
 const pushCommand = `docker push ${imageWithVersion}`;
 const pushLatestCommand = `docker push ${imageAsLatest}`;
+
+const cleanCommand = `rm -rf dist`;
+
+const compileTypescript = `tsc -p tsconfig.prod.json`;
+
+const moveFiles = `cp ./{package.json,yarn.lock,knexfile.js,LICENSE,docker-entry.sh,migrate.sh} dist`;
+const moveTestFiles = `cp -R test dist/`;
 
 gulp.task("default", ["docker-build"]);
 
 gulp.task("docker-release", ["docker-push"]);
 
-gulp.task("docker-build", shell.task([
-        buildCommand,
-        tagCommand
+
+gulp.task("build", shell.task([
+        cleanCommand,
+        compileTypescript,
+        moveFiles,
+        moveTestFiles
+    ])
+);
+
+gulp.task("docker-build", ["build"], shell.task([
+        dockerBuildCommand,
+        dockerTagCommand
     ])
 );
 

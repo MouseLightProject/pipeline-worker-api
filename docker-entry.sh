@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 
-./migrate.sh
+if [ ! -z "${PIPELINE_PERFORM_MIGRATION}" ]; then
+    ./migrate.sh
+fi
 
-npm run devel
+node server/pipelineWorkerApp.js
 
 sleep infinity

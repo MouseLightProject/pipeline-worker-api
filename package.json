@@ -6,10 +6,10 @@
   "license": "LicenseRef-LICENSE",
   "dockerImageName": "worker-api",
   "dockerRepository": "mouselightpipeline",
-  "main": "pipelineWorkerApp.js",
+  "main": "server/pipelineWorkerApp.js",
   "scripts": {
-    "devel": "DEBUG=pipeline* node $NODE_DEBUG_OPTION --trace-warnings src/pipelineWorkerApp.js",
-    "start": "node src/pipelineWorkerApp.js",
+    "devel": "DEBUG=pipeline* node $NODE_DEBUG_OPTION --trace-warnings server/pipelineWorkerApp.js",
+    "start": "node server/pipelineWorkerApp.js",
     "synchronize": "DEBUG=pipeline* node $NODE_DEBUG_OPTION --trace-warnings src/data-access/synchronize.js 1bcc812d-97ce-4b14-ad48-5c3c9b9b416e 3",
     "docker-build": "gulp docker-build",
     "docker-release": "gulp docker-release"
