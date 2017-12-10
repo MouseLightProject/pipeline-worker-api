@@ -27,6 +27,7 @@ const compileTypescript = `tsc -p tsconfig.prod.json`;
 
 const moveFiles = `cp ./{package.json,yarn.lock,knexfile.js,LICENSE,docker-entry.sh,migrate.sh} dist`;
 const moveTestFiles = `cp -R test dist/`;
+const moveMigrations = `cp -R knex-migrations dist/`;
 
 gulp.task("default", ["docker-build"]);
 
@@ -37,6 +38,7 @@ gulp.task("build", shell.task([
         cleanCommand,
         compileTypescript,
         moveFiles,
+        moveMigrations,
         moveTestFiles
     ])
 );

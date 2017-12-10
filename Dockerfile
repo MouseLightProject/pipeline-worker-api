@@ -2,7 +2,7 @@ FROM node:7.10
 
 WORKDIR /app
 
-OPY dist .
+COPY dist .
 
 RUN yarn global add knex@0.13.0
 

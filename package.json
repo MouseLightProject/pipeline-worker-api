@@ -1,6 +1,6 @@
 {
   "name": "pipeline-worker-api",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Mouselight Pipeline Worker Service",
   "author": "Patrick Edson <pedson@leapscientific.com> (http://github.com/pedson)",
   "license": "LicenseRef-LICENSE",
@@ -12,7 +12,7 @@
     "start": "node server/pipelineWorkerApp.js",
     "synchronize": "DEBUG=pipeline* node $NODE_DEBUG_OPTION --trace-warnings src/data-access/synchronize.js 1bcc812d-97ce-4b14-ad48-5c3c9b9b416e 3",
     "docker-build": "gulp docker-build",
-    "docker-release": "gulp docker-release"
+    "release": "gulp docker-release"
   },
   "dependencies": {
     "async": "^2.1.4",

@@ -1,5 +1,26 @@
 #!/usr/bin/env bash
 
-echo "Migrate local sqlite cache"
+migrateWorkerDatabase()
+{
+    SUCCESS=1
 
-knex migrate:latest
+    while [ ${SUCCESS} -ne 0 ]; do
+        echo "Migrate worker database"
+
+        knex migrate:latest
+        SUCCESS=$?
+
+        if [ ${SUCCESS} -ne 0 ]; then
+            echo "Migration failed - waiting 5 seconds"
+            sleep 5s
+        fi
+    done
+
+    echo "Migrated worker database"
+}
+
+echo "Migrate for worker database."
+
+migrateWorkerDatabase
+
+exit 0
