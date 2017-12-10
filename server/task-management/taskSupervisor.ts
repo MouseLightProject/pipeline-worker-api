@@ -114,8 +114,8 @@ export class TaskSupervisor implements ITaskSupervisor, ITaskUpdateDelegate {
             // debug(opts);
 
             if (worker.is_cluster_proxy) {
-               //  await  LSFTaskManager.Instance.startTask(taskExecution, taskDefinition, combinedArgs);
-                await localTaskManager.startTask(taskExecution, taskDefinition, combinedArgs);
+                await  LSFTaskManager.Instance.startTask(taskExecution, taskDefinition, combinedArgs);
+                // await localTaskManager.startTask(taskExecution, taskDefinition, combinedArgs);
             } else {
                 await localTaskManager.startTask(taskExecution, taskDefinition, combinedArgs);
             }
@@ -148,8 +148,8 @@ export class TaskSupervisor implements ITaskSupervisor, ITaskUpdateDelegate {
                 if (taskExecution.queue_type === QueueType.Local) {
                     await localTaskManager.stopTask(taskExecutionId);
                 } else {
-                    await localTaskManager.stopTask(taskExecutionId);
-                    // await  LSFTaskManager.Instance.stopTask(taskExecutionId);
+                    // await localTaskManager.stopTask(taskExecutionId);
+                    await LSFTaskManager.Instance.stopTask(taskExecutionId);
                 }
             }
 
