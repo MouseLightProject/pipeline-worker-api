@@ -93,10 +93,13 @@ export class LSFTaskManager implements ITaskUpdateSource {
         const programArgs = [taskExecution.resolved_script].concat(args).join(" ");
         debug(programArgs);
 
-        const clusterArgs = ["-n", "3", "-J", `ml-dg-${taskExecution.tile_id}`, "-cwd", `-R"select[broadwell]"`, "-g", `/mouselight/pipeline/${taskExecution.worker_id}`, `'${programArgs}'`];
+        const clusterArgs = ["bsub", "-n", "3", "-J", `ml-dg-${taskExecution.tile_id}`, "-cwd", `-R"select[broadwell]"`, "-g", `/mouselight/pipeline/${taskExecution.worker_id}`, `'${programArgs}'`].join(" ");
         console.log(clusterArgs);
 
-        const submit = spawn(`bsub`, clusterArgs);
+        const sshArgs = ["login1", `"${clusterArgs}"`];
+        console.log(sshArgs);
+
+        const submit = spawn(`ssh`, sshArgs);
 
         submit.on("close", (code) => {
             if (code > 0) {
