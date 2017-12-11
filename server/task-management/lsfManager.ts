@@ -99,20 +99,30 @@ export class LSFTaskManager implements ITaskUpdateSource {
         const sshArgs = ["login1", `"${clusterArgs}"`];
         console.log(sshArgs);
 
-        const submit = spawn(`ssh`, sshArgs);
+        try {
+            const submit = spawn(`ssh`, sshArgs);
 
-        submit.on("close", (code) => {
-            if (code > 0) {
-                debug(`submitted task id ${taskExecution.id} and received job id (exit code) ${code}`);
-                taskExecution.job_id = code;
-            } else {
-                taskExecution.completed_at = new Date();
-                taskExecution.execution_status_code = ExecutionStatus.Completed;
-                taskExecution.completion_status_code = CompletionResult.Error;
-            }
+            submit.on("close", (code) => {
+                if (code > 0) {
+                    debug(`submitted task id ${taskExecution.id} and received job id (exit code) ${code}`);
+                    taskExecution.job_id = code;
+                } else {
+                    taskExecution.completed_at = new Date();
+                    taskExecution.execution_status_code = ExecutionStatus.Completed;
+                    taskExecution.completion_status_code = CompletionResult.Error;
+                }
+
+                taskExecution.save();
+            });
+        } catch (err) {
+            debug(err);
+
+            taskExecution.completed_at = new Date();
+            taskExecution.execution_status_code = ExecutionStatus.Completed;
+            taskExecution.completion_status_code = CompletionResult.Error;
 
             taskExecution.save();
-        });
+        }
     }
 
     public async stopTask(taskExecutionId: string) {
