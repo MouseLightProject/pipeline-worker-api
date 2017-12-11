@@ -80,6 +80,9 @@ function parseJobInfoOutput(output: string): IJobUpdate[] {
                 }
             });
 
+            debug(`job update status for ${jobInfo.id}`);
+            console.log(jobInfo);
+
             return jobInfo
         });
 
