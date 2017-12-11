@@ -111,7 +111,7 @@ export function updateJobInfo(jobArray: string[] = []): Promise<IJobUpdate[]> {
             });
             */
 
-            exec(`ssh login1 "bjobs -d -W ${jobArray.join("")}"`, {maxBuffer: 10000 * 400}, (error, stdout, stderr) => {
+            exec(`ssh login1 "bjobs -a -W ${jobArray.join("")}"`, {maxBuffer: 10000 * 400}, (error, stdout, stderr) => {
                 if (error) {
                     console.log(error);
                 } else {

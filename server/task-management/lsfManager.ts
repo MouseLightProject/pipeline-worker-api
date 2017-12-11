@@ -6,7 +6,7 @@ const debug = require("debug")("pipeline:worker-api:lsf-manager");
 import {LocalPersistentStorageManager} from "../data-access/local/databaseConnector";
 import {ITaskDefinition} from "../data-model/sequelize/taskDefinition";
 import {CompletionResult, ExecutionStatus, ITaskExecution} from "../data-model/sequelize/taskExecution";
-import {IJobUpdate, ITaskUpdateDelegate, ITaskUpdateSource} from "./taskSupervisor";
+import {IJobUpdate, ITaskUpdateDelegate, ITaskUpdateSource, JobStatus} from "./taskSupervisor";
 import {updateJobInfo} from "./lsf";
 
 export class LSFTaskManager implements ITaskUpdateSource {
@@ -69,12 +69,14 @@ export class LSFTaskManager implements ITaskUpdateSource {
                     const processInfo = map.get(o.job_id);
 
                     if (processInfo) {
-                        await this.TaskUpdateDelegate.update(o, {
-                            id: processInfo.id,
-                            status: processInfo.status,
-                            exitCode: processInfo.exitCode,
-                            statistics: null
-                        });
+                        if (processInfo.status === JobStatus.Stopped || processInfo.status === JobStatus.Exited) {
+                            await this.TaskUpdateDelegate.update(o, {
+                                id: processInfo.id,
+                                status: processInfo.status,
+                                exitCode: processInfo.exitCode,
+                                statistics: null
+                            });
+                        }
                     }
                 }));
             }
@@ -86,7 +88,11 @@ export class LSFTaskManager implements ITaskUpdateSource {
             debug(`matched ${zombie.length} zombie jobs for removal`);
 
             await Promise.all(zombie.map(async (o) => {
-                await this.TaskUpdateDelegate.updateZombie(o);
+                // Only after 15 minutes in case there is any delay between submission and when the job is first
+                // available in polling.
+                if (Date.now().valueOf() - o.started_at.valueOf() > 15 * 60 * 1000) {
+                    await this.TaskUpdateDelegate.updateZombie(o);
+                }
             }));
         }
     }
