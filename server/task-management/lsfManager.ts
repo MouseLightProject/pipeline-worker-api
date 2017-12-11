@@ -89,24 +89,41 @@ export class LSFTaskManager implements ITaskUpdateSource {
         }
     }
 
-    public async startTask(taskExecution: ITaskExecution, taskDefinition: ITaskDefinition, args: string[]) {
+    public startTask(taskExecution: ITaskExecution, taskDefinition: ITaskDefinition, args: string[]) {
         const programArgs = [taskExecution.resolved_script].concat(args).join(" ");
-        debug(programArgs);
 
-        const clusterArgs = ["bsub", "-n", "3", "-J", `ml-dg-${taskExecution.tile_id}`, "-cwd", `-R"select[broadwell]"`, "-g", `/mouselight/pipeline/${taskExecution.worker_id}`, `'${programArgs}'`].join(" ");
-        console.log(clusterArgs);
+        const clusterArgs = ["bsub", "-n", "3", "-J", `ml-dg-${taskExecution.tile_id}`, "-cwd", `-R\\"select[broadwell]\\"`, "-g", `/mouselight/pipeline/${taskExecution.worker_id}`, `'${programArgs}'`].join(" ");
 
-        const sshArgs = ["login1", `"${clusterArgs}"`];
-        console.log(sshArgs);
+        const sshArgs = ["login1", `${clusterArgs}`];
 
         try {
             const submit = spawn(`ssh`, sshArgs);
 
+            submit.stdout.on("data", (data: string) => {
+                try {
+                    debug(data);
+
+                    const r = data.match(/\d+/);
+
+                    taskExecution.job_id = parseInt(r[0]);
+
+                    taskExecution.save();
+
+                    debug(`submitted task id ${taskExecution.id} has job id ${taskExecution.job_id}`);
+                } catch (err) {
+                    debug(err);
+
+                    taskExecution.completed_at = new Date();
+                    taskExecution.execution_status_code = ExecutionStatus.Completed;
+                    taskExecution.completion_status_code = CompletionResult.Error;
+                }
+            });
+
             submit.on("close", (code) => {
-                if (code > 0) {
-                    debug(`submitted task id ${taskExecution.id} and received job id (exit code) ${code}`);
-                    taskExecution.job_id = code;
+                if (code === 0) {
+                    debug(`submitted task id ${taskExecution.id}`);
                 } else {
+                    debug(`failed to submit task id ${taskExecution.id} with exit code ${code}`);
                     taskExecution.completed_at = new Date();
                     taskExecution.execution_status_code = ExecutionStatus.Completed;
                     taskExecution.completion_status_code = CompletionResult.Error;
