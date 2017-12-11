@@ -99,11 +99,13 @@ export class LSFTaskManager implements ITaskUpdateSource {
         try {
             const submit = spawn(`ssh`, sshArgs);
 
-            submit.stdout.on("data", (data: string) => {
+            submit.stdout.on("data", (data: Buffer) => {
                 try {
-                    debug(data);
+                    const str = data.toString();
 
-                    const r = data.match(/\d+/);
+                    debug(str);
+
+                    const r = str.match(/\d+/);
 
                     taskExecution.job_id = parseInt(r[0]);
 
