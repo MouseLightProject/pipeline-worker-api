@@ -55,6 +55,8 @@ export class LSFTaskManager implements ITaskUpdateSource {
 
             const running: ITaskExecution[] = this._localStorageManager.TaskExecutions.findRunning();
 
+            debug(`found ${running.length} running jobs`);
+
             const toUpdate: ITaskExecution[] = _.intersectionWith(running, jobInfo, (r: ITaskExecution, j: IJobUpdate) => {
                 return r.job_id === j.id;
             });
