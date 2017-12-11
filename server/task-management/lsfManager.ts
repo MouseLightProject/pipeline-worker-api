@@ -53,7 +53,7 @@ export class LSFTaskManager implements ITaskUpdateSource {
                 map.set(j.id, j);
             });
 
-            const running: ITaskExecution[] = this._localStorageManager.TaskExecutions.findRunning();
+            const running: ITaskExecution[] = await this._localStorageManager.TaskExecutions.findRunning();
 
             debug(`found ${running.length} running jobs`);
 
