@@ -11,6 +11,7 @@ export interface ITaskDefinition {
     expected_exit_code: number;
     work_units: number;
     cluster_work_units: number;
+    log_prefx: string;
     task_repository_id: string;
     created_at: Date;
     updated_at: Date;
@@ -65,6 +66,10 @@ export function sequelizeImport(sequelize, DataTypes) {
         cluster_work_units: {
             type: DataTypes.DOUBLE,
             defaultValue: 0
+        },
+        log_prefix: {
+            type: DataTypes.TEXT,
+            defaultValue: ""
         }
     }, {
         timestamps: true,

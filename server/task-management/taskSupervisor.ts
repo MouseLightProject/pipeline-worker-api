@@ -11,7 +11,11 @@ import {ITaskDefinition} from "../data-model/sequelize/taskDefinition";
 import {synchronizeTaskExecutions} from "../data-access/synchronize";
 import {updateStatisticsForTaskId} from "../data-model/taskStatistics";
 import {LSFTaskManager} from "./lsfManager";
+import {existsSync, mkdirSync} from "fs";
+import * as path from "path";
 
+const PIPELINE_INPUT_INDEX = 5;
+const TILE_NAME_INDEX = 5;
 const LOG_PATH_INDEX = 6;
 
 export enum QueueType {
@@ -97,7 +101,6 @@ export class TaskSupervisor implements ITaskSupervisor, ITaskUpdateDelegate {
         let userScriptArgs = taskDefinition.script_args ? taskDefinition.script_args.split(/[\s+]/).filter(Boolean) : [];
 
         taskExecution.resolved_script_arg_array = scriptArgs.concat(taskDefinition.expected_exit_code.toString()).concat(worker.id).concat([worker.is_cluster_proxy ? "1" : "0"]).concat(userScriptArgs);
-        taskExecution.resolved_script_args = taskExecution.resolved_script_arg_array.join(", ");
 
         taskExecution.resolved_cluster_arg_array = taskDefinition.cluster_args ? taskDefinition.cluster_args.split(/[\s+]/).filter(Boolean) : [];
         taskExecution.resolved_cluster_args = taskExecution.resolved_cluster_arg_array.join(", ");
@@ -107,7 +110,27 @@ export class TaskSupervisor implements ITaskSupervisor, ITaskUpdateDelegate {
         taskExecution.resolved_interpreter = taskDefinition.interpreter;
 
         if (taskExecution.resolved_script_arg_array.length > LOG_PATH_INDEX) {
-            taskExecution.resolved_log_path = taskExecution.resolved_script_arg_array[LOG_PATH_INDEX];
+            const logBase = taskExecution.resolved_script_arg_array[LOG_PATH_INDEX];
+
+            try {
+                const logDirectory = path.join(logBase, taskExecution.tile_id, ".log");
+
+                if (!existsSync(logDirectory)) {
+                    mkdirSync(logDirectory)
+                }
+
+                taskExecution.resolved_log_path = path.join(logDirectory, `${taskDefinition.log_prefx}-${taskExecution.resolved_script_arg_array[TILE_NAME_INDEX]}`);
+            } catch (err) {
+                debug("failed to create log directory");
+                debug(err);
+            }
+        }
+
+        taskExecution.resolved_log_path = taskExecution.resolved_log_path || "/tmp";
+
+        if (taskExecution.resolved_script_arg_array.length > LOG_PATH_INDEX) {
+            taskExecution.resolved_script_arg_array[LOG_PATH_INDEX] = taskExecution.resolved_log_path;
+            taskExecution.resolved_script_args = taskExecution.resolved_script_arg_array.join(", ");
         }
 
         taskExecution.started_at = new Date();

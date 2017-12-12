@@ -34,6 +34,7 @@ type TaskDefinition {
   cluster_args: String
   work_units: Float
   cluster_work_units: Float
+  log_prefix: String
   created_at: Float
   updated_at: Float
   deleted_at: Float
