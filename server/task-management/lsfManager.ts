@@ -113,8 +113,6 @@ export class LSFTaskManager implements ITaskUpdateSource, ITaskManager {
                 try {
                     const str = data.toString();
 
-                    debug(str);
-
                     const r = str.match(/\d+/);
 
                     taskExecution.job_id = parseInt(r[0]);
