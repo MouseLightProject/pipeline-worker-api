@@ -119,9 +119,9 @@ export class TaskSupervisor implements ITaskSupervisor, ITaskUpdateDelegate {
                     mkdirSync(logDirectory)
                 }
 
-                debug(`log_prefix ${taskDefinition.log_prefx}`);
+                debug(`log_prefix ${taskDefinition.log_prefix}`);
 
-                taskExecution.resolved_log_path = path.join(logDirectory, `${taskDefinition.log_prefx}-${taskExecution.resolved_script_arg_array[TILE_NAME_INDEX]}`);
+                taskExecution.resolved_log_path = path.join(logDirectory, `${taskDefinition.log_prefix}-${taskExecution.resolved_script_arg_array[TILE_NAME_INDEX]}`);
 
                 debug(`resolved_log_path ${taskExecution.resolved_log_path}`);
             } catch (err) {
