@@ -225,7 +225,7 @@ async function _update(taskExecution: ITaskExecution, jobUpdate: IJobUpdate) {
             }
         }
 
-        if (taskExecution.queue_type === QueueType.Local || taskExecution.queue_type === QueueType.Cluster) {
+        if (taskExecution.queue_type === QueueType.Local) {
             // Exit code may arrive separately from status change of done/exit.
             if (!isNullOrUndefined(jobUpdate.exitCode)) {
                 // May already be set if cancelled.
