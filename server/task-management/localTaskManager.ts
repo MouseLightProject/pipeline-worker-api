@@ -11,10 +11,10 @@ import {ExecutionStatus, ITaskExecution} from "../data-model/sequelize/taskExecu
 import {LocalPersistentStorageManager} from "../data-access/local/databaseConnector";
 import {
     JobStatus, IJobStatistics, ITaskUpdateDelegate,
-    ITaskUpdateSource
+    ITaskUpdateSource, ITaskManager
 } from "./taskSupervisor";
 
-export class LocalTaskManager implements ITaskUpdateSource, ProcessManager.IPM2MonitorDelegate {
+export class LocalTaskManager implements ITaskUpdateSource, ITaskManager, ProcessManager.IPM2MonitorDelegate {
     private _localStorageManager: LocalPersistentStorageManager = LocalPersistentStorageManager.Instance();
 
     private _taskUpdateDelegate: ITaskUpdateDelegate;
@@ -97,11 +97,11 @@ export class LocalTaskManager implements ITaskUpdateSource, ProcessManager.IPM2M
         }
     }
 
-    public async startTask(taskExecution: ITaskExecution, taskDefinition: ITaskDefinition, argsArray: string[]) {
+    public async startTask(taskExecution: ITaskExecution, taskDefinition: ITaskDefinition) {
         let opts = {
             name: taskExecution.id,
             script: taskExecution.resolved_script,
-            args: argsArray,
+            args: taskExecution.resolved_script_arg_array,
             interpreter: taskDefinition.interpreter,
             exec_mode: "fork",
             autorestart: false,

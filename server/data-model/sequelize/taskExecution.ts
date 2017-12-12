@@ -34,9 +34,12 @@ export interface ITaskExecution {
     task_definition_id: string;
     pipeline_stage_id: string;
     work_units: number;
+    cluster_work_units: number;
     resolved_script: string;
     resolved_interpreter: string;
-    resolved_args: string;
+    resolved_script_args: string;
+    resolved_cluster_args: string;
+    resolved_log_path: string;
     expected_exit_code: number;
     queue_type: number,
     job_id: number,
@@ -55,6 +58,10 @@ export interface ITaskExecution {
     created_at: Date;
     updated_at: Date;
     deleted_at: Date;
+
+    // Not persistent;
+    resolved_script_arg_array: string[];
+    resolved_cluster_arg_array: string[];
 
     save?(options?: InstanceSaveOptions): any;
     get?(key?: string | any, options?: any): any;
@@ -84,6 +91,9 @@ export function sequelizeImport(sequelize, DataTypes) {
         work_units: {
             type: DataTypes.INTEGER
         },
+        cluster_work_units: {
+            type: DataTypes.INTEGER
+        },
         resolved_script: {
             type: DataTypes.TEXT,
             defaultValue: ""
@@ -92,7 +102,15 @@ export function sequelizeImport(sequelize, DataTypes) {
             type: DataTypes.TEXT,
             defaultValue: ""
         },
-        resolved_args: {
+        resolved_script_args: {
+            type: DataTypes.TEXT,
+            defaultValue: ""
+        },
+        resolved_cluster_args: {
+            type: DataTypes.TEXT,
+            defaultValue: ""
+        },
+        resolved_log_path: {
             type: DataTypes.TEXT,
             defaultValue: ""
         },
@@ -181,8 +199,8 @@ export function sequelizeImport(sequelize, DataTypes) {
         return TaskExecution.destroy({where: {completion_status_code: code}});
     };
 
-    TaskExecution.createTask = async function (workerId: string, queueType: QueueType, taskDefinition: ITaskDefinition, pipelineStageId: string, tileId: string, scriptArgs: Array<string>): Promise<ITaskExecution> {
-        let taskExecution = createTaskFromDefinition(workerId, queueType, taskDefinition, pipelineStageId, tileId, scriptArgs);
+    TaskExecution.createTask = async function (workerId: string, queueType: QueueType, taskDefinition: ITaskDefinition, pipelineStageId: string, tileId: string): Promise<ITaskExecution> {
+        let taskExecution = createTaskFromDefinition(workerId, queueType, taskDefinition, pipelineStageId, tileId);
 
         return this.create(taskExecution);
     };
@@ -190,16 +208,19 @@ export function sequelizeImport(sequelize, DataTypes) {
     return TaskExecution;
 }
 
-function createTaskFromDefinition(workerId: string, queueType: QueueType, taskDefinition: ITaskDefinition, pipelineStageId: string, tileId: string, scriptArgs: Array<string>): ITaskExecution {
+function createTaskFromDefinition(workerId: string, queueType: QueueType, taskDefinition: ITaskDefinition, pipelineStageId: string, tileId: string): ITaskExecution {
     return {
         worker_id: workerId,
         tile_id: tileId,
         task_definition_id: taskDefinition.id,
         pipeline_stage_id: pipelineStageId,
         work_units: taskDefinition.work_units,
+        cluster_work_units: taskDefinition.cluster_work_units,
         resolved_script: null,
-        resolved_interpreter: null,
-        resolved_args: scriptArgs ? scriptArgs.join(", ") : "",
+        resolved_interpreter: taskDefinition.interpreter,
+        resolved_script_args: taskDefinition.script_args,
+        resolved_cluster_args: taskDefinition.cluster_args,
+        resolved_log_path: "",
         expected_exit_code: taskDefinition.expected_exit_code,
         queue_type: queueType,
         job_id: null,
@@ -217,6 +238,9 @@ function createTaskFromDefinition(workerId: string, queueType: QueueType, taskDe
         registered_at: null,
         created_at: null,
         updated_at: null,
-        deleted_at: null
+        deleted_at: null,
+
+        resolved_script_arg_array: [],
+        resolved_cluster_arg_array: []
     };
 }

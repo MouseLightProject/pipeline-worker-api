@@ -45,9 +45,12 @@ type TaskExecution {
   task_definition_id: String
   task: TaskDefinition
   work_units: Float
+  cluster_work_units: Float
   resolved_script: String
   resolved_interpreter: String
-  resolved_args: String
+  resolved_script_args: String
+  resolved_cluster_args: String
+  resolved_log_path: String
   execution_status_code: Int
   completion_status_code: Int
   last_process_status_code: Float

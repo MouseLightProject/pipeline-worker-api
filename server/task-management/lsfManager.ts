@@ -6,10 +6,10 @@ const debug = require("debug")("pipeline:worker-api:lsf-manager");
 import {LocalPersistentStorageManager} from "../data-access/local/databaseConnector";
 import {ITaskDefinition} from "../data-model/sequelize/taskDefinition";
 import {CompletionResult, ExecutionStatus, ITaskExecution} from "../data-model/sequelize/taskExecution";
-import {IJobUpdate, ITaskUpdateDelegate, ITaskUpdateSource, JobStatus} from "./taskSupervisor";
+import {IJobUpdate, ITaskManager, ITaskUpdateDelegate, ITaskUpdateSource, JobStatus} from "./taskSupervisor";
 import {updateJobInfo} from "./lsf";
 
-export class LSFTaskManager implements ITaskUpdateSource {
+export class LSFTaskManager implements ITaskUpdateSource, ITaskManager {
     public static Instance = new LSFTaskManager();
 
     private _localStorageManager: LocalPersistentStorageManager = LocalPersistentStorageManager.Instance();
@@ -97,12 +97,14 @@ export class LSFTaskManager implements ITaskUpdateSource {
         }
     }
 
-    public startTask(taskExecution: ITaskExecution, taskDefinition: ITaskDefinition, args: string[]) {
-        const programArgs = [taskExecution.resolved_script].concat(args).join(" ");
+    public startTask(taskExecution: ITaskExecution, taskDefinition: ITaskDefinition) {
+        const programArgs = [taskExecution.resolved_script].concat(taskExecution.resolved_script_arg_array).join(" ");
 
-        const clusterArgs = ["bsub", "-n", "3", "-J", `ml-dg-${taskExecution.tile_id}`, "-cwd", `-R\\"select[broadwell]\\"`, "-g", `/mouselight/pipeline/${taskExecution.worker_id}`, `'${programArgs}'`].join(" ");
+        const requiredBsubArgs = ["-J", `ml-dg-${taskExecution.tile_id}`, "-cwd", `-R\\"select[broadwell]\\"`, "-g", `/mouselight/pipeline/${taskExecution.worker_id}`, `'${programArgs}'`];
 
-        const sshArgs = ["login1", `${clusterArgs}`];
+        const clusterCommand = ["bsub"].concat(taskExecution.resolved_cluster_arg_array).concat(requiredBsubArgs).join(" ");
+
+        const sshArgs = ["login1", `${clusterCommand}`];
 
         try {
             const submit = spawn(`ssh`, sshArgs);

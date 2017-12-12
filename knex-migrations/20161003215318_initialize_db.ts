@@ -7,9 +7,12 @@ exports.up = function (knex, Promise) {
             table.uuid("task_definition_id");
             table.uuid("pipeline_stage_id");
             table.float("work_units");
+            table.float("cluster_work_units");
             table.string("resolved_script");
             table.string("resolved_interpreter");
-            table.text("resolved_args");
+            table.text("resolved_script_args");
+            table.text("resolved_cluster_args");
+            table.text("resolved_log_path");
             table.integer("expected_exit_code");
             table.integer("queue_type");
             table.integer("job_id");

@@ -12,6 +12,8 @@ import {synchronizeTaskExecutions} from "../data-access/synchronize";
 import {updateStatisticsForTaskId} from "../data-model/taskStatistics";
 import {LSFTaskManager} from "./lsfManager";
 
+const LOG_PATH_INDEX =
+
 export enum QueueType {
     Local = 0,
     Cluster = 1
@@ -61,6 +63,11 @@ export interface ITaskUpdateDelegate {
     update(taskExecution: ITaskExecution, processInfo: IJobUpdate);
 }
 
+export interface ITaskManager {
+    startTask(taskExecution: ITaskExecution, taskDefinition: ITaskDefinition): void;
+    stopTask(taskExecutionId: string): void;
+}
+
 export class TaskSupervisor implements ITaskSupervisor, ITaskUpdateDelegate {
     public static Instance = new TaskSupervisor();
 
@@ -83,19 +90,17 @@ export class TaskSupervisor implements ITaskSupervisor, ITaskUpdateDelegate {
 
         debug(`starting task ${taskDefinition.name} for pipeline ${pipelineStageId}`);
 
-        let customArgs = [];
-
-        if (taskDefinition.script_args) {
-            customArgs = taskDefinition.script_args.split(/[\s+]/).filter(Boolean);
-        }
-
         const worker = await Workers.Instance().worker();
 
-        const isClusterProxy = worker.is_cluster_proxy ? "1" : "0";
+        const taskExecution = await this._localStorageManager.TaskExecutions.createTask(worker.id, worker.is_cluster_proxy ? QueueType.Cluster : QueueType.Local, taskDefinition, pipelineStageId, tileId);
 
-        const combinedArgs = scriptArgs.concat(taskDefinition.expected_exit_code.toString()).concat(worker.id).concat([isClusterProxy]).concat(customArgs);
+        let userScriptArgs = taskDefinition.script_args ? taskDefinition.script_args.split(/[\s+]/).filter(Boolean) : [];
 
-        const taskExecution = await this._localStorageManager.TaskExecutions.createTask(worker.id, worker.is_cluster_proxy ? QueueType.Cluster : QueueType.Local, taskDefinition, pipelineStageId, tileId, combinedArgs);
+        taskExecution.resolved_script_arg_array = scriptArgs.concat(taskDefinition.expected_exit_code.toString()).concat(worker.id).concat([worker.is_cluster_proxy ? "1" : "0"]).concat(userScriptArgs);
+        taskExecution.resolved_script_args = taskExecution.resolved_script_arg_array.join(", ");
+
+        taskExecution.resolved_cluster_arg_array = taskDefinition.cluster_args ? taskDefinition.cluster_args.split(/[\s+]/).filter(Boolean) : [];
+        taskExecution.resolved_cluster_args = taskExecution.resolved_cluster_arg_array.join(", ");
 
         taskExecution.resolved_script = await taskDefinition.getFullScriptPath();
 
@@ -114,10 +119,9 @@ export class TaskSupervisor implements ITaskSupervisor, ITaskUpdateDelegate {
             // debug(opts);
 
             if (worker.is_cluster_proxy) {
-                await  LSFTaskManager.Instance.startTask(taskExecution, taskDefinition, combinedArgs);
-                // await localTaskManager.startTask(taskExecution, taskDefinition, combinedArgs);
+                await  LSFTaskManager.Instance.startTask(taskExecution, taskDefinition);
             } else {
-                await localTaskManager.startTask(taskExecution, taskDefinition, combinedArgs);
+                await localTaskManager.startTask(taskExecution, taskDefinition);
             }
         } catch (err) {
             debug(err);
@@ -148,7 +152,6 @@ export class TaskSupervisor implements ITaskSupervisor, ITaskUpdateDelegate {
                 if (taskExecution.queue_type === QueueType.Local) {
                     await localTaskManager.stopTask(taskExecutionId);
                 } else {
-                    // await localTaskManager.stopTask(taskExecutionId);
                     await LSFTaskManager.Instance.stopTask(taskExecutionId);
                 }
             }
