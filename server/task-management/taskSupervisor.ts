@@ -12,7 +12,7 @@ import {synchronizeTaskExecutions} from "../data-access/synchronize";
 import {updateStatisticsForTaskId} from "../data-model/taskStatistics";
 import {LSFTaskManager} from "./lsfManager";
 
-const LOG_PATH_INDEX =
+const LOG_PATH_INDEX = 6;
 
 export enum QueueType {
     Local = 0,
@@ -105,6 +105,10 @@ export class TaskSupervisor implements ITaskSupervisor, ITaskUpdateDelegate {
         taskExecution.resolved_script = await taskDefinition.getFullScriptPath();
 
         taskExecution.resolved_interpreter = taskDefinition.interpreter;
+
+        if (taskExecution.resolved_script_arg_array.length > LOG_PATH_INDEX) {
+            taskExecution.resolved_log_path = taskExecution.resolved_script_arg_array[LOG_PATH_INDEX];
+        }
 
         taskExecution.started_at = new Date();
 
