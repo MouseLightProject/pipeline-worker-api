@@ -98,8 +98,6 @@ export class LocalTaskManager implements ITaskUpdateSource, ITaskManager, Proces
     }
 
     public async startTask(taskExecution: ITaskExecution, taskDefinition: ITaskDefinition) {
-        console.log(taskExecution.resolved_log_path);
-
         let opts = {
             name: taskExecution.id,
             script: taskExecution.resolved_script,
@@ -108,8 +106,8 @@ export class LocalTaskManager implements ITaskUpdateSource, ITaskManager, Proces
             exec_mode: "fork",
             autorestart: false,
             watch: false,
-            output: taskExecution.resolved_log_path + ".local.log",
-            error: taskExecution.resolved_log_path + ".local.err"
+            output: taskExecution.resolved_log_path + ".local.out.log",
+            error: taskExecution.resolved_log_path + ".local.err.log"
         };
 
         await ProcessManager.start(opts);
