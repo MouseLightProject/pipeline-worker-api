@@ -119,11 +119,7 @@ export class TaskSupervisor implements ITaskSupervisor, ITaskUpdateDelegate {
                     mkdirSync(logDirectory)
                 }
 
-                debug(`log_prefix ${taskDefinition.log_prefix}`);
-
                 taskExecution.resolved_log_path = path.join(logDirectory, `${taskDefinition.log_prefix}-${taskExecution.resolved_script_arg_array[TILE_NAME_INDEX]}`);
-
-                debug(`resolved_log_path ${taskExecution.resolved_log_path}`);
             } catch (err) {
                 debug("failed to create log directory");
                 debug(err);
@@ -275,8 +271,7 @@ async function _update(taskExecution: ITaskExecution, jobUpdate: IJobUpdate) {
             }
         } else {
             debug(`checking completion for ${taskExecution.id}`);
-            debug(taskExecution);
-            debug(jobUpdate);
+
             if (taskExecution.completion_status_code < CompletionResult.Cancel) {
                 if (jobUpdate.status === JobStatus.Stopped) {
                     taskExecution.completion_status_code = CompletionResult.Success;
