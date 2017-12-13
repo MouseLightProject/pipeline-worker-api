@@ -105,7 +105,9 @@ export class LocalTaskManager implements ITaskUpdateSource, ITaskManager, Proces
             interpreter: taskDefinition.interpreter,
             exec_mode: "fork",
             autorestart: false,
-            watch: false
+            watch: false,
+            output: taskExecution.resolved_log_path + ".log",
+            error: taskExecution.resolved_log_path + ".err"
         };
 
         await ProcessManager.start(opts);
