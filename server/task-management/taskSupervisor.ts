@@ -98,9 +98,12 @@ export class TaskSupervisor implements ITaskSupervisor, ITaskUpdateDelegate {
 
         const taskExecution = await this._localStorageManager.TaskExecutions.createTask(worker.id, worker.is_cluster_proxy ? QueueType.Cluster : QueueType.Local, taskDefinition, pipelineStageId, tileId);
 
+        // Force id to be generated to pass to script.
+        await taskExecution.save();
+
         let userScriptArgs = taskDefinition.script_args ? taskDefinition.script_args.split(/[\s+]/).filter(Boolean) : [];
 
-        taskExecution.resolved_script_arg_array = scriptArgs.concat(taskDefinition.expected_exit_code.toString()).concat(worker.id).concat([worker.is_cluster_proxy ? "1" : "0"]).concat(userScriptArgs);
+        taskExecution.resolved_script_arg_array = scriptArgs.concat(taskDefinition.expected_exit_code.toString()).concat(taskExecution.id).concat([worker.is_cluster_proxy ? "1" : "0"]).concat(userScriptArgs);
 
         taskExecution.resolved_cluster_arg_array = taskDefinition.cluster_args ? taskDefinition.cluster_args.split(/[\s+]/).filter(Boolean) : [];
         taskExecution.resolved_cluster_args = taskExecution.resolved_cluster_arg_array.join(", ");
