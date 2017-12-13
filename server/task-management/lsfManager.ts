@@ -6,7 +6,7 @@ const debug = require("debug")("pipeline:worker-api:lsf-manager");
 import {LocalPersistentStorageManager} from "../data-access/local/databaseConnector";
 import {ITaskDefinition} from "../data-model/sequelize/taskDefinition";
 import {CompletionResult, ExecutionStatus, ITaskExecution} from "../data-model/sequelize/taskExecution";
-import {IJobUpdate, ITaskManager, ITaskUpdateDelegate, ITaskUpdateSource, JobStatus} from "./taskSupervisor";
+import {IJobUpdate, ITaskManager, ITaskUpdateDelegate, ITaskUpdateSource, JobStatus, QueueType} from "./taskSupervisor";
 import {updateJobInfo} from "./lsf";
 
 export class LSFTaskManager implements ITaskUpdateSource, ITaskManager {
@@ -87,7 +87,7 @@ export class LSFTaskManager implements ITaskUpdateSource, ITaskManager {
 
             debug(`matched ${zombie.length} zombie jobs for removal`);
 
-            await Promise.all(zombie.map(async (o) => {
+            await Promise.all(zombie.filter(z => z.queue_type === QueueType.Cluster).map(async (o) => {
                 // Only after 15 minutes in case there is any delay between submission and when the job is first
                 // available in polling.
                 if (Date.now().valueOf() - o.started_at.valueOf() > 15 * 60 * 1000) {
