@@ -96,10 +96,10 @@ export class TaskSupervisor implements ITaskSupervisor, ITaskUpdateDelegate {
 
         const worker = await Workers.Instance().worker();
 
-        const taskExecution = await this._localStorageManager.TaskExecutions.createTask(worker.id, worker.is_cluster_proxy ? QueueType.Cluster : QueueType.Local, taskDefinition, pipelineStageId, tileId);
+        let taskExecution = await this._localStorageManager.TaskExecutions.createTask(worker.id, worker.is_cluster_proxy ? QueueType.Cluster : QueueType.Local, taskDefinition, pipelineStageId, tileId);
 
         // Force id to be generated to pass to script.
-        await taskExecution.save();
+        taskExecution = await taskExecution.save();
 
         let userScriptArgs = taskDefinition.script_args ? taskDefinition.script_args.split(/[\s+]/).filter(Boolean) : [];
 

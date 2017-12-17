@@ -8,7 +8,8 @@ export enum ExecutionStatus {
     Initializing = 1,
     Running = 2,
     Zombie = 3,   // Was marked initialized/running but can not longer find in process manager list/cluster jobs
-    Completed = 4
+    Orphaned = 4, // Found in process manager with metadata that associates to worker, but no linked task in database
+    Completed = 5
 }
 
 export enum CompletionResult {
