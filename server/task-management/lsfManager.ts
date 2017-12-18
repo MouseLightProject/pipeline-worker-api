@@ -104,6 +104,8 @@ export class LSFTaskManager implements ITaskUpdateSource, ITaskManager {
 
         const clusterCommand = ["bsub"].concat(taskExecution.resolved_cluster_arg_array).concat(requiredBsubArgs).join(" ");
 
+        console.log(clusterCommand);
+
         const sshArgs = ["login1", `${clusterCommand}`];
 
         try {
