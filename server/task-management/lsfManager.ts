@@ -135,6 +135,11 @@ export class LSFTaskManager implements ITaskUpdateSource, ITaskManager {
                 }
             });
 
+            submit.stderr.on("data", (data: Buffer) => {
+                debug("ssh login1 error:");
+                debug(data.toString());
+            });
+
             submit.on("close", (code) => {
                 if (code === 0) {
                     debug(`submitted task id ${taskExecution.id}`);
