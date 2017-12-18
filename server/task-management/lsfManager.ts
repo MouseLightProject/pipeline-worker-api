@@ -100,13 +100,13 @@ export class LSFTaskManager implements ITaskUpdateSource, ITaskManager {
     public startTask(taskExecution: ITaskExecution, taskDefinition: ITaskDefinition) {
         const programArgs = [taskExecution.resolved_script].concat(taskExecution.resolved_script_arg_array).join(" ");
 
-        const requiredBsubArgs = [`-R\\"select[broadwell]\\"`, "-J", `ml-dg-${taskExecution.tile_id}`, "-cwd", "-g", `/mouselight/pipeline/${taskExecution.worker_id}`, "-oo", `${taskExecution.resolved_log_path + ".cluster.out.log"}`, "-eo", `${taskExecution.resolved_log_path + ".cluster.err.log"}`, `'${programArgs}'`];
+        const requiredBsubArgs = ["-J", `ml-dg-${taskExecution.tile_id}`, "-cwd", `-R\\"select[broadwell]\\"`, "-g", `/mouselight/pipeline/${taskExecution.worker_id}`, "-oo", `${taskExecution.resolved_log_path + ".cluster.out.log"}`, "-eo", `${taskExecution.resolved_log_path + ".cluster.err.log"}`, `'${programArgs}'`];
 
         // const clusterArgs = taskExecution.resolved_cluster_arg_array.join(" ").replace(/"/g, `\\"`);
 
-        const clusterArgs = taskExecution.resolved_cluster_arg_array.join(" ");
+        // const clusterArgs = taskExecution.resolved_cluster_arg_array.join(" ");
 
-        console.log(clusterArgs);
+        // console.log(clusterArgs);
 
         const clusterCommand = ["bsub"].concat(taskExecution.resolved_cluster_arg_array).concat(requiredBsubArgs).join(" ");
 
