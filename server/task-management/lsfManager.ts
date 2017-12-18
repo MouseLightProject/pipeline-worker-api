@@ -98,7 +98,7 @@ export class LSFTaskManager implements ITaskUpdateSource, ITaskManager {
     }
 
     public startTask(taskExecution: ITaskExecution, taskDefinition: ITaskDefinition) {
-        const programArgs = [taskExecution.resolved_script].concat(taskExecution.resolved_script_arg_array).join(" ").replace(`"`, `\\"`);
+        const programArgs = [taskExecution.resolved_script].concat(taskExecution.resolved_script_arg_array).join(" ").replace(`"`, `\\\"`);
 
         const requiredBsubArgs = ["-J", `ml-dg-${taskExecution.tile_id}`, "-cwd", "-g", `/mouselight/pipeline/${taskExecution.worker_id}`, "-oo", `${taskExecution.resolved_log_path + ".cluster.out.log"}`, "-eo", `${taskExecution.resolved_log_path + ".cluster.err.log"}`, `'${programArgs}'`];
 
