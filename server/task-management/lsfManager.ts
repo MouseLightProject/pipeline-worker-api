@@ -108,7 +108,7 @@ export class LSFTaskManager implements ITaskUpdateSource, ITaskManager {
 
         console.log(clusterArgs);
 
-        const clusterCommand = ["bsub"].concat([clusterArgs]).concat(requiredBsubArgs).join(" ");
+        const clusterCommand = ["bsub"].concat(taskExecution.resolved_cluster_arg_array).concat(requiredBsubArgs).join(" ");
 
         console.log(clusterCommand);
 
