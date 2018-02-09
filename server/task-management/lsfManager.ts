@@ -109,7 +109,7 @@ export class LSFTaskManager implements ITaskUpdateSource, ITaskManager {
 
         // console.log(clusterArgs);
 
-        const clusterCommand = ["bsub"].concat([clusterArgs]).concat(requiredBsubArgs).concat([, `'${programArgs}'`]).join(" ");
+        const clusterCommand = ["bsub"].concat([clusterArgs]).concat(requiredBsubArgs).concat([, `${programArgs}`]).join(" ");
 
         console.log(clusterCommand);
 
