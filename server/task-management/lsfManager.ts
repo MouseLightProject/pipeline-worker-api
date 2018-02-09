@@ -103,7 +103,7 @@ export class LSFTaskManager implements ITaskUpdateSource, ITaskManager {
 
         const requiredBsubArgs = ["-J", `ml-dg-${taskExecution.tile_id}`, "-g", `/mouselight/pipeline/${taskExecution.worker_id}`, "-oo", `${taskExecution.resolved_log_path + ".cluster.out.log"}`, "-eo", `${taskExecution.resolved_log_path + ".cluster.err.log"}`];
 
-        const clusterArgs = taskExecution.resolved_cluster_arg_array.join(" ").replace(/"/g, `\\"`).replace(/\(/g, `\\(`).replace(/\)/g, `\\)`);
+        const clusterArgs = taskExecution.resolved_cluster_arg_array.join(" ").replace(/"/g, `\\"`); //.replace(/\(/g, `\\(`).replace(/\)/g, `\\)`);
 
         // const clusterArgs = taskExecution.resolved_cluster_arg_array.join(" ");
 
@@ -113,7 +113,7 @@ export class LSFTaskManager implements ITaskUpdateSource, ITaskManager {
 
         console.log(clusterCommand);
 
-        const sshArgs = ["login1", `${clusterCommand}`];
+        const sshArgs = ["login1", `\"${clusterCommand}\"`];
 
         try {
             const submit = spawn(`ssh`, sshArgs);
