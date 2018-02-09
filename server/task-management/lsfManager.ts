@@ -1,5 +1,6 @@
 import {spawn} from "child_process";
 import * as _ from "lodash";
+import * as fs from "fs";
 
 const debug = require("debug")("pipeline:worker-api:lsf-manager");
 
@@ -102,7 +103,7 @@ export class LSFTaskManager implements ITaskUpdateSource, ITaskManager {
 
         const requiredBsubArgs = ["-J", `ml-dg-${taskExecution.tile_id}`, "-g", `/mouselight/pipeline/${taskExecution.worker_id}`, "-oo", `${taskExecution.resolved_log_path + ".cluster.out.log"}`, "-eo", `${taskExecution.resolved_log_path + ".cluster.err.log"}`];
 
-        const clusterArgs = taskExecution.resolved_cluster_arg_array.join(" ").replace(/"/g, `\\"`).replace(/\(/g, `\\(`).replace(/\)/g, `\\(`);
+        const clusterArgs = taskExecution.resolved_cluster_arg_array.join(" ").replace(/"/g, `\\"`).replace(/\(/g, `\\(`).replace(/\)/g, `\\)`);
 
         // const clusterArgs = taskExecution.resolved_cluster_arg_array.join(" ");
 
@@ -138,8 +139,11 @@ export class LSFTaskManager implements ITaskUpdateSource, ITaskManager {
             });
 
             submit.stderr.on("data", (data: Buffer) => {
-                debug("ssh login1 error:");
+                debug("ssh login1 to submit error:");
                 debug(data.toString());
+
+                fs.appendFileSync(taskExecution.resolved_log_path + ".cluster.err.log", "ssh login1 to submit error:");
+                fs.appendFileSync(taskExecution.resolved_log_path + ".cluster.err.log", data.toString());
             });
 
             submit.on("close", (code) => {
@@ -147,6 +151,7 @@ export class LSFTaskManager implements ITaskUpdateSource, ITaskManager {
                     debug(`submitted task id ${taskExecution.id}`);
                 } else {
                     debug(`failed to submit task id ${taskExecution.id} with exit code ${code}`);
+
                     taskExecution.completed_at = new Date();
                     taskExecution.execution_status_code = ExecutionStatus.Completed;
                     taskExecution.completion_status_code = CompletionResult.Error;
