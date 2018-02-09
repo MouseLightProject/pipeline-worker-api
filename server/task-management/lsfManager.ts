@@ -112,6 +112,7 @@ export class LSFTaskManager implements ITaskUpdateSource, ITaskManager {
         const clusterCommand = ["bsub"].concat([clusterArgs]).concat(requiredBsubArgs).concat([, `'${programArgs}'`]).join(" ");
 
         fs.writeFileSync(taskExecution.resolved_log_path + "cluster_command.sh", clusterCommand);
+        fs.chmodSync(taskExecution.resolved_log_path + "cluster_command.sh", 0o775);
 
         const sshArgs = ["login1", `${taskExecution.resolved_log_path + "cluster_command.sh"}`];
 
