@@ -43,7 +43,11 @@ export class LSFTaskManager implements ITaskUpdateSource, ITaskManager {
     }
 
     private async pollClusterJobStatus() {
-        const jobInfo: IJobUpdate[] = await updateJobInfo();
+        const running: ITaskExecution[] = await this._localStorageManager.TaskExecutions.findRunning();
+
+        const ids = running.map(t => t.job_id).filter(j => j > 0).map(j => j.toString());
+
+        const jobInfo: IJobUpdate[] = await updateJobInfo(ids);
 
         debug(`received ${jobInfo.length} job status updates`);
 
@@ -54,7 +58,7 @@ export class LSFTaskManager implements ITaskUpdateSource, ITaskManager {
                 map.set(j.id, j);
             });
 
-            const running: ITaskExecution[] = await this._localStorageManager.TaskExecutions.findRunning();
+            // const running: ITaskExecution[] = await this._localStorageManager.TaskExecutions.findRunning();
 
             debug(`found ${running.length} running jobs`);
 

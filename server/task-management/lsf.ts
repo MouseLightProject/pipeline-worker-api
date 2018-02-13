@@ -90,7 +90,7 @@ function parseJobInfoOutput(output: string): IJobUpdate[] {
     }
 }
 
-export function updateJobInfo(jobArray: string[] = []): Promise<IJobUpdate[]> {
+export function updateJobInfo(jobArray: string[]): Promise<IJobUpdate[]> {
     return new Promise<IJobUpdate[]>((resolve, reject) => {
         try {
             /*
@@ -112,7 +112,7 @@ export function updateJobInfo(jobArray: string[] = []): Promise<IJobUpdate[]> {
                 if (error) {
                     console.log(error);
                 } else {
-                    console.log(stdout);
+                    // console.log(stdout);
                     resolve(parseJobInfoOutput(stdout));
                 }
             });
