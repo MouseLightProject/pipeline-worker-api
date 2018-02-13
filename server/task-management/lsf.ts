@@ -112,6 +112,7 @@ export function updateJobInfo(jobArray: string[] = []): Promise<IJobUpdate[]> {
                 if (error) {
                     console.log(error);
                 } else {
+                    console.log(stdout);
                     resolve(parseJobInfoOutput(stdout));
                 }
             });
