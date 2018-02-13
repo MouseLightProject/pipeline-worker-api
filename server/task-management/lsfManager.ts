@@ -45,6 +45,11 @@ export class LSFTaskManager implements ITaskUpdateSource, ITaskManager {
     private async pollClusterJobStatus() {
         const running: ITaskExecution[] = await this._localStorageManager.TaskExecutions.findRunning();
 
+        if (running.length === 0) {
+            debug("No running jobs - skipping cluster status check.");
+            return;
+        }
+
         const ids = running.map(t => t.job_id).filter(j => j > 0).map(j => j.toString());
 
         const jobInfo: IJobUpdate[] = await updateJobInfo(ids);
