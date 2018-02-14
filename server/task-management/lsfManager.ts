@@ -112,7 +112,7 @@ export class LSFTaskManager implements ITaskUpdateSource, ITaskManager {
             debug(`${longRunning.length} cluster tasks have been running longer than 1 minute`);
             debug(`\tlongest ${longRunning[0].humanize()}`);
             if (longRunning.length > 1) {
-                debug(`\lshortest ${longRunning[longRunning.length - 1].humanize()}`);
+                debug(`\tshortest ${longRunning[longRunning.length - 1].humanize()}`);
             }
         }
     }
