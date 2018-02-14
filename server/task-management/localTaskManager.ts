@@ -88,10 +88,10 @@ export class LocalTaskManager implements ITaskUpdateSource, ITaskManager, Proces
             }
         }));
 
-        const longRunning = running.map(r => moment.duration(Date.now().valueOf() - r.started_at.valueOf())).filter(d => d.asSeconds() > 60).sort((a, b) => b.asMilliseconds() - a.asMilliseconds());
+        const longRunning = running.map(r => moment.duration(Date.now().valueOf() - r.started_at.valueOf())).filter(d => d.asHours() > 3).sort((a, b) => b.asMilliseconds() - a.asMilliseconds());
 
         if (longRunning.length > 0) {
-            debug(`${longRunning.length} local tasks have been running longer than 1 minute`);
+            debug(`${longRunning.length} local tasks have been running longer than 3 hours`);
             debug(`\tlongest ${longRunning[0].humanize()}`);
             if (longRunning.length > 1) {
                 debug(`\tshortest ${longRunning[longRunning.length - 1].humanize()}`);
