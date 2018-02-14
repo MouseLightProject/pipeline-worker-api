@@ -114,7 +114,11 @@ export class LocalTaskManager implements ITaskUpdateSource, ITaskManager, Proces
     }
 
     public async stopTask(taskExecutionId: string) {
-        await ProcessManager.stop(taskExecutionId);
+        try {
+            await ProcessManager.stop(taskExecutionId);
+        } catch (err) {
+            debug(err);
+        }
     }
 }
 
