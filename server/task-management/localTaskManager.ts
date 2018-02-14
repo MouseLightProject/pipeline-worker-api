@@ -93,7 +93,9 @@ export class LocalTaskManager implements ITaskUpdateSource, ITaskManager, Proces
         if (longRunning.length > 0) {
             debug(`${longRunning.length} local tasks have been running longer than 1 minute`);
             debug(`\tlongest ${longRunning[0].humanize()}`);
-            debug(`\tlshortest ${longRunning[0].humanize()}`);
+            if (longRunning.length > 1) {
+                debug(`\lshortest ${longRunning[longRunning.length - 1].humanize()}`);
+            }
         }
     }
 
