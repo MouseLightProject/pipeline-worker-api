@@ -66,7 +66,7 @@ export class LocalTaskManager implements ITaskUpdateSource, ITaskManager, Proces
     private async refreshTasksFromProcessManager() {
         const processList: IProcessInfo[] = await ProcessManager.list();
 
-        const running: ITaskExecution[] = await this._localStorageManager.TaskExecutions.findRunning();
+        const running: ITaskExecution[] = await this._localStorageManager.TaskExecutions.findRunning().filter(z => z.queue_type === QueueType.Local);
 
         if (running.length === 0) {
             // TODO if refreshOneTaskForProcess starts doing something with orphans, don't early return here.
