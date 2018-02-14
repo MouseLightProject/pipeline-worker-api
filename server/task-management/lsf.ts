@@ -86,7 +86,7 @@ function parseJobInfoOutput(output: string): IJobUpdate[] {
         return jobs.filter(j => !isNull(j.id));
     } catch (err) {
         debug(err);
-        return null;
+        return [];
     }
 }
 
@@ -110,7 +110,8 @@ export function updateJobInfo(jobArray: string[]): Promise<IJobUpdate[]> {
 
             exec(`ssh login1 "bjobs -a -W ${jobArray.join(" ")}"`, {maxBuffer: 10000 * 400}, (error, stdout, stderr) => {
                 if (error) {
-                    console.log(error);
+                    debug(error);
+                    reject([]);
                 } else {
                     // console.log(stdout);
                     resolve(parseJobInfoOutput(stdout));

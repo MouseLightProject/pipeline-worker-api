@@ -1,6 +1,7 @@
 import {spawn} from "child_process";
 import * as _ from "lodash";
 import * as fs from "fs";
+import * as moment from "moment";
 
 const debug = require("debug")("pipeline:worker-api:lsf-manager");
 
@@ -19,6 +20,7 @@ export class LSFTaskManager implements ITaskUpdateSource, ITaskManager {
 
     public constructor() {
         // Periodically poll cluster job status.
+
         setTimeout(async () => {
             await this.refreshAllJobs();
         }, 0);
@@ -35,11 +37,11 @@ export class LSFTaskManager implements ITaskUpdateSource, ITaskManager {
     private async refreshAllJobs() {
         try {
             await this.pollClusterJobStatus();
-
-            setTimeout(() => this.refreshAllJobs(), 30 * 1000);
         } catch (err) {
             debug(err);
         }
+
+        setTimeout(() => this.refreshAllJobs(), 30 * 1000);
     }
 
     private async pollClusterJobStatus() {
@@ -56,14 +58,12 @@ export class LSFTaskManager implements ITaskUpdateSource, ITaskManager {
 
         debug(`received ${jobInfo.length} job status updates`);
 
-        if (jobInfo && jobInfo.length > 0) {
+        if (jobInfo.length > 0) {
             const map = new Map<number, IJobUpdate>();
 
             jobInfo.map((j) => {
                 map.set(j.id, j);
             });
-
-            // const running: ITaskExecution[] = await this._localStorageManager.TaskExecutions.findRunning();
 
             debug(`found ${running.length} running jobs`);
 
@@ -90,20 +90,28 @@ export class LSFTaskManager implements ITaskUpdateSource, ITaskManager {
                     }
                 }));
             }
+        }
 
-            const zombie: ITaskExecution[] = _.differenceWith(running, jobInfo, (r: ITaskExecution, j: IJobUpdate) => {
-                return r.job_id === j.id;
-            });
+        const zombie: ITaskExecution[] = _.differenceWith(running, jobInfo, (r: ITaskExecution, j: IJobUpdate) => {
+            return r.job_id === j.id;
+        });
 
-            debug(`matched ${zombie.length} zombie jobs for removal`);
+        debug(`matched ${zombie.length} zombie jobs for removal`);
 
-            await Promise.all(zombie.filter(z => z.queue_type === QueueType.Cluster).map(async (o) => {
-                // Only after 15 minutes in case there is any delay between submission and when the job is first
-                // available in polling.
-                if (Date.now().valueOf() - o.started_at.valueOf() > 15 * 60 * 1000) {
-                    await this.TaskUpdateDelegate.updateZombie(o);
-                }
-            }));
+        await Promise.all(zombie.filter(z => z.queue_type === QueueType.Cluster).map(async (o) => {
+            // Only after 15 minutes in case there is any delay between submission and when the job is first
+            // available in polling.
+            if (Date.now().valueOf() - o.started_at.valueOf() > 15 * 60 * 1000) {
+                await this.TaskUpdateDelegate.updateZombie(o);
+            }
+        }));
+
+        const longRunning = running.map(r => moment.duration(Date.now().valueOf() - r.started_at.valueOf())).filter(d => d.asSeconds() > 60).sort((a, b) => b.asMilliseconds() - a.asMilliseconds());
+
+        if (longRunning.length > 0) {
+            debug(`${longRunning.length} cluster tasks have been running longer than 1 minute`);
+            debug(`\tlongest ${longRunning[0].humanize()}`);
+            debug(`\tlshortest ${longRunning[0].humanize()}`);
         }
     }
 

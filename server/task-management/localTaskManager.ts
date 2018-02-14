@@ -1,4 +1,6 @@
 import {isNullOrUndefined} from "util";
+import * as moment from "moment";
+import * as _ from "lodash";
 
 const ChildProcess = require("child_process");
 import * as ProcessManager from "./pm2-async";
@@ -11,7 +13,7 @@ import {ExecutionStatus, ITaskExecution} from "../data-model/sequelize/taskExecu
 import {LocalPersistentStorageManager} from "../data-access/local/databaseConnector";
 import {
     JobStatus, IJobStatistics, ITaskUpdateDelegate,
-    ITaskUpdateSource, ITaskManager
+    ITaskUpdateSource, ITaskManager, QueueType
 } from "./taskSupervisor";
 
 export class LocalTaskManager implements ITaskUpdateSource, ITaskManager, ProcessManager.IPM2MonitorDelegate {
@@ -49,11 +51,11 @@ export class LocalTaskManager implements ITaskUpdateSource, ITaskManager, Proces
     private async refreshAllTasks() {
         try {
             await this.refreshTasksFromProcessManager();
-
-            setTimeout(() => this.refreshAllTasks(), 60000);
         } catch (err) {
             debug(err);
         }
+
+        setTimeout(() => this.refreshAllTasks(), 60 * 1000);
     }
 
     // TODO Need a function to refresh what the database thinks are running tasks (find orphans, update stats, etc).
@@ -64,7 +66,35 @@ export class LocalTaskManager implements ITaskUpdateSource, ITaskManager, Proces
     private async refreshTasksFromProcessManager() {
         const processList: IProcessInfo[] = await ProcessManager.list();
 
+        const running: ITaskExecution[] = await this._localStorageManager.TaskExecutions.findRunning();
+
+        if (running.length === 0) {
+            // TODO if refreshOneTaskForProcess starts doing something with orphans, don't early return here.
+            debug("No running jobs - skipping local status check.");
+            return;
+        }
+
         await Promise.all(processList.map(processInfo => this.refreshOneTaskForProcess(processInfo)));
+
+        const zombies = _.differenceWith(running, processList, (r: ITaskExecution, j: IProcessInfo) => {
+            return r.id === j.name;
+        });
+
+        await Promise.all(zombies.filter(z => z.queue_type === QueueType.Local).map(async (o) => {
+            // Only after 15 minutes in case there is any delay between submission and when the job is first
+            // available in polling.
+            if (Date.now().valueOf() - o.started_at.valueOf() > 15 * 60 * 1000) {
+                await this.TaskUpdateDelegate.updateZombie(o);
+            }
+        }));
+
+        const longRunning = running.map(r => moment.duration(Date.now().valueOf() - r.started_at.valueOf())).filter(d => d.asSeconds() > 60).sort((a, b) => b.asMilliseconds() - a.asMilliseconds());
+
+        if (longRunning.length > 0) {
+            debug(`${longRunning.length} local tasks have been running longer than 1 minute`);
+            debug(`\tlongest ${longRunning[0].humanize()}`);
+            debug(`\tlshortest ${longRunning[0].humanize()}`);
+        }
     }
 
     private async refreshOneTaskForProcess(processInfo: IProcessInfo): Promise<void> {
@@ -94,6 +124,8 @@ export class LocalTaskManager implements ITaskUpdateSource, ITaskManager, Proces
                 debug(`removing completed process (${processInfo.managerId}) from process manager`);
                 await ProcessManager.deleteTask(processInfo.managerId);
             }
+        } else {
+            // TODO orphaned process.
         }
     }
 
