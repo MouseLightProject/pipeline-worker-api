@@ -51,6 +51,7 @@ export interface ITaskExecution {
     max_memory: number;
     max_cpu: number;
     exit_code: number;
+    submitted_at: Date;
     started_at: Date;
     completed_at: Date;
     sync_status?: SyncStatus;
@@ -145,6 +146,9 @@ export function sequelizeImport(sequelize, DataTypes) {
         exit_code: {
             type: DataTypes.INTEGER
         },
+        submitted_at: {
+            type: DataTypes.DATE
+        },
         started_at: {
             type: DataTypes.DATE
         },
@@ -232,6 +236,7 @@ function createTaskFromDefinition(workerId: string, queueType: QueueType, taskDe
         max_memory: NaN,
         max_cpu: NaN,
         exit_code: null,
+        submitted_at: null,
         started_at: null,
         completed_at: null,
         sync_status: SyncStatus.Never,

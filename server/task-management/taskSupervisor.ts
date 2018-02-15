@@ -136,7 +136,8 @@ export class TaskSupervisor implements ITaskSupervisor, ITaskUpdateDelegate {
             taskExecution.resolved_script_args = taskExecution.resolved_script_arg_array.join(", ");
         }
 
-        taskExecution.started_at = new Date();
+        taskExecution.submitted_at = new Date();
+        taskExecution.started_at = taskExecution.submitted_at;
 
         try {
             taskExecution.execution_status_code = ExecutionStatus.Running;
@@ -238,6 +239,10 @@ async function _update(taskExecution: ITaskExecution, jobUpdate: IJobUpdate) {
     }
 
     if (!isNullOrUndefined(jobUpdate.status)) {
+        if (jobUpdate.status === JobStatus.Pending) {
+            taskExecution.started_at = new Date();
+        }
+
         // Have a real status from the process manager (e.g, PM2).
         if (jobUpdate.status > taskExecution.last_process_status_code) {
             taskExecution.last_process_status_code = jobUpdate.status;

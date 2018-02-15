@@ -58,6 +58,7 @@ type TaskExecution {
   max_memory: Float
   max_cpu: Float
   exit_code: Int
+  submitted_at: Float
   started_at: Float
   completed_at: Float
   created_at: Float
