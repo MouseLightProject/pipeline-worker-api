@@ -241,6 +241,18 @@ async function _update(taskExecution: ITaskExecution, jobUpdate: IJobUpdate) {
     if (!isNullOrUndefined(jobUpdate.status)) {
         if (jobUpdate.status === JobStatus.Pending) {
             taskExecution.started_at = new Date();
+            taskExecution.last_process_status_code = jobUpdate.status;
+
+            await taskExecution.save();
+
+            return;
+        }
+
+        if (jobUpdate.status === JobStatus.Online) {
+            taskExecution.last_process_status_code = jobUpdate.status;
+            await taskExecution.save();
+
+            return;
         }
 
         // Have a real status from the process manager (e.g, PM2).
