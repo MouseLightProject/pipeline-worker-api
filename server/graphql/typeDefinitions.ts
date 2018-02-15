@@ -54,7 +54,7 @@ type TaskExecution {
   resolved_log_path: String
   execution_status_code: Int
   completion_status_code: Int
-  last_process_status_code: Float
+  last_process_status_code: Int
   max_memory: Float
   max_cpu: Float
   exit_code: Int

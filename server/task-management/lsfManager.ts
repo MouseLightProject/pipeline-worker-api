@@ -79,7 +79,7 @@ export class LSFTaskManager implements ITaskUpdateSource, ITaskManager {
                     const processInfo = map.get(o.job_id);
 
                     if (processInfo) {
-                        if (processInfo.status === JobStatus.Stopped || processInfo.status === JobStatus.Exited) {
+                        if (processInfo.status === JobStatus.Stopped || processInfo.status === JobStatus.Exited || processInfo.status === JobStatus.Pending) {
                             await this.TaskUpdateDelegate.update(o, {
                                 id: processInfo.id,
                                 status: processInfo.status,
