@@ -179,7 +179,7 @@ export function sequelizeImport(sequelize, DataTypes) {
     TaskExecution.findRunning = async function (): Promise<ITaskExecution[]> {
         return TaskExecution.findAll({
             where: {execution_status_code: ExecutionStatus.Running},
-            order: [["started_at", "DESC"]]
+            order: [["submitted_at", "DESC"]]
         });
     };
 
