@@ -13,6 +13,7 @@ import {updateStatisticsForTaskId} from "../data-model/taskStatistics";
 import {LSFTaskManager} from "./lsfManager";
 import {existsSync, mkdirSync} from "fs";
 import * as path from "path";
+import {MainQueue} from "../message-queue/mainQueue";
 
 const PIPELINE_INPUT_INDEX = 5;
 const TILE_NAME_INDEX = 5;
@@ -223,37 +224,27 @@ export class TaskSupervisor implements ITaskSupervisor, ITaskUpdateDelegate {
 }
 
 async function _update(taskExecution: ITaskExecution, jobUpdate: IJobUpdate) {
-    if (taskExecution == null || jobUpdate == null) {
-        debug(`skipping update for null task execution (${taskExecution == null}) or process info (${jobUpdate == null})`);
+    if (taskExecution == null) {
+        debug(`skipping update for null task execution (${taskExecution == null})`);
         return;
-    }
-
-    if (!isNullOrUndefined(jobUpdate.statistics)) {
-        if (!isNullOrUndefined(jobUpdate.statistics.memoryGB) && (jobUpdate.statistics.memoryGB > taskExecution.max_memory || isNaN(taskExecution.max_memory))) {
-            taskExecution.max_memory = jobUpdate.statistics.memoryGB;
-        }
-
-        if (!isNullOrUndefined(jobUpdate.statistics.cpuPercent) && (jobUpdate.statistics.cpuPercent > taskExecution.max_cpu || isNaN(taskExecution.max_cpu))) {
-            taskExecution.max_cpu = jobUpdate.statistics.cpuPercent;
-        }
     }
 
     if (!isNullOrUndefined(jobUpdate.status)) {
         if (jobUpdate.status === JobStatus.Pending) {
             taskExecution.started_at = new Date();
-            taskExecution.last_process_status_code = jobUpdate.status;
+            // taskExecution.last_process_status_code = jobUpdate.status;
 
-            await taskExecution.save();
+            // await taskExecution.save();
 
-            return;
+            // return;
         }
 
-        if (jobUpdate.status === JobStatus.Online) {
-            taskExecution.last_process_status_code = jobUpdate.status;
-            await taskExecution.save();
+        // if (jobUpdate.status === JobStatus.Online) {
+            // taskExecution.last_process_status_code = jobUpdate.status;
+            // await taskExecution.save();
 
-            return;
-        }
+            // return;
+        // }
 
         // Have a real status from the process manager (e.g, PM2).
         if (jobUpdate.status > taskExecution.last_process_status_code) {
@@ -273,41 +264,52 @@ async function _update(taskExecution: ITaskExecution, jobUpdate: IJobUpdate) {
                     taskExecution.completion_status_code = CompletionResult.Unknown;
                 }
             }
+
+            if (taskExecution.queue_type === QueueType.Local) {
+                // Exit code may arrive separately from status change of done/exit.
+                if (!isNullOrUndefined(jobUpdate.exitCode)) {
+                    // May already be set if cancelled.
+                    if (taskExecution.completion_status_code < CompletionResult.Cancel) {
+                        taskExecution.completion_status_code = (jobUpdate.exitCode === taskExecution.expected_exit_code) ? CompletionResult.Success : CompletionResult.Error;
+                    }
+
+                    if (taskExecution.exit_code === null) {
+                        taskExecution.exit_code = jobUpdate.exitCode;
+
+                        updateStatisticsForTaskId(taskExecution);
+                    }
+                }
+            } else {
+                debug(`checking completion for ${taskExecution.id}`);
+
+                if (taskExecution.completion_status_code < CompletionResult.Cancel) {
+                    if (jobUpdate.status === JobStatus.Stopped) {
+                        taskExecution.completion_status_code = CompletionResult.Success;
+                    } else if (jobUpdate.status === JobStatus.Exited) {
+                        taskExecution.completion_status_code = CompletionResult.Error;
+                    }
+
+                    if (!isNullOrUndefined(jobUpdate.exitCode) && isNullOrUndefined(taskExecution.exit_code)) {
+                        taskExecution.exit_code = jobUpdate.exitCode;
+                    }
+
+                    if (taskExecution.completion_status_code >= CompletionResult.Success) {
+                        updateStatisticsForTaskId(taskExecution);
+                    }
+                }
+            }
+
+            // MainQueue.Instance.SendTaskExecutionUpdate(taskExecution);
+        }
+    }
+
+    if (!isNullOrUndefined(jobUpdate.statistics)) {
+        if (!isNullOrUndefined(jobUpdate.statistics.memoryGB) && (jobUpdate.statistics.memoryGB > taskExecution.max_memory || isNaN(taskExecution.max_memory))) {
+            taskExecution.max_memory = jobUpdate.statistics.memoryGB;
         }
 
-        if (taskExecution.queue_type === QueueType.Local) {
-            // Exit code may arrive separately from status change of done/exit.
-            if (!isNullOrUndefined(jobUpdate.exitCode)) {
-                // May already be set if cancelled.
-                if (taskExecution.completion_status_code < CompletionResult.Cancel) {
-                    taskExecution.completion_status_code = (jobUpdate.exitCode === taskExecution.expected_exit_code) ? CompletionResult.Success : CompletionResult.Error;
-                }
-
-                if (taskExecution.exit_code === null) {
-                    taskExecution.exit_code = jobUpdate.exitCode;
-
-                    updateStatisticsForTaskId(taskExecution);
-                }
-            }
-        } else {
-            debug(`checking completion for ${taskExecution.id}`);
-
-            if (taskExecution.completion_status_code < CompletionResult.Cancel) {
-                if (jobUpdate.status === JobStatus.Stopped) {
-                    taskExecution.completion_status_code = CompletionResult.Success;
-                } else if (jobUpdate.status === JobStatus.Exited) {
-                    taskExecution.completion_status_code = CompletionResult.Error;
-                }
-
-                if (!isNullOrUndefined(jobUpdate.exitCode) && isNullOrUndefined(taskExecution.exit_code)) {
-                    taskExecution.exit_code = jobUpdate.exitCode;
-
-                }
-
-                if (taskExecution.completion_status_code >= CompletionResult.Success) {
-                    updateStatisticsForTaskId(taskExecution);
-                }
-            }
+        if (!isNullOrUndefined(jobUpdate.statistics.cpuPercent) && (jobUpdate.statistics.cpuPercent > taskExecution.max_cpu || isNaN(taskExecution.max_cpu))) {
+            taskExecution.max_cpu = jobUpdate.statistics.cpuPercent;
         }
     }
 

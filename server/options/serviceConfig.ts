@@ -18,9 +18,16 @@ export interface IManagementServiceConfiguration {
     port: number;
     graphQLEndpoint: string;
 }
+
+export interface IMessageServiceConfiguration {
+    host: string;
+    port: number;
+}
+
 export interface IServerConfig {
     apiService: IApiServiceConfiguration;
     managementService: IManagementServiceConfiguration;
+    messageService: IMessageServiceConfiguration;
 }
 
 const configurations = {
@@ -29,14 +36,18 @@ const configurations = {
             name: "",
             networkInterface: "",
             networkAddress: "",
-            networkPort: 3500,
+            networkPort: 6201,
             graphQlEndpoint: "/graphql",
             graphiQlEndpoint: "/graphiql"
         },
         managementService: {
             host: "pipeline-api",
-            port: 3000,
+            port: 6001,
             graphQLEndpoint: "/graphql"
+        },
+        messageService: {
+            host: "pipeline-api",
+            port: 5672
         }
     }
 };
@@ -50,6 +61,9 @@ function overrideDefaults(config: IServerConfig): IServerConfig {
 
     config.managementService.host = process.env.PIPELINE_API_HOST || config.managementService.host;
     config.managementService.port = parseInt(process.env.PIPELINE_API_PORT) || config.managementService.port;
+
+    config.messageService.host = process.env.PIPELINE_MESSAGE_HOST || config.messageService.host;
+    config.messageService.port = parseInt(process.env.PIPELINE_MESSAGE_PORT) || config.messageService.port;
 
     return config;
 }

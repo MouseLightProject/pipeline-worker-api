@@ -1,3 +1,4 @@
+import * as path from "path";
 import {isNullOrUndefined} from "util";
 import * as moment from "moment";
 import * as _ from "lodash";
@@ -140,6 +141,7 @@ export class LocalTaskManager implements ITaskUpdateSource, ITaskManager, Proces
             exec_mode: "fork",
             autorestart: false,
             watch: false,
+            cwd: path.dirname(taskExecution.resolved_script),
             output: taskExecution.resolved_log_path + ".local.out.log",
             error: taskExecution.resolved_log_path + ".local.err.log"
         };

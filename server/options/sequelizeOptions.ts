@@ -34,7 +34,7 @@ function loadDatabaseOptions() {
 
     const options = database.remote;
 
-    options.host = process.env.PIPELINE_DATABASE_HOST || options.host;
+    options.host = process.env.PIPELINE_CORE_SERVICES_HOST || options.host;
     options.port = parseInt(process.env.PIPELINE_DATABASE_PORT) || options.port;
     options.username = process.env.PIPELINE_DATABASE_USER || options.username;
     options.password = process.env.PIPELINE_DATABASE_PASS || options.password;

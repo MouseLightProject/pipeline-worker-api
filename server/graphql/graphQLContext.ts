@@ -57,7 +57,7 @@ export class GraphQLAppContext {
     }
 
     public getTaskExecutions(): Promise<ITaskExecution[]> {
-        return this.localStorageManager.TaskExecutions.findAll({order: [["updated_at", "DESC"]]});
+        return this.localStorageManager.TaskExecutions.findAll({order: [["completed_at", "DESC"]]});
     }
 
     public async getTaskExecutionsPage(reqOffset: number, reqLimit: number, completionStatus: CompletionResult): Promise<ISimplePage<ITaskExecution>> {

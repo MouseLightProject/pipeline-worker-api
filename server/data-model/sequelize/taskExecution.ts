@@ -186,7 +186,8 @@ export function sequelizeImport(sequelize, DataTypes) {
     TaskExecution.getPage = async function (reqOffset: number, reqLimit: number, completionCode: CompletionResult): Promise<ITaskExecution[]> {
         const options: FindOptions<ITaskExecution> = {
             offset: reqOffset,
-            limit: reqLimit
+            limit: reqLimit,
+            order: [["completed_at", "DESC"]]
         };
 
         if (!isNullOrUndefined(completionCode)) {
