@@ -1,3 +1,5 @@
+import * as path from "path";
+import * as fse from "fs-extra";
 import {isNullOrUndefined} from "util";
 
 const debug = require("debug")("pipeline:worker-api:task-supervisor");
@@ -11,8 +13,6 @@ import {ITaskDefinition} from "../data-model/sequelize/taskDefinition";
 import {synchronizeTaskExecutions} from "../data-access/synchronize";
 import {updateStatisticsForTaskId} from "../data-model/taskStatistics";
 import {LSFTaskManager} from "./lsfManager";
-import {existsSync, mkdirSync} from "fs";
-import * as path from "path";
 import {MainQueue} from "../message-queue/mainQueue";
 
 const PIPELINE_INPUT_INDEX = 5;
@@ -119,8 +119,8 @@ export class TaskSupervisor implements ITaskSupervisor, ITaskUpdateDelegate {
             try {
                 const logDirectory = path.join(logBase, taskExecution.tile_id, ".log");
 
-                if (!existsSync(logDirectory)) {
-                    mkdirSync(logDirectory)
+                if (!fse.existsSync(logDirectory)) {
+                    fse.ensureDirSync(logDirectory)
                 }
 
                 taskExecution.resolved_log_path = path.join(logDirectory, `${taskDefinition.log_prefix}-${taskExecution.resolved_script_arg_array[TILE_NAME_INDEX]}`);
