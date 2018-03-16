@@ -2,7 +2,7 @@ import {IServerConfig, ServerConfiguration} from "../options/serviceConfig";
 import {RemotePersistentStorageManager} from "../data-access/remote/databaseConnector";
 import {LocalPersistentStorageManager} from "../data-access/local/databaseConnector";
 import {ITaskDefinition} from "../data-model/sequelize/taskDefinition";
-import {CompletionResult, ITaskExecution} from "../data-model/sequelize/taskExecution";
+import {CompletionResult, ITaskExecution, ITaskExecutionAttributes} from "../data-model/sequelize/taskExecution";
 import {ITaskSupervisor, TaskSupervisor} from "../task-management/taskSupervisor";
 
 const serverConfiguration = ServerConfiguration();
@@ -45,22 +45,24 @@ export class GraphQLAppContext {
     }
 
     public getTaskDefinition(id: string): Promise<ITaskDefinition> {
-        return this.remoteStorageManager.TaskDefinitions.findById(id);
+        // return this.remoteStorageManager.TaskDefinitions.findById(id);
+        return Promise.resolve(null);
     }
 
     public getTaskDefinitions(): Promise<ITaskDefinition[]> {
-        return this.remoteStorageManager.TaskDefinitions.findAll({});
+        // return this.remoteStorageManager.TaskDefinitions.findAll({});
+        return Promise.resolve([]);
     }
 
-    public getTaskExecution(id: string): Promise<ITaskExecution> {
-        return this.localStorageManager.TaskExecutions.findById(id);
+    public async getTaskExecution(id: string): Promise<ITaskExecution> {
+        return await this.localStorageManager.TaskExecutions.findById(id);
     }
 
-    public getTaskExecutions(): Promise<ITaskExecution[]> {
-        return this.localStorageManager.TaskExecutions.findAll({order: [["completed_at", "DESC"]]});
+    public async getTaskExecutions(): Promise<ITaskExecution[]> {
+        return await this.localStorageManager.TaskExecutions.findAll({order: [["completed_at", "DESC"]]});
     }
 
-    public async getTaskExecutionsPage(reqOffset: number, reqLimit: number, completionStatus: CompletionResult): Promise<ISimplePage<ITaskExecution>> {
+    public async getTaskExecutionsPage(reqOffset: number, reqLimit: number, completionStatus: CompletionResult): Promise<ISimplePage<ITaskExecutionAttributes>> {
         let offset = 0;
         let limit = 10;
 
@@ -84,7 +86,7 @@ export class GraphQLAppContext {
             };
         }
 
-        const nodes: ITaskExecution[] = await this.localStorageManager.TaskExecutions.getPage(offset, limit, completionStatus);
+        const nodes: ITaskExecutionAttributes[] = await this.localStorageManager.TaskExecutions.getPage(offset, limit, completionStatus);
 
         return {
             offset: offset,
@@ -95,7 +97,7 @@ export class GraphQLAppContext {
         };
     }
 
-    public async getTaskExecutionsConnection(first: number, after: string): Promise<IPaginationConnections<ITaskExecution>> {
+    public async getTaskExecutionsConnection(first: number, after: string): Promise<IPaginationConnections<ITaskExecutionAttributes>> {
         let offset = 0;
         let limit = 10;
 
@@ -109,7 +111,7 @@ export class GraphQLAppContext {
 
         const count = await this.localStorageManager.TaskExecutions.count();
 
-        const nodes: ITaskExecution[] = await this.localStorageManager.TaskExecutions.getPage(offset, limit, null);
+        const nodes: ITaskExecutionAttributes[] = await this.localStorageManager.TaskExecutions.getPage(offset, limit, null);
 
         return {
             totalCount: count,
@@ -123,7 +125,7 @@ export class GraphQLAppContext {
         }
     }
 
-    public getRunningTaskExecutions(): Promise<ITaskExecution[]> {
+    public getRunningTaskExecutions(): Promise<ITaskExecutionAttributes[]> {
         return this.localStorageManager.TaskExecutions.findRunning();
     }
 

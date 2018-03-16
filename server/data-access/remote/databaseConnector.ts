@@ -1,17 +1,19 @@
 import * as path from "path";
-const Sequelize = require("sequelize");
+
+const sequelize = require("sequelize");
 
 const debug = require("debug")("pipeline:worker-api:database-connector");
 
 import {IPersistentStorageManager, loadModels} from "../modelLoader";
 import {SequelizeOptions} from "../../options/sequelizeOptions";
+import {TaskExecutionModel} from "../../data-model/sequelize/taskExecution";
 import {Sequelize} from "sequelize";
 
 
 export interface IPipelineModels {
-    TaskDefinitions?: any;
-    TaskRepositories?: any;
-    TaskExecutions?: any;
+    // TaskDefinitions?: any;
+    // TaskRepositories?: any;
+    // TaskExecutions?: TaskExecutionModel;
 }
 
 export interface ISequelizeDatabase<T> {
@@ -36,6 +38,7 @@ export class RemotePersistentStorageManager implements IPersistentStorageManager
         return this.pipelineDatabase.connection;
     }
 
+    /*
     public get TaskRepositories() {
         return this.pipelineDatabase.models.TaskRepositories;
     }
@@ -47,6 +50,8 @@ export class RemotePersistentStorageManager implements IPersistentStorageManager
     public get TaskExecutions() {
         return this.pipelineDatabase.models.TaskExecutions;
     }
+
+    */
 
     public async initialize() {
         this.pipelineDatabase = await createConnection({});
@@ -84,7 +89,7 @@ async function createConnection<T>(models: T) {
         isConnected: false
     };
 
-    db.connection = new Sequelize(databaseConfig.database, databaseConfig.username, databaseConfig.password, databaseConfig);
+    db.connection = new sequelize(databaseConfig.database, databaseConfig.username, databaseConfig.password, databaseConfig);
 
     return await loadModels(db, path.normalize(path.join(__dirname, "..", "..", "data-model", "sequelize")));
 }

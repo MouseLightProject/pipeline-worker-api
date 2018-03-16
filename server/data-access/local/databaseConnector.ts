@@ -1,17 +1,17 @@
 import * as path from "path";
-
-const Sequelize = require("sequelize");
+const sequelize = require("sequelize");
 
 const debug = require("debug")("pipeline:worker-api:database-connector");
 
 import {IPersistentStorageManager, loadModel} from "../modelLoader";
 import {SequelizeOptions} from "../../options/sequelizeOptions";
 import {Sequelize} from "sequelize";
+import {TaskExecutionModel} from "../../data-model/sequelize/taskExecution";
 
 
 export interface IPipelineModels {
-    Workers?: any;
-    TaskExecutions?: any;
+    // Workers?: any;
+    TaskExecutions?: TaskExecutionModel;
 }
 
 export interface ISequelizeDatabase<T> {
@@ -76,7 +76,7 @@ async function createConnection<T>(models: T) {
         isConnected: false
     };
 
-    db.connection = new Sequelize(databaseConfig.database, databaseConfig.username, databaseConfig.password, databaseConfig);
+    db.connection = new sequelize(databaseConfig.database, databaseConfig.username, databaseConfig.password, databaseConfig);
 
     return await loadModel(db, path.normalize(path.join(__dirname, "..", "..", "data-model", "sequelize", "taskExecution.js")));
 }

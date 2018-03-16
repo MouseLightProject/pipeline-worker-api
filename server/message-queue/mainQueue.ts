@@ -1,7 +1,7 @@
 import * as amqp from "amqplib";
 import {ServerConfiguration} from "../options/serviceConfig";
 import {Connection, Channel} from "amqplib";
-import {ITaskExecution} from "../data-model/sequelize/taskExecution";
+import {ITaskExecutionAttributes} from "../data-model/sequelize/taskExecution";
 
 const debug = require("debug")("pipeline:main-queue");
 
@@ -36,7 +36,7 @@ export class MainQueue {
         debug(`main queue ready`);
     }
 
-    public SendTaskExecutionUpdate(taskExecution: ITaskExecution) {
+    public SendTaskExecutionUpdate(taskExecution: ITaskExecutionAttributes) {
         if (this.channel) {
             this.channel.sendToQueue(TaskExecutionUpdateQueue, new Buffer(JSON.stringify(taskExecution)), {persistent: true});
         }

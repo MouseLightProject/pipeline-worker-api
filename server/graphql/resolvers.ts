@@ -2,13 +2,14 @@ import {GraphQLAppContext, IPaginationConnections, ISimplePage} from "./graphQLC
 import {ITaskStatistics, taskStatisticsInstance} from "../data-model/taskStatistics";
 import {Workers, IWorker, IWorkerInput} from "../data-model/worker";
 import {ITaskDefinition} from "../data-model/sequelize/taskDefinition";
-import {CompletionResult, ITaskExecution} from "../data-model/sequelize/taskExecution";
+import {CompletionResult, ITaskExecutionAttributes} from "../data-model/sequelize/taskExecution";
 
 const debug = require("debug")("pipeline:worker-api:resolvers");
 
 interface IIdOnlyArguments {
     id: string;
 }
+
 interface ITaskIdArguments {
     taskId: string;
 }
@@ -17,11 +18,8 @@ interface IRemoveCompletedArguments {
     code: CompletionResult;
 }
 
-interface IRunTaskArguments {
-    taskDefinitionId: string;
-    pipelineStageId: string;
-    tileId: string;
-    scriptArgs: Array<string>;
+interface IStartTaskArguments {
+    taskInput: string;
 }
 
 interface ICancelTaskArguments {
@@ -52,16 +50,16 @@ let resolvers = {
         taskDefinitions(_, __, context: GraphQLAppContext): Promise<ITaskDefinition[]> {
             return context.getTaskDefinitions();
         },
-        taskExecution(_, args: IIdOnlyArguments, context: GraphQLAppContext): Promise<ITaskExecution> {
+        taskExecution(_, args: IIdOnlyArguments, context: GraphQLAppContext): Promise<ITaskExecutionAttributes> {
             return context.getTaskExecution(args.id);
         },
-        taskExecutions(_, __, context: GraphQLAppContext): Promise<ITaskExecution[]> {
+        taskExecutions(_, __, context: GraphQLAppContext): Promise<ITaskExecutionAttributes[]> {
              return context.getTaskExecutions();
         },
-        taskExecutionPage(_, args: IPageArguments, context: GraphQLAppContext): Promise<ISimplePage<ITaskExecution>> {
+        taskExecutionPage(_, args: IPageArguments, context: GraphQLAppContext): Promise<ISimplePage<ITaskExecutionAttributes>> {
             return context.getTaskExecutionsPage(args.offset, args.limit, args.status);
         },
-        taskExecutionConnections(_, args: IConnectionArguments, context: GraphQLAppContext): Promise<IPaginationConnections<ITaskExecution>> {
+        taskExecutionConnections(_, args: IConnectionArguments, context: GraphQLAppContext): Promise<IPaginationConnections<ITaskExecutionAttributes>> {
             return context.getTaskExecutionsConnection(args.first, args.after);
         },
         taskStatistics(_, __, context: GraphQLAppContext): Promise<ITaskStatistics[]> {
@@ -70,7 +68,7 @@ let resolvers = {
         statisticsForTask(_, args: IIdOnlyArguments, context: GraphQLAppContext): Promise<ITaskStatistics> {
             return taskStatisticsInstance.getForTaskId(args.id);
         },
-        runningTasks(_, __, context: GraphQLAppContext): Promise<ITaskExecution[]> {
+        runningTasks(_, __, context: GraphQLAppContext): Promise<ITaskExecutionAttributes[]> {
             return context.getRunningTaskExecutions();
         },
         worker(_, __, context: GraphQLAppContext): Promise<IWorker> {
@@ -81,10 +79,10 @@ let resolvers = {
         updateWorker(_, args: IUpdateWorkerArguments, context: GraphQLAppContext): Promise<IWorker> {
             return  Workers.Instance().updateFromInput(args.worker);
         },
-        startTask(_, args: IRunTaskArguments, context: GraphQLAppContext): Promise<ITaskExecution> {
-            return context.taskManager.startTask(args.taskDefinitionId, args.pipelineStageId, args.tileId, args.scriptArgs);
+        startTask(_, args: IStartTaskArguments, context: GraphQLAppContext): Promise<ITaskExecutionAttributes> {
+            return context.taskManager.startTask(JSON.parse(args.taskInput));
         },
-        stopTask(_, args: ICancelTaskArguments, context: GraphQLAppContext): Promise<ITaskExecution> {
+        stopTask(_, args: ICancelTaskArguments, context: GraphQLAppContext): Promise<ITaskExecutionAttributes> {
             debug(`stop task ${args.taskExecutionId}`);
             return context.taskManager.stopTask(args.taskExecutionId);
         },

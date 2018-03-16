@@ -9,8 +9,7 @@ import * as ProcessManager from "./pm2-async";
 const debug = require("debug")("pipeline:worker-api:local-manager");
 
 import {IProcessInfo} from "./pm2-async";
-import {ITaskDefinition} from "../data-model/sequelize/taskDefinition";
-import {ExecutionStatus, ITaskExecution} from "../data-model/sequelize/taskExecution";
+import {ExecutionStatus, ITaskExecutionAttributes} from "../data-model/sequelize/taskExecution";
 import {LocalPersistentStorageManager} from "../data-access/local/databaseConnector";
 import {
     JobStatus, IJobStatistics, ITaskUpdateDelegate,
@@ -67,7 +66,7 @@ export class LocalTaskManager implements ITaskUpdateSource, ITaskManager, Proces
     private async refreshTasksFromProcessManager() {
         const processList: IProcessInfo[] = await ProcessManager.list();
 
-        const running: ITaskExecution[] = (await this._localStorageManager.TaskExecutions.findRunning()).filter(z => z.queue_type === QueueType.Local);
+        const running: ITaskExecutionAttributes[] = (await this._localStorageManager.TaskExecutions.findRunning()).filter(z => z.queue_type === QueueType.Local);
 
         if (running.length === 0) {
             // TODO if refreshOneTaskForProcess starts doing something with orphans, don't early return here.
@@ -77,7 +76,7 @@ export class LocalTaskManager implements ITaskUpdateSource, ITaskManager, Proces
 
         await Promise.all(processList.map(processInfo => this.refreshOneTaskForProcess(processInfo)));
 
-        const zombies = _.differenceWith(running, processList, (r: ITaskExecution, j: IProcessInfo) => {
+        const zombies = _.differenceWith(running, processList, (r: ITaskExecutionAttributes, j: IProcessInfo) => {
             return r.id === j.name;
         });
 
@@ -132,12 +131,12 @@ export class LocalTaskManager implements ITaskUpdateSource, ITaskManager, Proces
         }
     }
 
-    public async startTask(taskExecution: ITaskExecution, taskDefinition: ITaskDefinition) {
+    public async startTask(taskExecution: ITaskExecutionAttributes) {
         let opts = {
             name: taskExecution.id,
             script: taskExecution.resolved_script,
-            args: taskExecution.resolved_script_arg_array,
-            interpreter: taskDefinition.interpreter,
+            args: JSON.parse(taskExecution.resolved_script_args),
+            interpreter: taskExecution.resolved_interpreter,
             exec_mode: "fork",
             autorestart: false,
             watch: false,

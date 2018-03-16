@@ -1,23 +1,19 @@
-import * as path from "path";
 import * as fse from "fs-extra";
 import {isNullOrUndefined} from "util";
 
 const debug = require("debug")("pipeline:worker-api:task-supervisor");
 
-import {RemotePersistentStorageManager} from "../data-access/remote/databaseConnector";
 import {LocalPersistentStorageManager} from "../data-access/local/databaseConnector";
 import {localTaskManager} from "./localTaskManager";
-import {CompletionResult, ExecutionStatus, ITaskExecution} from "../data-model/sequelize/taskExecution";
+import {
+    CompletionResult, ExecutionStatus, ITaskExecution,
+    ITaskExecutionAttributes
+} from "../data-model/sequelize/taskExecution";
 import {Workers} from "../data-model/worker";
-import {ITaskDefinition} from "../data-model/sequelize/taskDefinition";
 import {synchronizeTaskExecutions} from "../data-access/synchronize";
 import {updateStatisticsForTaskId} from "../data-model/taskStatistics";
 import {LSFTaskManager} from "./lsfManager";
-import {MainQueue} from "../message-queue/mainQueue";
-
-const PIPELINE_INPUT_INDEX = 5;
-const TILE_NAME_INDEX = 5;
-const LOG_PATH_INDEX = 6;
+import * as path from "path";
 
 export enum QueueType {
     Local = 0,
@@ -55,8 +51,8 @@ export interface IJobUpdate {
 }
 
 export interface ITaskSupervisor {
-    startTask(taskDefinitionId: string, pipelineStageId: string, tileId: string, scriptArgs: Array<string>): Promise<ITaskExecution>;
-    stopTask(taskExecutionId: string): Promise<ITaskExecution>;
+    startTask(remoteTaskExecution: ITaskExecutionAttributes): Promise<ITaskExecution>;
+    stopTask(taskExecutionId: string): Promise<ITaskExecutionAttributes>;
 }
 
 export interface ITaskUpdateSource {
@@ -64,19 +60,17 @@ export interface ITaskUpdateSource {
 }
 
 export interface ITaskUpdateDelegate {
-    updateZombie(taskExecution: ITaskExecution);
-    update(taskExecution: ITaskExecution, processInfo: IJobUpdate);
+    updateZombie(taskExecution: ITaskExecutionAttributes);
+    update(taskExecution: ITaskExecutionAttributes, processInfo: IJobUpdate);
 }
 
 export interface ITaskManager {
-    startTask(taskExecution: ITaskExecution, taskDefinition: ITaskDefinition): void;
+    startTask(taskExecution: ITaskExecutionAttributes): void;
     stopTask(taskExecutionId: string): void;
 }
 
 export class TaskSupervisor implements ITaskSupervisor, ITaskUpdateDelegate {
     public static Instance = new TaskSupervisor();
-
-    private _remotePersistentStorageManager: RemotePersistentStorageManager = RemotePersistentStorageManager.Instance();
 
     private _localStorageManager: LocalPersistentStorageManager = LocalPersistentStorageManager.Instance();
 
@@ -90,52 +84,26 @@ export class TaskSupervisor implements ITaskSupervisor, ITaskUpdateDelegate {
         }, 0)
     }
 
-    public async startTask(taskDefinitionId: string, pipelineStageId: string, tileId: string, scriptArgs: Array<string>) {
-        const taskDefinition: ITaskDefinition = await this._remotePersistentStorageManager.TaskDefinitions.findById(taskDefinitionId);
-
-        debug(`starting task ${taskDefinition.name} for pipeline ${pipelineStageId}`);
+    public async startTask(remoteTaskExecution: ITaskExecutionAttributes): Promise<ITaskExecution> {
+        debug(`starting task ${remoteTaskExecution.task_definition_id} for pipeline ${remoteTaskExecution.pipeline_stage_id}`);
 
         const worker = await Workers.Instance().worker();
 
-        let taskExecution = await this._localStorageManager.TaskExecutions.createTask(worker.id, worker.is_cluster_proxy ? QueueType.Cluster : QueueType.Local, taskDefinition, pipelineStageId, tileId);
+        const localTaskExecutionInput = Object.assign({}, remoteTaskExecution);
 
-        // Force id to be generated to pass to script.
-        taskExecution = await taskExecution.save();
+        localTaskExecutionInput.remote_id = remoteTaskExecution.id;
+        localTaskExecutionInput.id = undefined;
 
-        let userScriptArgs = taskDefinition.script_args ? taskDefinition.script_args.split(/[\s+]/).filter(Boolean) : [];
 
-        taskExecution.resolved_script_arg_array = scriptArgs.concat(taskDefinition.expected_exit_code.toString()).concat(taskExecution.id).concat([worker.is_cluster_proxy ? "1" : "0"]).concat(userScriptArgs);
-
-        taskExecution.resolved_cluster_arg_array = taskDefinition.cluster_args ? taskDefinition.cluster_args.split(/[\s+]/).filter(Boolean) : [];
-        taskExecution.resolved_cluster_args = taskExecution.resolved_cluster_arg_array.join(", ");
-
-        taskExecution.resolved_script = await taskDefinition.getFullScriptPath();
-
-        taskExecution.resolved_interpreter = taskDefinition.interpreter;
-
-        if (taskExecution.resolved_script_arg_array.length > LOG_PATH_INDEX) {
-            const logBase = taskExecution.resolved_script_arg_array[LOG_PATH_INDEX];
-
-            try {
-                const logDirectory = path.join(logBase, taskExecution.tile_id, ".log");
-
-                if (!fse.existsSync(logDirectory)) {
-                    fse.ensureDirSync(logDirectory)
-                }
-
-                taskExecution.resolved_log_path = path.join(logDirectory, `${taskDefinition.log_prefix}-${taskExecution.resolved_script_arg_array[TILE_NAME_INDEX]}`);
-            } catch (err) {
-                debug("failed to create log directory");
-                debug(err);
-            }
+        if (!path.isAbsolute(localTaskExecutionInput.resolved_script)) {
+            // This happens if a repository is not used or an absolute path is not used.  The coordinator does not make
+            // it absolute based on that remote location.
+            localTaskExecutionInput.resolved_script = path.join(process.cwd(), localTaskExecutionInput.resolved_script);
         }
 
-        taskExecution.resolved_log_path = taskExecution.resolved_log_path || "/tmp";
+        let taskExecution: ITaskExecution = await this._localStorageManager.TaskExecutions.create(localTaskExecutionInput);
 
-        if (taskExecution.resolved_script_arg_array.length > LOG_PATH_INDEX) {
-            taskExecution.resolved_script_arg_array[LOG_PATH_INDEX] = taskExecution.resolved_log_path;
-            taskExecution.resolved_script_args = taskExecution.resolved_script_arg_array.join(", ");
-        }
+        fse.ensureDirSync(path.basename(taskExecution.resolved_log_path));
 
         taskExecution.submitted_at = new Date();
         taskExecution.started_at = taskExecution.submitted_at;
@@ -151,9 +119,9 @@ export class TaskSupervisor implements ITaskSupervisor, ITaskUpdateDelegate {
             // debug(opts);
 
             if (worker.is_cluster_proxy) {
-                await  LSFTaskManager.Instance.startTask(taskExecution, taskDefinition);
+                await  LSFTaskManager.Instance.startTask(taskExecution);
             } else {
-                await localTaskManager.startTask(taskExecution, taskDefinition);
+                await localTaskManager.startTask(taskExecution);
             }
         } catch (err) {
             debug(err);

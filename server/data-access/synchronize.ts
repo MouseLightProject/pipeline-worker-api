@@ -1,5 +1,5 @@
 import {
-    CompletionResult, ExecutionStatus, ITaskExecution,
+    CompletionResult, ExecutionStatus, ITaskExecution, ITaskExecutionAttributes,
     SyncStatus
 } from "../data-model/sequelize/taskExecution";
 import {RemotePersistentStorageManager} from "./remote/databaseConnector";
@@ -69,6 +69,7 @@ export async function synchronizeTaskExecutions(workerId: string, completionCode
 
         const localUnSynced = local.filter(t => t.sync_status === SyncStatus.Never || t.sync_status === SyncStatus.Expired);
 
+        /*
         // The array of all remote associated with this worker and completion code.
         const remote = await remoteStorageManager.TaskExecutions.findAll({
             where: {
@@ -77,6 +78,8 @@ export async function synchronizeTaskExecutions(workerId: string, completionCode
                 completion_status_code: completionCode
             }
         });
+        */
+        const remote = [];
 
         const inserting: ITaskExecution[] = _.differenceBy(localUnSynced, remote, "id");
 
@@ -141,7 +144,7 @@ async function insertRemote(tasks: ITaskExecution[]) {
             obj.sync_status = SyncStatus.Never;
             obj.synchronized_at = null;
 
-            return remoteStorageManager.TaskExecutions.create(obj, {transaction: t});
+            // return remoteStorageManager.TaskExecutions.create(obj, {transaction: t});
         }))
     });
 }
@@ -149,9 +152,10 @@ async function insertRemote(tasks: ITaskExecution[]) {
 async function updateRemote(tasks: ITaskExecution[]) {
     await remoteStorageManager.Connection.transaction(t => {
         return Promise.all(tasks.map(async (task) => {
-            const obj = task.get({plain: true});
+            /*
+           const obj = task.get({plain: true});
 
-            const remote = await remoteStorageManager.TaskExecutions.findById(obj.id);
+             const remote = await remoteStorageManager.TaskExecutions.findById(obj.id);
 
             if (remote.synchronized_at === null) {
                 obj.sync_status = SyncStatus.Never;
@@ -164,18 +168,23 @@ async function updateRemote(tasks: ITaskExecution[]) {
             } else {
                 return Promise.resolve();
             }
+            */
+            return Promise.resolve();
         }));
     });
 }
 
-async function removeRemote(tasks: ITaskExecution[]) {
+async function removeRemote(tasks: ITaskExecutionAttributes[]) {
     await remoteStorageManager.Connection.transaction(t => {
+        /*
         return remoteStorageManager.TaskExecutions.destroy({
                 where: {
                     id: {$in: tasks.map(task => task.id)}
-                }
-            },
-            {transaction: t}
+                },
+                transaction: t
+            }
         )
+        */
+        return Promise.resolve();
     })
 }

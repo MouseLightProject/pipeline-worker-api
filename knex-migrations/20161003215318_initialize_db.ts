@@ -2,6 +2,7 @@ exports.up = function (knex, Promise) {
     return knex.schema
         .createTableIfNotExists("TaskExecutions", (table) => {
             table.uuid("id").primary().unique();
+            table.uuid("remote_id");
             table.uuid("worker_id");
             table.uuid("tile_id");
             table.uuid("task_definition_id");
@@ -24,6 +25,7 @@ exports.up = function (knex, Promise) {
             table.float("max_cpu");
             table.integer("exit_code");
             table.integer("sync_status");
+            table.timestamp("submitted_at");
             table.timestamp("started_at");
             table.timestamp("completed_at");
             table.timestamp("synchronized_at"); // Task execution is fully synchronized to server

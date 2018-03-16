@@ -6,9 +6,11 @@ import * as moment from "moment";
 const debug = require("debug")("pipeline:worker-api:lsf-manager");
 
 import {LocalPersistentStorageManager} from "../data-access/local/databaseConnector";
-import {ITaskDefinition} from "../data-model/sequelize/taskDefinition";
-import {CompletionResult, ExecutionStatus, ITaskExecution} from "../data-model/sequelize/taskExecution";
-import {IJobUpdate, ITaskManager, ITaskUpdateDelegate, ITaskUpdateSource, JobStatus, QueueType} from "./taskSupervisor";
+import {
+    CompletionResult, ExecutionStatus, ITaskExecution,
+    ITaskExecutionAttributes
+} from "../data-model/sequelize/taskExecution";
+import {IJobUpdate, ITaskManager, ITaskUpdateDelegate, ITaskUpdateSource, QueueType} from "./taskSupervisor";
 import {updateJobInfo} from "./lsf";
 
 export class LSFTaskManager implements ITaskUpdateSource, ITaskManager {
@@ -45,7 +47,7 @@ export class LSFTaskManager implements ITaskUpdateSource, ITaskManager {
     }
 
     private async pollClusterJobStatus() {
-        const running: ITaskExecution[] = (await this._localStorageManager.TaskExecutions.findRunning()).filter(z => z.queue_type === QueueType.Cluster);
+        const running: ITaskExecutionAttributes[] = (await this._localStorageManager.TaskExecutions.findRunning()).filter(z => z.queue_type === QueueType.Cluster);
 
         if (running.length === 0) {
             debug("No running jobs - skipping cluster status check.");
@@ -67,7 +69,7 @@ export class LSFTaskManager implements ITaskUpdateSource, ITaskManager {
 
             debug(`found ${running.length} running jobs`);
 
-            const toUpdate: ITaskExecution[] = _.intersectionWith(running, jobInfo, (r: ITaskExecution, j: IJobUpdate) => {
+            const toUpdate: ITaskExecutionAttributes[] = _.intersectionWith(running, jobInfo, (r: ITaskExecutionAttributes, j: IJobUpdate) => {
                 return r.job_id === j.id;
             });
 
@@ -90,7 +92,7 @@ export class LSFTaskManager implements ITaskUpdateSource, ITaskManager {
             }
         }
 
-        const zombie: ITaskExecution[] = _.differenceWith(running, jobInfo, (r: ITaskExecution, j: IJobUpdate) => {
+        const zombie: ITaskExecutionAttributes[] = _.differenceWith(running, jobInfo, (r: ITaskExecutionAttributes, j: IJobUpdate) => {
             return r.job_id === j.id;
         });
 
@@ -115,12 +117,13 @@ export class LSFTaskManager implements ITaskUpdateSource, ITaskManager {
         }
     }
 
-    public startTask(taskExecution: ITaskExecution, taskDefinition: ITaskDefinition) {
-        const programArgs = [taskExecution.resolved_script].concat(taskExecution.resolved_script_arg_array).join(" ");
+    public startTask(taskExecution: ITaskExecution) {
+        // TODO Need to escape \ and " in any script arguments?
+        const programArgs = [taskExecution.resolved_script].concat(JSON.parse(taskExecution.resolved_script_args)).join(" ");
 
         const requiredBsubArgs = ["-J", `ml-dg-${taskExecution.tile_id}`, "-g", `/mouselight/pipeline/${taskExecution.worker_id}`, "-oo", `${taskExecution.resolved_log_path + ".cluster.out.log"}`, "-eo", `${taskExecution.resolved_log_path + ".cluster.err.log"}`];
 
-        const clusterArgs = taskExecution.resolved_cluster_arg_array.join(" ").replace(/"/g, `\\"`).replace(/\(/g, `\\(`).replace(/\)/g, `\\)`);
+        const clusterArgs = JSON.parse(taskExecution.resolved_cluster_args).arguments[0].replace(/"/g, `\\"`).replace(/\(/g, `\\(`).replace(/\)/g, `\\)`);
 
         // const clusterArgs = taskExecution.resolved_cluster_arg_array.join(" ");
 
@@ -146,7 +149,7 @@ export class LSFTaskManager implements ITaskUpdateSource, ITaskManager {
 
                     taskExecution.job_id = parseInt(r[0]);
 
-                    taskExecution.save();
+                    taskExecution.save().then();
 
                     debug(`submitted task id ${taskExecution.id} has job id ${taskExecution.job_id}`);
                 } catch (err) {
@@ -177,7 +180,7 @@ export class LSFTaskManager implements ITaskUpdateSource, ITaskManager {
                     taskExecution.completion_status_code = CompletionResult.Error;
                 }
 
-                taskExecution.save();
+                taskExecution.save().then();
             });
         } catch (err) {
             debug(err);
@@ -186,7 +189,7 @@ export class LSFTaskManager implements ITaskUpdateSource, ITaskManager {
             taskExecution.execution_status_code = ExecutionStatus.Completed;
             taskExecution.completion_status_code = CompletionResult.Error;
 
-            taskExecution.save();
+            taskExecution.save().then();
         }
     }
 

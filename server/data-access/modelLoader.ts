@@ -9,7 +9,6 @@ import {Sequelize} from "sequelize";
 export interface IPersistentStorageManager {
     Connection: Sequelize;
     IsConnected: boolean;
-    TaskExecutions: any;
 }
 
 export async function loadModels<T>(db: ISequelizeDatabase<T>, modelsLocation: string) {

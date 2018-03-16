@@ -4,7 +4,7 @@ const debug = require("debug")("pipeline:worker-api:socket.io");
 
 import {IServerConfig, IApiServiceConfiguration} from "../options/serviceConfig";
 import {IWorker, Workers} from "../data-model/worker";
-import {ITaskExecution} from "../data-model/sequelize/taskExecution";
+import {ITaskExecutionAttributes} from "../data-model/sequelize/taskExecution";
 import {LocalPersistentStorageManager} from "../data-access/local/databaseConnector";
 import {MachineProperties} from "../system/systemProperties";
 
@@ -96,7 +96,7 @@ export class SocketIoClient {
 
         let taskLoad = -1;
 
-        let tasks: ITaskExecution[] = await this._localStorageManager.TaskExecutions.findRunning();
+        let tasks: ITaskExecutionAttributes[] = await this._localStorageManager.TaskExecutions.findRunning();
 
         if (tasks != null) {
             // Cluster capacity is measured by number of jobs.

@@ -3,7 +3,7 @@ import {v4} from "uuid";
 const AsyncLock = require("async");
 
 import {ITableModelRow, TableModel} from "./tableModel";
-import {CompletionResult, ITaskExecution} from "./sequelize/taskExecution";
+import {CompletionResult, ITaskExecutionAttributes} from "./sequelize/taskExecution";
 
 export interface ITaskStatistics extends ITableModelRow {
     task_definition_id: string;
@@ -165,7 +165,7 @@ queue.error = (err) => {
     console.log("queue error");
 };
 
-export function updateStatisticsForTaskId(taskExecution: ITaskExecution) {
+export function updateStatisticsForTaskId(taskExecution: ITaskExecutionAttributes) {
     let duration_ms = null;
 
     if (taskExecution.completed_at && taskExecution.started_at) {

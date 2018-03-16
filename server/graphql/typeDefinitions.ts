@@ -110,6 +110,14 @@ input WorkerInput {
   is_accepting_jobs: Boolean
 }
 
+input StartTaskInput {
+  taskDefinitionId: String!
+  pipelineStageId: String!
+  tileId: String!
+  logFile: String!
+  scriptArgs: [String!]
+}
+
 type Query {
   taskDefinitions: [TaskDefinition!]!
   taskDefinition(id: String!): TaskDefinition
@@ -126,7 +134,7 @@ type Query {
 type Mutation {
   updateWorker(worker: WorkerInput): Worker
 
-  startTask(taskDefinitionId: String!,pipelineStageId: String!, tileId: String!, scriptArgs: [String!]): TaskExecution
+  startTask(taskInput: String!): TaskExecution
   stopTask(taskExecutionId: String!): TaskExecution
 
   removeCompletedExecutionsWithCode(code: Int): Int
