@@ -46,7 +46,7 @@ const configurations = {
             graphQLEndpoint: "/graphql"
         },
         messageService: {
-            host: "pipeline-api",
+            host: "pipeline-message-queue",
             port: 5672
         }
     }
