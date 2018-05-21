@@ -103,7 +103,10 @@ export class TaskSupervisor implements ITaskSupervisor, ITaskUpdateDelegate {
 
         let taskExecution: ITaskExecution = await this._localStorageManager.TaskExecutions.create(localTaskExecutionInput);
 
-        fse.ensureDirSync(path.basename(taskExecution.resolved_log_path));
+        // resolved_log_path is really the log prefix i.e., the log path plus the prefix for file names.  There is no
+        // extension so node sees this as a directory.
+        fse.ensureDirSync(path.resolve(taskExecution.resolved_log_path, ".."));
+        debug(`ensured log path at ${path.resolve(taskExecution.resolved_log_path, "..")}`);
 
         taskExecution.submitted_at = new Date();
         taskExecution.started_at = taskExecution.submitted_at;
