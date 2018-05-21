@@ -47,6 +47,7 @@ type TaskExecution {
   task: TaskDefinition
   work_units: Float
   cluster_work_units: Float
+  tile_id: String
   resolved_script: String
   resolved_interpreter: String
   resolved_script_args: String
