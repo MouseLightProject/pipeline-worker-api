@@ -11,8 +11,8 @@ import {Sequelize} from "sequelize";
 
 
 export interface IPipelineModels {
-    // TaskDefinitions?: any;
-    // TaskRepositories?: any;
+    TaskDefinitions?: any;
+    TaskRepositories?: any;
     // TaskExecutions?: TaskExecutionModel;
 }
 
@@ -38,7 +38,6 @@ export class RemotePersistentStorageManager implements IPersistentStorageManager
         return this.pipelineDatabase.connection;
     }
 
-    /*
     public get TaskRepositories() {
         return this.pipelineDatabase.models.TaskRepositories;
     }
@@ -47,10 +46,10 @@ export class RemotePersistentStorageManager implements IPersistentStorageManager
         return this.pipelineDatabase.models.TaskDefinitions;
     }
 
+    /*
     public get TaskExecutions() {
         return this.pipelineDatabase.models.TaskExecutions;
     }
-
     */
 
     public async initialize() {

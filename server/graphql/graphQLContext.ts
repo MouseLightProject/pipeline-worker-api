@@ -45,13 +45,11 @@ export class GraphQLAppContext {
     }
 
     public getTaskDefinition(id: string): Promise<ITaskDefinition> {
-        // return this.remoteStorageManager.TaskDefinitions.findById(id);
-        return Promise.resolve(null);
+        return this.remoteStorageManager.TaskDefinitions.findById(id);
     }
 
     public getTaskDefinitions(): Promise<ITaskDefinition[]> {
-        // return this.remoteStorageManager.TaskDefinitions.findAll({});
-        return Promise.resolve([]);
+        return this.remoteStorageManager.TaskDefinitions.findAll({});
     }
 
     public async getTaskExecution(id: string): Promise<ITaskExecution> {
