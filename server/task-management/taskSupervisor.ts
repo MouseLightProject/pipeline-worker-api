@@ -14,6 +14,7 @@ import {synchronizeTaskExecutions} from "../data-access/synchronize";
 import {updateStatisticsForTaskId} from "../data-model/taskStatistics";
 import {LSFTaskManager} from "./lsfManager";
 import * as path from "path";
+import {MainQueue} from "../message-queue/mainQueue";
 
 export enum QueueType {
     Local = 0,
@@ -270,7 +271,7 @@ async function _update(taskExecution: ITaskExecution, jobUpdate: IJobUpdate) {
                 }
             }
 
-            // MainQueue.Instance.SendTaskExecutionUpdate(taskExecution);
+            MainQueue.Instance.SendTaskExecutionUpdate(taskExecution);
         }
     }
 

@@ -9,8 +9,7 @@ import {Workers} from "./data-model/worker";
 import {ServerConfiguration} from "./options/serviceConfig";
 import {MainQueue} from "./message-queue/mainQueue";
 
-start().then(() => {
-}).catch((err) => debug(err));
+start().then().catch((err) => debug(err));
 
 async function start() {
     const worker = await Workers.Instance().worker();

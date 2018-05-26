@@ -44,12 +44,6 @@ interface IConnectionArguments {
 
 let resolvers = {
     Query: {
-        taskDefinition(_, args: IIdOnlyArguments, context: GraphQLAppContext): Promise<ITaskDefinition> {
-            return context.getTaskDefinition(args.id);
-        },
-        taskDefinitions(_, __, context: GraphQLAppContext): Promise<ITaskDefinition[]> {
-            return context.getTaskDefinitions();
-        },
         taskExecution(_, args: IIdOnlyArguments, context: GraphQLAppContext): Promise<ITaskExecutionAttributes> {
             return context.getTaskExecution(args.id);
         },
@@ -101,6 +95,28 @@ let resolvers = {
     TaskExecution: {
         task(taskExecution, _, context: GraphQLAppContext) {
             return context.getTaskDefinition(taskExecution.task_definition_id);
+        }
+    },
+    Worker: {
+        async task_load(w: IWorker, _, context: GraphQLAppContext) {
+            const worker = await Workers.Instance().worker();
+
+            let taskLoad = -1;
+
+            let tasks: ITaskExecutionAttributes[] = await context.getRunningTaskExecutions();
+
+            if (tasks != null) {
+                // Cluster capacity is measured by number of jobs.
+                if (worker.is_cluster_proxy) {
+                    taskLoad = tasks.length;
+                } else {
+                    taskLoad = tasks.reduce((total: number, task) => {
+                        return task.work_units + total;
+                    }, 0);
+                }
+            }
+
+            return taskLoad;
         }
     }
 };

@@ -38,7 +38,7 @@ export class SocketIoClient {
     private _localStorageManager = LocalPersistentStorageManager.Instance();
 
     private constructor(worker: IWorker, config: IServerConfig) {
-        this._socket = socket_io(`http://${config.managementService.host}:${config.managementService.port}`);
+        this._socket = socket_io(`http://${config.coordinatorApiService.host}:${config.coordinatorApiService.port}`);
 
         this._apiService = config.apiService;
 

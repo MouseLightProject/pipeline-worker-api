@@ -97,6 +97,7 @@ type Worker {
   work_capacity: Float
   is_cluster_proxy: Boolean
   is_accepting_jobs: Boolean
+  task_load: Int
   created_at: String
   updated_at: String
   deleted_at: String
