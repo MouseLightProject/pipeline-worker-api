@@ -3,7 +3,7 @@ import {ITaskStatistics, taskStatisticsInstance} from "../data-model/taskStatist
 import {CompletionResult, ITaskExecutionAttributes} from "../data-model/sequelize/taskExecution";
 import {LocalPersistentStorageManager} from "../data-access/local/databaseConnector";
 import {IWorker, IWorkerInput} from "../data-model/sequelize/worker";
-import {QueueType} from "../task-management/taskSupervisor";
+import {QueueType, startTask} from "../task-management/taskSupervisor";
 
 const debug = require("debug")("pipeline:worker-api:resolvers");
 
@@ -43,6 +43,12 @@ interface IConnectionArguments {
     after: string;
 }
 
+export interface IStartTaskResponse {
+    taskExecution: ITaskExecutionAttributes;
+    localTaskLoad: number;
+    clusterTaskLoad: number;
+}
+
 let resolvers = {
     Query: {
         taskExecution(_, args: IIdOnlyArguments, context: GraphQLAppContext): Promise<ITaskExecutionAttributes> {
@@ -74,8 +80,8 @@ let resolvers = {
         updateWorker(_, args: IUpdateWorkerArguments, context: GraphQLAppContext): Promise<IWorker> {
             return LocalPersistentStorageManager.Instance().Worker.updateFromInput(args.worker);
         },
-        startTask(_, args: IStartTaskArguments, context: GraphQLAppContext): Promise<ITaskExecutionAttributes> {
-            return context.taskManager.startTask(JSON.parse(args.taskInput));
+        startTask(_, args: IStartTaskArguments, context: GraphQLAppContext): Promise<IStartTaskResponse> {
+            return startTask(JSON.parse(args.taskInput));
         },
         stopTask(_, args: ICancelTaskArguments, context: GraphQLAppContext): Promise<ITaskExecutionAttributes> {
             debug(`stop task ${args.taskExecutionId}`);

@@ -46,7 +46,7 @@ export class SocketIoClient {
 
         debug("interface available");
 
-        this._socket.on("connect", async() => {
+        this._socket.on("connect", async () => {
             debug("connected to server");
 
             this._connectionStatus = ServerConnectionStatus.Connected;
@@ -89,13 +89,17 @@ export class SocketIoClient {
     }
 
     private emitHostInformation(worker: IWorker) {
-        this._socket.emit("workerApiService", {worker: worker, service: ServiceConfiguration, machine: MachineProperties});
+        this._socket.emit("workerApiService", {
+            worker: worker,
+            service: ServiceConfiguration,
+            machine: MachineProperties
+        });
     }
 
     private async emitHeartBeat() {
         try {
-            let localTaskLoad = -1;
-            let clusterTaskLoad = -1;
+            let localTaskLoad = 0;
+            let clusterTaskLoad = 0;
 
             const tasks: ITaskExecutionAttributes[] = await this._localStorageManager.TaskExecutions.findRunning();
 
@@ -112,6 +116,7 @@ export class SocketIoClient {
                 localTaskLoad,
                 clusterTaskLoad
             });
+
         } catch (err) {
             debug("failed to emit heartbeat");
             debug(err);

@@ -43,16 +43,23 @@ type TaskDefinition {
 type TaskExecution {
   id: String!
   worker_id: String
+  remote_task_execution_id: String
+  tile_id: String
   task_definition_id: String
   task: TaskDefinition
+  pipeline_stage_id: String
+  queue_type: Int
   local_work_units: Float
   cluster_work_units: Float
-  tile_id: String
+  resolved_output_path: String
   resolved_script: String
   resolved_interpreter: String
   resolved_script_args: String
   resolved_cluster_args: String
   resolved_log_path: String
+  expected_exit_code: Int
+  job_id: Int
+  job_name: String
   execution_status_code: Int
   completion_status_code: Int
   last_process_status_code: Int
@@ -62,6 +69,8 @@ type TaskExecution {
   submitted_at: Float
   started_at: Float
   completed_at: Float
+  sync_status: Int
+  synchronized_at: Float
   created_at: Float
   updated_at: Float
   deleted_at: Float
@@ -104,6 +113,12 @@ type Worker {
   deleted_at: String
 }
 
+type StartTaskResponse {
+    taskExecution: TaskExecution
+    localTaskLoad: Float
+    clusterTaskLoad: Float
+}
+
 input WorkerInput {
   id: String
   preferred_network_interface_id: String
@@ -129,7 +144,7 @@ type Query {
 type Mutation {
   updateWorker(worker: WorkerInput): Worker
 
-  startTask(taskInput: String!): TaskExecution
+  startTask(taskInput: String!): StartTaskResponse
   stopTask(taskExecutionId: String!): TaskExecution
 
   removeCompletedExecutionsWithCode(code: Int): Int

@@ -38,20 +38,21 @@ export class LSFTaskManager implements ITaskUpdateSource, ITaskManager {
 
     private async refreshAllJobs() {
         try {
-            await this.pollClusterJobStatus();
+            const load = await this.pollClusterJobStatus();
+            this._taskUpdateDelegate.notifyTaskLoad(QueueType.Cluster, load)
         } catch (err) {
             debug(err);
         }
 
-        setTimeout(() => this.refreshAllJobs(), 30 * 1000);
+        setTimeout(() => this.refreshAllJobs(), 20 * 1000);
     }
 
-    private async pollClusterJobStatus() {
+    private async pollClusterJobStatus(): Promise<number> {
         const running: ITaskExecutionAttributes[] = (await this._localStorageManager.TaskExecutions.findRunning()).filter(z => z.queue_type === QueueType.Cluster);
 
         if (running.length === 0) {
             debug("No running jobs - skipping cluster status check.");
-            return;
+            return 0;
         }
 
         const ids = running.map(t => t.job_id).filter(j => j > 0).map(j => j.toString());
@@ -115,6 +116,10 @@ export class LSFTaskManager implements ITaskUpdateSource, ITaskManager {
                 debug(`\tshortest ${longRunning[longRunning.length - 1].humanize()}`);
             }
         }
+
+        return running.reduce((p, t) => {
+            return p + t.cluster_work_units;
+        }, 0);
     }
 
     public startTask(taskExecution: ITaskExecution) {

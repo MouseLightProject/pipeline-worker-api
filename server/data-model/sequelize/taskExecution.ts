@@ -34,6 +34,7 @@ export interface ITaskExecutionAttributes {
     tile_id: string;
     task_definition_id: string;
     pipeline_stage_id: string;
+    queue_type: number,
     local_work_units: number;
     cluster_work_units: number;
     resolved_output_path: string;
@@ -43,7 +44,6 @@ export interface ITaskExecutionAttributes {
     resolved_cluster_args: string;
     resolved_log_path: string;
     expected_exit_code: number;
-    queue_type: number,
     job_id: number,
     job_name: string,
     execution_status_code: ExecutionStatus;

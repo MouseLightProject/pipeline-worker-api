@@ -50,12 +50,13 @@ export class LocalTaskManager implements ITaskUpdateSource, ITaskManager, Proces
 
     private async refreshAllTasks() {
         try {
-            await this.refreshTasksFromProcessManager();
+            const load = await this.refreshTasksFromProcessManager();
+            this._taskUpdateDelegate.notifyTaskLoad(QueueType.Local, load);
         } catch (err) {
             debug(err);
         }
 
-        setTimeout(() => this.refreshAllTasks(), 60 * 1000);
+        setTimeout(() => this.refreshAllTasks(), 20 * 1000);
     }
 
     // TODO Need a function to refresh what the database thinks are running tasks (find orphans, update stats, etc).
@@ -63,7 +64,7 @@ export class LocalTaskManager implements ITaskUpdateSource, ITaskManager, Proces
     // this interface than the only ones that should exist that we"d care about should be known to us, unless there is
     // a bug where a process gets kicked off, but the initial save to database fails at creation.
 
-    private async refreshTasksFromProcessManager() {
+    private async refreshTasksFromProcessManager(): Promise<number> {
         const processList: IProcessInfo[] = await ProcessManager.list();
 
         const running: ITaskExecutionAttributes[] = (await this._localStorageManager.TaskExecutions.findRunning()).filter(z => z.queue_type === QueueType.Local);
@@ -71,7 +72,7 @@ export class LocalTaskManager implements ITaskUpdateSource, ITaskManager, Proces
         if (running.length === 0) {
             // TODO if refreshOneTaskForProcess starts doing something with orphans, don't early return here.
             debug("No running jobs - skipping local status check.");
-            return;
+            return 0;
         }
 
         await Promise.all(processList.map(processInfo => this.refreshOneTaskForProcess(processInfo)));
@@ -97,6 +98,10 @@ export class LocalTaskManager implements ITaskUpdateSource, ITaskManager, Proces
                 debug(`\tshortest ${longRunning[longRunning.length - 1].humanize()}`);
             }
         }
+
+        return running.reduce((p, t) => {
+            return p + t.local_work_units;
+        }, 0);
     }
 
     private async refreshOneTaskForProcess(processInfo: IProcessInfo): Promise<void> {
