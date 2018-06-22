@@ -1,5 +1,3 @@
-import {knex} from "../data-access/knexConnector";
-
 export interface ITableModelRow {
     id: string;
     created_at: Date;
@@ -8,10 +6,10 @@ export interface ITableModelRow {
 }
 
 export abstract class TableModel<T extends ITableModelRow> {
-    private _tableName = "";
-    private _idKey = "";
+    private readonly _tableName: string = "";
+    private readonly _idKey: string = "";
 
-    public constructor(tableName: string, idKey: string = "id") {
+    protected constructor(tableName: string, idKey: string = "id") {
         this._tableName = tableName;
         this._idKey = idKey;
     }
@@ -41,7 +39,7 @@ export abstract class TableModel<T extends ITableModelRow> {
     }
 
     public async count(): Promise<number> {
-        const result = await knex(this._tableName).whereNull("deleted_at").count("id");
+        const result = []; // await knex(this._tableName).whereNull("deleted_at").count("id");
 
         if (result && result.length > 0) {
             return result[0][`count("id")`];
@@ -65,13 +63,13 @@ export abstract class TableModel<T extends ITableModelRow> {
         if (row.created_at == null) {
             row.created_at = new Date();
 
-            await knex(this._tableName).insert(row);
+            // await knex(this._tableName).insert(row);
         } else {
             if (!row.deleted_at) {
                 row.updated_at = new Date();
             }
 
-            await knex(this._tableName).where(this._idKey, row.id).update(row);
+            // await knex(this._tableName).where(this._idKey, row.id).update(row);
         }
 
         if (!row.deleted_at) {
@@ -114,16 +112,16 @@ export abstract class TableModel<T extends ITableModelRow> {
         let objList;
 
         if (includeSoftDelete) {
-            objList = await knex(this._tableName).select(this._idKey).orderBy("id");
+            objList = []; // await knex(this._tableName).select(this._idKey).orderBy("id");
         } else {
-            objList = await knex(this._tableName).select(this._idKey).whereNull("deleted_at").orderBy("id");
+            objList = []; // await knex(this._tableName).select(this._idKey).whereNull("deleted_at").orderBy("id");
         }
 
         return <string[]>objList.map(obj => obj.id);
     }
 
     protected async fetch(keys: string[], orderBy: string = "id", asc: boolean = true): Promise<T[]> {
-        const rows = await knex(this.tableName).whereIn(this.idKey, keys).orderBy(orderBy, asc ? "asc" : "desc");
+        const rows = []; // await knex(this.tableName).whereIn(this.idKey, keys).orderBy(orderBy, asc ? "asc" : "desc");
 
         return rows.map(row => {
             return this.didFetchRow(row);

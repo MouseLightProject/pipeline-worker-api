@@ -2,11 +2,13 @@ import * as socket_io from "socket.io-client";
 
 const debug = require("debug")("pipeline:worker-api:socket.io");
 
-import {IServerConfig, IApiServiceConfiguration} from "../options/serviceConfig";
-import {IWorker, Workers} from "../data-model/worker";
 import {ITaskExecutionAttributes} from "../data-model/sequelize/taskExecution";
 import {LocalPersistentStorageManager} from "../data-access/local/databaseConnector";
 import {MachineProperties} from "../system/systemProperties";
+import {IWorker} from "../data-model/sequelize/worker";
+import {ICoordinatorService} from "../options/coreServicesOptions";
+import {ServiceConfiguration} from "../options/serviceConfig";
+import {QueueType} from "../task-management/taskSupervisor";
 
 export enum ServerConnectionStatus {
     Uninitialized,
@@ -23,13 +25,13 @@ export class SocketIoClient {
 
     private static _ioClient: SocketIoClient = null;
 
-    public static use(worker: IWorker, config: IServerConfig) {
-        this._ioClient = new SocketIoClient(worker, config);
+    public static use(worker: IWorker, coordinatorService: ICoordinatorService) {
+        this._ioClient = new SocketIoClient(worker, coordinatorService);
     }
 
     private _socket;
 
-    private _apiService: IApiServiceConfiguration = null;
+    private _worker: IWorker;
 
     private _heartBeatInterval = null;
 
@@ -37,10 +39,10 @@ export class SocketIoClient {
 
     private _localStorageManager = LocalPersistentStorageManager.Instance();
 
-    private constructor(worker: IWorker, config: IServerConfig) {
-        this._socket = socket_io(`http://${config.coordinatorApiService.host}:${config.coordinatorApiService.port}`);
+    private constructor(worker: IWorker, coordinatorService: ICoordinatorService) {
+        this._worker = worker;
 
-        this._apiService = config.apiService;
+        this._socket = socket_io(`http://${coordinatorService.host}:${coordinatorService.port}`);
 
         debug("interface available");
 
@@ -87,31 +89,32 @@ export class SocketIoClient {
     }
 
     private emitHostInformation(worker: IWorker) {
-        this._socket.emit("workerApiService", {worker: worker, service: this._apiService, machine: MachineProperties});
+        this._socket.emit("workerApiService", {worker: worker, service: ServiceConfiguration, machine: MachineProperties});
     }
 
     private async emitHeartBeat() {
+        try {
+            let localTaskLoad = -1;
+            let clusterTaskLoad = -1;
 
-        const worker = await Workers.Instance().worker();
+            const tasks: ITaskExecutionAttributes[] = await this._localStorageManager.TaskExecutions.findRunning();
 
-        let taskLoad = -1;
+            tasks.map((t) => {
+                if (t.queue_type === QueueType.Local) {
+                    localTaskLoad += t.local_work_units;
+                } else {
+                    clusterTaskLoad += t.cluster_work_units;
+                }
+            });
 
-        let tasks: ITaskExecutionAttributes[] = await this._localStorageManager.TaskExecutions.findRunning();
-
-        if (tasks != null) {
-            // Cluster capacity is measured by number of jobs.
-            if (worker.is_cluster_proxy) {
-                taskLoad = tasks.length;
-            } else {
-                taskLoad = tasks.reduce((total: number, task) => {
-                    return task.work_units + total;
-                }, 0);
-            }
+            this._socket.emit("heartBeat", {
+                worker: this._worker.toJSON(),
+                localTaskLoad,
+                clusterTaskLoad
+            });
+        } catch (err) {
+            debug("failed to emit heartbeat");
+            debug(err);
         }
-
-        this._socket.emit("heartBeat", {
-            worker: worker,
-            taskLoad: taskLoad
-        });
     }
 }

@@ -2,7 +2,7 @@ const os = require("os");
 
 const debug = require("debug")("pipeline:worker-api:configuration");
 
-export interface IApiServiceConfiguration {
+export interface IApiService {
     name: string;
     networkInterface: string;
     networkAddress: string;
@@ -11,71 +11,21 @@ export interface IApiServiceConfiguration {
     graphiQlEndpoint: string;
 }
 
-// To establish socket.io, graphql, and any other connections.  In place of having a general discovery service.
-
-export interface IManagementServiceConfiguration {
-    host: string;
-    port: number;
-    graphQLEndpoint: string;
-}
-
-export interface IMessageServiceConfiguration {
-    host: string;
-    port: number;
-}
-
-export interface IServerConfig {
-    apiService: IApiServiceConfiguration;
-    coordinatorApiService: IManagementServiceConfiguration;
-    messageService: IMessageServiceConfiguration;
-}
-
-const configurations = {
-    production: {
-        apiService: {
-            name: "",
-            networkInterface: "",
-            networkAddress: "",
-            networkPort: 6201,
-            graphQlEndpoint: "/graphql",
-            graphiQlEndpoint: "/graphiql"
-        },
-        coordinatorApiService: {
-            host: "pipeline-api",
-            port: 6001,
-            graphQLEndpoint: "/graphql"
-        },
-        messageService: {
-            host: "pipeline-message-queue",
-            port: 5672
-        }
-    }
+const ApiService: IApiService = {
+    name: "",
+    networkInterface: "",
+    networkAddress: "",
+    networkPort: 6201,
+    graphQlEndpoint: "/graphql",
+    graphiQlEndpoint: "/graphiql"
 };
 
-function overrideDefaults(config: IServerConfig): IServerConfig {
-    let networkProperties: INetworkProperties = findNetworkAddress(process.env.PREFERRED_NETWORK_INTERFACE || config.apiService.networkInterface);
+function loadApiService(apiService: IApiService): IApiService {
+    let networkProperties: INetworkProperties = findNetworkAddress(process.env.PREFERRED_NETWORK_INTERFACE || apiService.networkInterface);
 
     networkProperties.networkAddress = process.env.HOST_NETWORK_ADDRESS || networkProperties.networkAddress;
 
-    config.apiService = readHostProperties(config.apiService, networkProperties);
-
-    config.coordinatorApiService.host = process.env.PIPELINE_API_HOST || config.coordinatorApiService.host;
-    config.coordinatorApiService.port = parseInt(process.env.PIPELINE_API_PORT) || config.coordinatorApiService.port;
-
-    config.messageService.host = process.env.PIPELINE_CORE_SERVICES_HOST || config.messageService.host;
-    config.messageService.port = parseInt(process.env.PIPELINE_MESSAGE_PORT) || config.messageService.port;
-
-    return config;
-}
-
-let localServerConfiguration = null;
-
-export function ServerConfiguration(): IServerConfig {
-    if (localServerConfiguration === null) {
-        localServerConfiguration = overrideDefaults(configurations.production);
-    }
-
-    return localServerConfiguration;
+    return readHostProperties(apiService, networkProperties);
 }
 
 interface INetworkProperties {
@@ -83,7 +33,7 @@ interface INetworkProperties {
     networkAddress: string;
 }
 
-function readHostProperties(config: IApiServiceConfiguration, networkProperties: INetworkProperties): IApiServiceConfiguration {
+function readHostProperties(config: IApiService, networkProperties: INetworkProperties): IApiService {
     return {
         name: process.env.PIPELINE_WORKER_NAME || os.hostname(),
         networkInterface: networkProperties.interfaceName,
@@ -130,3 +80,5 @@ function findNetworkAddress(preferredNetworkInterface: string): INetworkProperti
 
     return networkProperties;
 }
+
+export const ServiceConfiguration = loadApiService(ApiService);

@@ -1,11 +1,8 @@
-import {IServerConfig, ServerConfiguration} from "../options/serviceConfig";
 import {RemotePersistentStorageManager} from "../data-access/remote/databaseConnector";
 import {LocalPersistentStorageManager} from "../data-access/local/databaseConnector";
 import {ITaskDefinition} from "../data-model/sequelize/taskDefinition";
 import {CompletionResult, ITaskExecution, ITaskExecutionAttributes} from "../data-model/sequelize/taskExecution";
-import {ITaskSupervisor, TaskSupervisor} from "../task-management/taskSupervisor";
-
-const serverConfiguration = ServerConfiguration();
+import {ITaskSupervisor, QueueType, TaskSupervisor} from "../task-management/taskSupervisor";
 
 export interface IPageInfo {
     endCursor: string,
@@ -32,13 +29,11 @@ export interface ISimplePage<T> {
 }
 
 export class GraphQLAppContext {
-    readonly serverConfiguration: IServerConfig;
     readonly remoteStorageManager: RemotePersistentStorageManager;
     readonly localStorageManager: LocalPersistentStorageManager;
     readonly taskManager: ITaskSupervisor;
 
     constructor() {
-        this.serverConfiguration = serverConfiguration;
         this.remoteStorageManager = RemotePersistentStorageManager.Instance();
         this.localStorageManager = LocalPersistentStorageManager.Instance();
         this.taskManager = TaskSupervisor.Instance;
@@ -125,6 +120,10 @@ export class GraphQLAppContext {
 
     public getRunningTaskExecutions(): Promise<ITaskExecutionAttributes[]> {
         return this.localStorageManager.TaskExecutions.findRunning();
+    }
+
+    public getRunningTaskExecutionsByQueueType(queueType: QueueType): Promise<ITaskExecutionAttributes[]> {
+        return this.localStorageManager.TaskExecutions.findRunningByQueueType(queueType);
     }
 
     public removeTaskExecutionsWithCompletionCode(code: CompletionResult): Promise<number> {

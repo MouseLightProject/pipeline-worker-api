@@ -4,16 +4,14 @@ const sequelize = require("sequelize");
 
 const debug = require("debug")("pipeline:worker-api:database-connector");
 
-import {IPersistentStorageManager, loadModels} from "../modelLoader";
-import {SequelizeOptions} from "../../options/sequelizeOptions";
-import {TaskExecutionModel} from "../../data-model/sequelize/taskExecution";
+import {associateModels, IPersistentStorageManager, loadModel, loadModels} from "../modelLoader";
+import {SequelizeOptions} from "../../options/coreServicesOptions";
 import {Sequelize} from "sequelize";
 
 
 export interface IPipelineModels {
     TaskDefinitions?: any;
     TaskRepositories?: any;
-    // TaskExecutions?: TaskExecutionModel;
 }
 
 export interface ISequelizeDatabase<T> {
@@ -46,20 +44,16 @@ export class RemotePersistentStorageManager implements IPersistentStorageManager
         return this.pipelineDatabase.models.TaskDefinitions;
     }
 
-    /*
-    public get TaskExecutions() {
-        return this.pipelineDatabase.models.TaskExecutions;
-    }
-    */
-
     public async initialize() {
-        this.pipelineDatabase = await createConnection({});
+        this.pipelineDatabase = createConnection({});
         await authenticate(this.pipelineDatabase, "pipeline");
     }
 }
 
 async function authenticate(database, name) {
     try {
+        associateModels(database);
+
         await database.connection.authenticate();
 
         database.isConnected = true;
@@ -79,7 +73,7 @@ async function authenticate(database, name) {
     }
 }
 
-async function createConnection<T>(models: T) {
+function createConnection<T>(models: T) {
     let databaseConfig = SequelizeOptions.remote;
 
     let db: ISequelizeDatabase<T> = {
@@ -90,7 +84,10 @@ async function createConnection<T>(models: T) {
 
     db.connection = new sequelize(databaseConfig.database, databaseConfig.username, databaseConfig.password, databaseConfig);
 
-    return await loadModels(db, path.normalize(path.join(__dirname, "..", "..", "data-model", "sequelize")));
+    db = loadModel(db, path.normalize(path.join(__dirname, "..", "..", "data-model", "sequelize", "taskRepository.js")));
+    db = loadModel(db, path.normalize(path.join(__dirname, "..", "..", "data-model", "sequelize", "taskDefinition.js")));
+
+    return db;
 }
 
 const _manager: RemotePersistentStorageManager = new RemotePersistentStorageManager();

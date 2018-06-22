@@ -11,7 +11,7 @@ export interface IPersistentStorageManager {
     IsConnected: boolean;
 }
 
-export async function loadModels<T>(db: ISequelizeDatabase<T>, modelsLocation: string) {
+export function loadModels<T>(db: ISequelizeDatabase<T>, modelsLocation: string) {
     fs.readdirSync(modelsLocation).filter(file => {
         return (file.indexOf(".") !== 0) && (file.slice(-3) === ".js");
     }).forEach(file => {
@@ -26,7 +26,7 @@ export async function loadModels<T>(db: ISequelizeDatabase<T>, modelsLocation: s
 }
 
 // If loading models individually caller is responsible for ensuring association is called.
-export async function loadModel<T>(db: ISequelizeDatabase<T>, modelLocation: string) {
+export function loadModel<T>(db: ISequelizeDatabase<T>, modelLocation: string) {
     if ((modelLocation.indexOf(".") === 0) || modelLocation.length < 4 || (modelLocation.slice(-3) !== ".js")) {
         return db;
     }

@@ -7,7 +7,7 @@ migrateWorkerDatabase()
     while [ ${SUCCESS} -ne 0 ]; do
         echo "Migrate worker database"
 
-        knex migrate:latest
+        sequelize db:migrate
         SUCCESS=$?
 
         if [ ${SUCCESS} -ne 0 ]; then

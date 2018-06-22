@@ -1,7 +1,7 @@
 import * as amqp from "amqplib";
-import {ServerConfiguration} from "../options/serviceConfig";
 import {Connection, Channel} from "amqplib";
 import {ITaskExecutionAttributes} from "../data-model/sequelize/taskExecution";
+import {MessageQueueService} from "../options/coreServicesOptions";
 
 const debug = require("debug")("pipeline:main-queue");
 
@@ -18,7 +18,7 @@ export class MainQueue {
     }
 
     public async Connect(): Promise<void> {
-        const url = `amqp://${ServerConfiguration().messageService.host}:${ServerConfiguration().messageService.port}`;
+        const url = `amqp://${MessageQueueService.host}:${MessageQueueService.port}`;
 
         debug(`main queue url: ${url}`);
 

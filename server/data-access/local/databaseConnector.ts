@@ -1,16 +1,20 @@
 import * as path from "path";
+
 const sequelize = require("sequelize");
 
 const debug = require("debug")("pipeline:worker-api:database-connector");
 
-import {IPersistentStorageManager, loadModel} from "../modelLoader";
-import {SequelizeOptions} from "../../options/sequelizeOptions";
+import {associateModels, IPersistentStorageManager, loadModel} from "../modelLoader";
+import {SequelizeOptions} from "../../options/coreServicesOptions";
 import {Sequelize} from "sequelize";
 import {TaskExecutionModel} from "../../data-model/sequelize/taskExecution";
+import {IWorker, IWorkerModel} from "../../data-model/sequelize/worker";
+import {isNullOrUndefined} from "util";
+import v4 = require("uuid/v4");
 
 
 export interface IPipelineModels {
-    // Workers?: any;
+    Workers?: IWorkerModel;
     TaskExecutions?: TaskExecutionModel;
 }
 
@@ -23,6 +27,8 @@ export interface ISequelizeDatabase<T> {
 export class LocalPersistentStorageManager implements IPersistentStorageManager {
 
     private pipelineDatabase: ISequelizeDatabase<IPipelineModels>;
+
+    private _worker: IWorker;
 
     public static Instance(): LocalPersistentStorageManager {
         return _manager;
@@ -40,34 +46,52 @@ export class LocalPersistentStorageManager implements IPersistentStorageManager 
         return this.pipelineDatabase.models.TaskExecutions;
     }
 
-    public async initialize() {
-        this.pipelineDatabase = await createConnection({});
-        await authenticate(this.pipelineDatabase, "pipeline");
+    public get Workers() {
+        return this.pipelineDatabase.models.Workers;
     }
-}
 
-async function authenticate(database, name) {
-    try {
-        await database.connection.authenticate();
+    public get Worker(): IWorker {
+        return this._worker;
+    }
 
-        database.isConnected = true;
+    public async initialize(): Promise<IWorker> {
+        this.pipelineDatabase = createConnection({});
+        return await this.authenticate(this.pipelineDatabase, "pipeline");
+    }
 
-        debug(`successful local database connection: ${name}`);
 
-        Object.keys(database.models).map(modelName => {
-            if (database.models[modelName].prepareContents) {
-                database.models[modelName].prepareContents(database.models);
+    private async authenticate(database, name): Promise<IWorker> {
+        try {
+            associateModels(database);
+
+            await database.connection.authenticate();
+
+            database.isConnected = true;
+
+            debug(`successful local database connection: ${name}`);
+
+
+            if (!isNullOrUndefined(process.env.PIPELINE_WORKER_ID)) {
+                [this._worker] = await this.pipelineDatabase.models.Workers.findOrCreate({where: {id: process.env.PIPELINE_WORKER_ID}});
+            } else {
+                this._worker = await this.pipelineDatabase.models.Workers.findOne();
+
+                if (isNullOrUndefined(this._worker)) {
+                    this._worker = await this.pipelineDatabase.models.Workers.create({id: v4()});
+                }
             }
-        });
-    } catch (err) {
-        debug(`failed database connection: ${name}`);
-        debug(err);
 
-        setTimeout(() => authenticate(database, name), 5000);
+            return this._worker;
+        } catch (err) {
+            debug(`failed database connection: ${name}`);
+            debug(err);
+
+            setTimeout(() => this.authenticate(database, name), 5000);
+        }
     }
 }
 
-async function createConnection<T>(models: T) {
+function createConnection<T>(models: T) {
     let databaseConfig = SequelizeOptions.local;
 
     let db: ISequelizeDatabase<T> = {
@@ -78,10 +102,10 @@ async function createConnection<T>(models: T) {
 
     db.connection = new sequelize(databaseConfig.database, databaseConfig.username, databaseConfig.password, databaseConfig);
 
-    return await loadModel(db, path.normalize(path.join(__dirname, "..", "..", "data-model", "sequelize", "taskExecution.js")));
+    db = loadModel(db, path.normalize(path.join(__dirname, "..", "..", "data-model", "sequelize", "taskExecution.js")));
+    db = loadModel(db, path.normalize(path.join(__dirname, "..", "..", "data-model", "sequelize", "worker.js")));
+
+    return db;
 }
 
 const _manager: LocalPersistentStorageManager = new LocalPersistentStorageManager();
-
-_manager.initialize().then(() => {
-});

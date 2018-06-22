@@ -32,7 +32,7 @@ type TaskDefinition {
   interpreter: String!
   script_args: String
   cluster_args: String
-  work_units: Float
+  local_work_units: Float
   cluster_work_units: Float
   log_prefix: String
   created_at: Float
@@ -45,7 +45,7 @@ type TaskExecution {
   worker_id: String
   task_definition_id: String
   task: TaskDefinition
-  work_units: Float
+  local_work_units: Float
   cluster_work_units: Float
   tile_id: String
   resolved_script: String
@@ -94,10 +94,11 @@ type Worker {
   process_id: Int
   preferred_network_interface_id: String
   display_name: String
-  work_capacity: Float
-  is_cluster_proxy: Boolean
+  local_work_capacity: Float
+  cluster_work_capacity: Float
   is_accepting_jobs: Boolean
-  task_load: Int
+  local_task_load: Float
+  cluster_task_load: Float
   created_at: String
   updated_at: String
   deleted_at: String
@@ -107,17 +108,9 @@ input WorkerInput {
   id: String
   preferred_network_interface_id: String
   display_name: String
-  work_capacity: Float
-  is_cluster_proxy: Boolean
+  local_work_capacity: Float
+  cluster_work_capacity: Float
   is_accepting_jobs: Boolean
-}
-
-input StartTaskInput {
-  taskDefinitionId: String!
-  pipelineStageId: String!
-  tileId: String!
-  logFile: String!
-  scriptArgs: [String!]
 }
 
 type Query {

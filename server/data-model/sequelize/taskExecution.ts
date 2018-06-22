@@ -1,5 +1,6 @@
 import {FindOptions, Instance, Model} from "sequelize";
 import {isNullOrUndefined} from "util";
+import {QueueType} from "../../task-management/taskSupervisor";
 
 export enum ExecutionStatus {
     Undefined = 0,
@@ -28,13 +29,14 @@ export enum SyncStatus {
 
 export interface ITaskExecutionAttributes {
     id?: string;
-    remote_id?: string;
     worker_id: string;
+    remote_task_execution_id?: string;
     tile_id: string;
     task_definition_id: string;
     pipeline_stage_id: string;
-    work_units: number;
+    local_work_units: number;
     cluster_work_units: number;
+    resolved_output_path: string;
     resolved_script: string;
     resolved_interpreter: string;
     resolved_script_args: string;
@@ -65,6 +67,7 @@ export interface ITaskExecution extends Instance<ITaskExecutionAttributes>, ITas
 
 export interface TaskExecutionModel extends Model<ITaskExecution, ITaskExecutionAttributes> {
     findRunning(): Promise<ITaskExecution[]>;
+    findRunningByQueueType(queueType: QueueType): Promise<ITaskExecution[]>;
     getPage(reqOffset: number, reqLimit: number, completionCode: CompletionResult): Promise<ITaskExecution[]>;
     removeWithCompletionCode(code: CompletionResult): Promise<number>;
 }
@@ -78,7 +81,7 @@ export function sequelizeImport(sequelize, DataTypes) {
             type: DataTypes.UUID,
             defaultValue: DataTypes.UUIDV4
         },
-        remote_id: {
+        remote_task_execution_id: {
             type: DataTypes.UUID,
         },
         task_definition_id: {
@@ -89,6 +92,10 @@ export function sequelizeImport(sequelize, DataTypes) {
         },
         tile_id: {
             type: DataTypes.TEXT
+        },
+        resolved_output_path: {
+            type: DataTypes.TEXT,
+            defaultValue: ""
         },
         resolved_script: {
             type: DataTypes.TEXT,
@@ -113,7 +120,7 @@ export function sequelizeImport(sequelize, DataTypes) {
         worker_id: {
             type: DataTypes.UUID
         },
-        work_units: {
+        local_work_units: {
             type: DataTypes.INTEGER
         },
         cluster_work_units: {
@@ -169,14 +176,16 @@ export function sequelizeImport(sequelize, DataTypes) {
         paranoid: false
     });
 
-    TaskExecution.associate = models => {
-        TaskExecution.belongsTo(models.TaskDefinitions, {foreignKey: "task_definition_id"});
-    };
-
     TaskExecution.findRunning = async function (): Promise<ITaskExecution[]> {
         return TaskExecution.findAll({
             where: {execution_status_code: ExecutionStatus.Running},
             order: [["submitted_at", "DESC"]]
+        });
+    };
+
+    TaskExecution.findRunningByQueueType = async function (queueType: QueueType): Promise<ITaskExecution[]> {
+        return TaskExecution.findAll({
+            where: {execution_status_code: ExecutionStatus.Running, queue_type: queueType}
         });
     };
 

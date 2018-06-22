@@ -1,8 +1,9 @@
 import {GraphQLAppContext, IPaginationConnections, ISimplePage} from "./graphQLContext";
 import {ITaskStatistics, taskStatisticsInstance} from "../data-model/taskStatistics";
-import {Workers, IWorker, IWorkerInput} from "../data-model/worker";
-import {ITaskDefinition} from "../data-model/sequelize/taskDefinition";
 import {CompletionResult, ITaskExecutionAttributes} from "../data-model/sequelize/taskExecution";
+import {LocalPersistentStorageManager} from "../data-access/local/databaseConnector";
+import {IWorker, IWorkerInput} from "../data-model/sequelize/worker";
+import {QueueType} from "../task-management/taskSupervisor";
 
 const debug = require("debug")("pipeline:worker-api:resolvers");
 
@@ -48,7 +49,7 @@ let resolvers = {
             return context.getTaskExecution(args.id);
         },
         taskExecutions(_, __, context: GraphQLAppContext): Promise<ITaskExecutionAttributes[]> {
-             return context.getTaskExecutions();
+            return context.getTaskExecutions();
         },
         taskExecutionPage(_, args: IPageArguments, context: GraphQLAppContext): Promise<ISimplePage<ITaskExecutionAttributes>> {
             return context.getTaskExecutionsPage(args.offset, args.limit, args.status);
@@ -65,13 +66,13 @@ let resolvers = {
         runningTasks(_, __, context: GraphQLAppContext): Promise<ITaskExecutionAttributes[]> {
             return context.getRunningTaskExecutions();
         },
-        worker(_, __, context: GraphQLAppContext): Promise<IWorker> {
-            return Workers.Instance().worker();
+        worker(_, __, context: GraphQLAppContext): IWorker {
+            return LocalPersistentStorageManager.Instance().Worker;
         }
     },
     Mutation: {
         updateWorker(_, args: IUpdateWorkerArguments, context: GraphQLAppContext): Promise<IWorker> {
-            return  Workers.Instance().updateFromInput(args.worker);
+            return LocalPersistentStorageManager.Instance().Worker.updateFromInput(args.worker);
         },
         startTask(_, args: IStartTaskArguments, context: GraphQLAppContext): Promise<ITaskExecutionAttributes> {
             return context.taskManager.startTask(JSON.parse(args.taskInput));
@@ -98,25 +99,17 @@ let resolvers = {
         }
     },
     Worker: {
-        async task_load(w: IWorker, _, context: GraphQLAppContext) {
-            const worker = await Workers.Instance().worker();
-
-            let taskLoad = -1;
-
-            let tasks: ITaskExecutionAttributes[] = await context.getRunningTaskExecutions();
-
-            if (tasks != null) {
-                // Cluster capacity is measured by number of jobs.
-                if (worker.is_cluster_proxy) {
-                    taskLoad = tasks.length;
-                } else {
-                    taskLoad = tasks.reduce((total: number, task) => {
-                        return task.work_units + total;
-                    }, 0);
-                }
-            }
-
-            return taskLoad;
+        async local_task_load(w: IWorker, _, context: GraphQLAppContext) {
+            const tasks = await context.getRunningTaskExecutionsByQueueType(QueueType.Local);
+            return tasks.reduce((p, t) => {
+                return p + t.local_work_units;
+            }, 0);
+        },
+        async cluster_task_load(w: IWorker, _, context: GraphQLAppContext) {
+            const tasks = await context.getRunningTaskExecutionsByQueueType(QueueType.Cluster);
+            return tasks.reduce((p, t) => {
+                return p + t.cluster_work_units;
+            }, 0);
         }
     }
 };

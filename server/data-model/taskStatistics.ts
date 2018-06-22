@@ -1,4 +1,3 @@
-import {knex} from "../data-access/knexConnector";
 import {v4} from "uuid";
 const AsyncLock = require("async");
 
@@ -42,7 +41,7 @@ export class TaskStatistics extends TableModel<ITaskStatistics> {
     }
 
     public async getForTaskId(taskId: string): Promise<ITaskStatistics> {
-        let objList = await knex(this.tableName).select(this.idKey).where({task_definition_id: taskId});
+        let objList = []; // await knex(this.tableName).select(this.idKey).where({task_definition_id: taskId});
 
         let idList = <string[]>objList.map(obj => obj.id);
 
@@ -91,7 +90,7 @@ export class TaskStatistics extends TableModel<ITaskStatistics> {
 
     public async reset(taskId: string, now: boolean = false) {
         if (now) {
-            return await knex(this.tableName).where({task_definition_id: taskId}).del();
+            return 0; //  await knex(this.tableName).where({task_definition_id: taskId}).del();
         } else {
             queue.push({taskId: taskId, action: UpdateQueueAction.Reset}, (err) => {
             });

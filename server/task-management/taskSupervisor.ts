@@ -9,7 +9,6 @@ import {
     CompletionResult, ExecutionStatus, ITaskExecution,
     ITaskExecutionAttributes
 } from "../data-model/sequelize/taskExecution";
-import {Workers} from "../data-model/worker";
 import {synchronizeTaskExecutions} from "../data-access/synchronize";
 import {updateStatisticsForTaskId} from "../data-model/taskStatistics";
 import {LSFTaskManager} from "./lsfManager";
@@ -88,13 +87,12 @@ export class TaskSupervisor implements ITaskSupervisor, ITaskUpdateDelegate {
     public async startTask(remoteTaskExecution: ITaskExecutionAttributes): Promise<ITaskExecution> {
         debug(`starting task ${remoteTaskExecution.task_definition_id} for pipeline ${remoteTaskExecution.pipeline_stage_id}`);
 
-        const worker = await Workers.Instance().worker();
+        const worker = await LocalPersistentStorageManager.Instance().Worker;
 
         const localTaskExecutionInput = Object.assign({}, remoteTaskExecution);
 
-        localTaskExecutionInput.remote_id = remoteTaskExecution.id;
+        localTaskExecutionInput.remote_task_execution_id = remoteTaskExecution.id;
         localTaskExecutionInput.id = undefined;
-
 
         if (!path.isAbsolute(localTaskExecutionInput.resolved_script)) {
             // This happens if a repository is not used or an absolute path is not used.  The coordinator does not make
@@ -104,15 +102,27 @@ export class TaskSupervisor implements ITaskSupervisor, ITaskUpdateDelegate {
 
         let taskExecution: ITaskExecution = await this._localStorageManager.TaskExecutions.create(localTaskExecutionInput);
 
-        // resolved_log_path is really the log prefix i.e., the log path plus the prefix for file names.  There is no
-        // extension so node sees this as a directory.
-        fse.ensureDirSync(path.resolve(taskExecution.resolved_log_path, ".."));
-        debug(`ensured log path at ${path.resolve(taskExecution.resolved_log_path, "..")}`);
-
-        taskExecution.submitted_at = new Date();
-        taskExecution.started_at = taskExecution.submitted_at;
-
         try {
+            fse.ensureDirSync(taskExecution.resolved_output_path);
+            fse.chmodSync(taskExecution.resolved_output_path, 0o775);
+            // resolved_log_path is really the log prefix i.e., the log path plus the prefix for file names.  There is no
+            // extension so node sees this as a directory.
+            fse.ensureDirSync(path.resolve(taskExecution.resolved_log_path, ".."));
+            debug(`ensured log path at ${path.resolve(taskExecution.resolved_log_path, "..")}`);
+
+            const completeFile = path.join(`${taskExecution.resolved_log_path}-done.txt`);
+
+            try {
+                if (fse.existsSync(completeFile)) {
+                    fse.unlinkSync(completeFile);
+                }
+            } catch (err) {
+                debug(err);
+            }
+
+            taskExecution.submitted_at = new Date();
+            taskExecution.started_at = taskExecution.submitted_at;
+
             taskExecution.execution_status_code = ExecutionStatus.Running;
 
             await taskExecution.save();
@@ -122,7 +132,7 @@ export class TaskSupervisor implements ITaskSupervisor, ITaskUpdateDelegate {
 
             // debug(opts);
 
-            if (worker.is_cluster_proxy) {
+            if (worker.cluster_work_capacity > 0) {
                 await  LSFTaskManager.Instance.startTask(taskExecution);
             } else {
                 await localTaskManager.startTask(taskExecution);
@@ -180,7 +190,9 @@ export class TaskSupervisor implements ITaskSupervisor, ITaskUpdateDelegate {
 
     private async synchronizeUnsuccessfulTasks() {
         try {
-            const worker = await Workers.Instance().worker();
+            // TODO Synchronize is currently disabled  (connection to remote database and task execution table on remote
+            // has been removed during a refactor.
+            const worker = await LocalPersistentStorageManager.Instance().Worker;
 
             if (!isNullOrUndefined(worker)) {
                 await synchronizeTaskExecutions(worker.id, CompletionResult.Error);
@@ -212,10 +224,10 @@ async function _update(taskExecution: ITaskExecution, jobUpdate: IJobUpdate) {
         }
 
         // if (jobUpdate.status === JobStatus.Online) {
-            // taskExecution.last_process_status_code = jobUpdate.status;
-            // await taskExecution.save();
+        // taskExecution.last_process_status_code = jobUpdate.status;
+        // await taskExecution.save();
 
-            // return;
+        // return;
         // }
 
         // Have a real status from the process manager (e.g, PM2).
@@ -266,6 +278,9 @@ async function _update(taskExecution: ITaskExecution, jobUpdate: IJobUpdate) {
                     }
 
                     if (taskExecution.completion_status_code >= CompletionResult.Success) {
+                        if (taskExecution.completion_status_code === CompletionResult.Success) {
+                            fse.appendFileSync(`${taskExecution.resolved_log_path}-done.txt`, `Complete ${(new Date()).toUTCString()}`);
+                        }
                         updateStatisticsForTaskId(taskExecution);
                     }
                 }
