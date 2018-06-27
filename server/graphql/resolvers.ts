@@ -1,5 +1,4 @@
 import {GraphQLAppContext, IPaginationConnections, ISimplePage} from "./graphQLContext";
-import {ITaskStatistics, taskStatisticsInstance} from "../data-model/taskStatistics";
 import {CompletionResult, ITaskExecutionAttributes} from "../data-model/sequelize/taskExecution";
 import {LocalPersistentStorageManager} from "../data-access/local/databaseConnector";
 import {IWorker, IWorkerInput} from "../data-model/sequelize/worker";
@@ -9,10 +8,6 @@ const debug = require("debug")("pipeline:worker-api:resolvers");
 
 interface IIdOnlyArguments {
     id: string;
-}
-
-interface ITaskIdArguments {
-    taskId: string;
 }
 
 interface IRemoveCompletedArguments {
@@ -63,12 +58,6 @@ let resolvers = {
         taskExecutionConnections(_, args: IConnectionArguments, context: GraphQLAppContext): Promise<IPaginationConnections<ITaskExecutionAttributes>> {
             return context.getTaskExecutionsConnection(args.first, args.after);
         },
-        taskStatistics(_, __, context: GraphQLAppContext): Promise<ITaskStatistics[]> {
-            return taskStatisticsInstance.getAll();
-        },
-        statisticsForTask(_, args: IIdOnlyArguments, context: GraphQLAppContext): Promise<ITaskStatistics> {
-            return taskStatisticsInstance.getForTaskId(args.id);
-        },
         runningTasks(_, __, context: GraphQLAppContext): Promise<ITaskExecutionAttributes[]> {
             return context.getRunningTaskExecutions();
         },
@@ -89,14 +78,6 @@ let resolvers = {
         },
         removeCompletedExecutionsWithCode(_, args: IRemoveCompletedArguments, context: GraphQLAppContext) {
             return context.removeTaskExecutionsWithCompletionCode(args.code);
-        },
-        resetStatistics(_, args: ITaskIdArguments, context: GraphQLAppContext) {
-            return taskStatisticsInstance.reset(args.taskId);
-        }
-    },
-    TaskStatistics: {
-        task(taskStatistics, _, context: GraphQLAppContext) {
-            return context.getTaskDefinition(taskStatistics.task_definition_id);
         }
     },
     TaskExecution: {

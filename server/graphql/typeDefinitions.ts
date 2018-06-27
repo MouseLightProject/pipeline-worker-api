@@ -76,28 +76,6 @@ type TaskExecution {
   deleted_at: Float
 }
 
-type TaskStatistics {
-  id: String!
-  task_definition_id: String
-  task: TaskDefinition
-  num_execute: Int
-  num_complete: Int
-  num_error: Int
-  num_cancel: Int
-  cpu_average: Float
-  cpu_high: Float
-  cpu_low: Float
-  memory_average: Float
-  memory_high: Float
-  memory_low: Float
-  duration_average: Float
-  duration_high: Float
-  duration_low: Float
-  created_at: String
-  updated_at: String
-  deleted_at: String
-}
-
 type Worker {
   id: String
   process_id: Int
@@ -135,8 +113,6 @@ type Query {
   taskExecutions: [TaskExecution!]!
   taskExecutionPage(offset: Int, limit: Int): ExecutionPage
   taskExecutionConnections(first: Int, after: String): ExecutionConnection
-  taskStatistics: [TaskStatistics!]!
-  statisticsForTask(id: String): TaskStatistics
   runningTasks: [TaskExecution!]!
   worker: Worker
 }
@@ -148,8 +124,6 @@ type Mutation {
   stopTask(taskExecutionId: String!): TaskExecution
 
   removeCompletedExecutionsWithCode(code: Int): Int
-
-  resetStatistics(taskId: String): Int
 }
 
 schema {

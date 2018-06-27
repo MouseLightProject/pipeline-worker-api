@@ -11,7 +11,6 @@ import {
     ITaskExecutionAttributes
 } from "../data-model/sequelize/taskExecution";
 import {synchronizeTaskExecutions} from "../data-access/synchronize";
-import {updateStatisticsForTaskId} from "../data-model/taskStatistics";
 import {LSFTaskManager} from "./lsfManager";
 import * as path from "path";
 import {MainQueue} from "../message-queue/mainQueue";
@@ -304,8 +303,6 @@ export class TaskSupervisor implements ITaskSupervisor, ITaskUpdateDelegate {
 
                         if (taskExecution.exit_code === null) {
                             taskExecution.exit_code = jobUpdate.exitCode;
-
-                            updateStatisticsForTaskId(taskExecution);
                         }
                     }
                 } else {
@@ -326,7 +323,6 @@ export class TaskSupervisor implements ITaskSupervisor, ITaskUpdateDelegate {
                             if (taskExecution.completion_status_code === CompletionResult.Success) {
                                 fse.appendFileSync(`${taskExecution.resolved_log_path}-done.txt`, `Complete ${(new Date()).toUTCString()}`);
                             }
-                            updateStatisticsForTaskId(taskExecution);
                         }
                     }
                 }

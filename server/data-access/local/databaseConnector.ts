@@ -11,6 +11,7 @@ import {TaskExecutionModel} from "../../data-model/sequelize/taskExecution";
 import {IWorker, IWorkerModel} from "../../data-model/sequelize/worker";
 import {isNullOrUndefined} from "util";
 import v4 = require("uuid/v4");
+import {ServiceConfiguration} from "../../options/serviceConfig";
 
 
 export interface IPipelineModels {
@@ -70,7 +71,6 @@ export class LocalPersistentStorageManager implements IPersistentStorageManager 
 
             debug(`successful local database connection: ${name}`);
 
-
             if (!isNullOrUndefined(process.env.PIPELINE_WORKER_ID)) {
                 [this._worker] = await this.pipelineDatabase.models.Workers.findOrCreate({where: {id: process.env.PIPELINE_WORKER_ID}});
             } else {
@@ -80,6 +80,8 @@ export class LocalPersistentStorageManager implements IPersistentStorageManager 
                     this._worker = await this.pipelineDatabase.models.Workers.create({id: v4()});
                 }
             }
+
+            this._worker.display_name = this._worker.display_name || ServiceConfiguration.name;
 
             return this._worker;
         } catch (err) {
