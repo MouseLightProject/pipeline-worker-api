@@ -42,7 +42,7 @@ export enum JobStatus {
 export interface IJobStatistics {
     cpuPercent: number;
     cpuTime: number;
-    memoryGB: number;
+    memoryMB: number;
 }
 
 export interface IJobUpdate {
@@ -336,8 +336,8 @@ export class TaskSupervisor implements ITaskSupervisor, ITaskUpdateDelegate {
         }
 
         if (!isNullOrUndefined(jobUpdate.statistics)) {
-            if (!isNullOrUndefined(jobUpdate.statistics.memoryGB) && (jobUpdate.statistics.memoryGB > taskExecution.max_memory || isNaN(taskExecution.max_memory))) {
-                taskExecution.max_memory = jobUpdate.statistics.memoryGB;
+            if (!isNullOrUndefined(jobUpdate.statistics.memoryMB) && (jobUpdate.statistics.memoryMB > taskExecution.max_memory || isNaN(taskExecution.max_memory))) {
+                taskExecution.max_memory = jobUpdate.statistics.memoryMB;
             }
 
             if (!isNullOrUndefined(jobUpdate.statistics.cpuPercent) && (jobUpdate.statistics.cpuPercent > taskExecution.max_cpu || isNaN(taskExecution.max_cpu))) {

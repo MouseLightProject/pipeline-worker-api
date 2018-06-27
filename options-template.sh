@@ -6,6 +6,7 @@
 # However, typically PIPELINE_CORE_SERVICES_HOST and PIPELINE_API_HOST at minimum need appropriate values.
 
 export PIPELINE_WORKER_ID=
+export PIPELINE_WORKER_API_PORT=
 
 export PIPELINE_CORE_SERVICES_HOST=
 

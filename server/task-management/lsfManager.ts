@@ -107,10 +107,10 @@ export class LSFTaskManager implements ITaskUpdateSource, ITaskManager {
             }
         }));
 
-        const longRunning = running.map(r => moment.duration(Date.now().valueOf() - r.started_at.valueOf())).filter(d => d.asSeconds() > 60).sort((a, b) => b.asMilliseconds() - a.asMilliseconds());
+        const longRunning = running.map(r => moment.duration(Date.now().valueOf() - r.started_at.valueOf())).filter(d => d.asMinutes() > 60).sort((a, b) => b.asMilliseconds() - a.asMilliseconds());
 
         if (longRunning.length > 0) {
-            debug(`${longRunning.length} cluster tasks have been running longer than 1 minute`);
+            debug(`${longRunning.length} cluster tasks have been running longer than 60 minutes`);
             debug(`\tlongest ${longRunning[0].humanize()}`);
             if (longRunning.length > 1) {
                 debug(`\tshortest ${longRunning[longRunning.length - 1].humanize()}`);

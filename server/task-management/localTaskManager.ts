@@ -178,7 +178,7 @@ function readProcessStatistics(processId): Promise<IJobStatistics> {
                 let stats: IJobStatistics = {
                     cpuPercent: null,
                     cpuTime: null,
-                    memoryGB: null,
+                    memoryMB: null,
                 };
 
                 stdout = stdout.split(/\n/).filter(Boolean);
@@ -190,7 +190,7 @@ function readProcessStatistics(processId): Promise<IJobStatistics> {
                         return {
                             cpuPercent: parseFloat(parts[3]),
                             cpuTime: null,
-                            memoryGB: parseInt(parts[2]) / 1024 / 1024
+                            memoryMB: parseInt(parts[2]) / 1024
                         };
                     } else {
                         return null;
@@ -201,7 +201,7 @@ function readProcessStatistics(processId): Promise<IJobStatistics> {
                     return {
                         cpuPercent: isNullOrUndefined(prev.cpuPercent) ? stats.cpuPercent : prev.cpuPercent + stats.cpuPercent,
                         cpuTime: null,
-                        memoryGB: isNullOrUndefined(prev.memoryGB) ? stats.memoryGB : prev.memoryGB + stats.memoryGB
+                        memoryMB: isNullOrUndefined(prev.memoryMB) ? stats.memoryMB : prev.memoryMB + stats.memoryMB
                     };
                 }, stats);
 
