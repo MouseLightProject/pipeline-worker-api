@@ -12,7 +12,7 @@
     "debug": "DEBUG=pipeline* node --inspect=pipeline-worker.local:9229 --trace-warnings server/pipelineWorkerApp.js",
     "start": "node server/pipelineWorkerApp.js",
     "docker-build": "gulp docker-build",
-    "release": "gulp docker-release"
+    "release": "gulp release"
   },
   "dependencies": {
     "amqplib": "^0.5.2",

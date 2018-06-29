@@ -11,4 +11,3 @@ wait
 export DEBUG=pipeline*
 
 node server/pipelineWorkerApp.js &> /var/log/pipeline/worker-${logName}.log
-

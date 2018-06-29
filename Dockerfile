@@ -1,13 +1,13 @@
-FROM node:7.10
+FROM node:8.11.3
 
 WORKDIR /app
 
 COPY dist .
 
-RUN yarn global add knex@0.13.0
+RUN yarn global add sequelize-cli
 
 RUN yarn install
 
 CMD ["./docker-entry.sh"]
 
-EXPOSE  3500
+EXPOSE  6201
