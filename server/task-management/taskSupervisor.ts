@@ -121,7 +121,6 @@ export class TaskSupervisor implements ITaskSupervisor, ITaskUpdateDelegate {
         let argsAsArray = JSON.parse(remoteTaskExecution.resolved_script_args);
         argsAsArray = argsAsArray.map(a => {
             if (a === "IS_CLUSTER_JOB") {
-                debug(`substituting ${queueType.toString()} for IS_CLUSTER_JOB`);
                 return queueType.toString();
             }
             return a;
