@@ -168,31 +168,37 @@ localTaskManager.connect().catch(err => {
     debug("failed to connect to process manager from graphql context.");
 });
 
-function readProcessStatistics(processId): Promise<IJobStatistics> {
+function readProcessStatistics(processId: number): Promise<IJobStatistics> {
     return new Promise<IJobStatistics>((resolve, reject) => {
-        ChildProcess.exec(`ps -A -o pid,pgid,rss,%cpu | grep ${processId}`, (err, stdout, stderr) => {
+        ChildProcess.exec(`ps -A -o pid,pgid,rss,%cpu,time | grep ${processId}`, (err, stdout, stderr) => {
             if (err || stderr) {
                 reject(err);
             }
             else {
                 let stats: IJobStatistics = {
                     cpuPercent: null,
-                    cpuTime: null,
+                    cpuTimeSeconds: null,
                     memoryMB: null,
                 };
 
+                // Separate lines
                 stdout = stdout.split(/\n/).filter(Boolean);
 
                 let statsArray: Array<IJobStatistics> = stdout.map(obj => {
-                    let parts = obj.split(/[\s+]/).filter(Boolean);
+                    try {
+                        // Separate columns
+                        let parts = obj.split(/[\s+]/).filter(Boolean);
 
-                    if (parts && parts.length === 4) {
-                        return {
-                            cpuPercent: parseFloat(parts[3]),
-                            cpuTime: null,
-                            memoryMB: parseInt(parts[2]) / 1024
-                        };
-                    } else {
+                        if (parts && parts.length === 4) {
+                            return {
+                                cpuPercent: parseFloat(parts[3]),
+                                cpuTime: parseCpuUsed(parts[4]),
+                                memoryMB: parseInt(parts[2]) / 1024
+                            };
+                        } else {
+                            return null;
+                        }
+                    } catch (ex) {
                         return null;
                     }
                 }).filter(Boolean);
@@ -200,7 +206,7 @@ function readProcessStatistics(processId): Promise<IJobStatistics> {
                 stats = statsArray.reduce((prev, stats) => {
                     return {
                         cpuPercent: isNullOrUndefined(prev.cpuPercent) ? stats.cpuPercent : prev.cpuPercent + stats.cpuPercent,
-                        cpuTime: null,
+                        cpuTimeSeconds: isNullOrUndefined(prev.cpuTimeSeconds) ? stats.cpuTimeSeconds : prev.cpuTimeSeconds + stats.cpuTimeSeconds,
                         memoryMB: isNullOrUndefined(prev.memoryMB) ? stats.memoryMB : prev.memoryMB + stats.memoryMB
                     };
                 }, stats);
@@ -209,4 +215,20 @@ function readProcessStatistics(processId): Promise<IJobStatistics> {
             }
         });
     });
+}
+
+function parseCpuUsed(value: string) {
+    try {
+        // does not handle D-HH:MM:SS when it has days.
+        const parts = value.split(":");
+        if (parts.length === 3) {
+            const hours = parseInt(parts[0]);
+            const minutes = parseInt(parts[1]);
+            const seconds = parseInt(parts[2]);
+
+            return (hours * 3600) + (minutes * 60) + seconds;
+        }
+    } catch (ex) {
+        return null;
+    }
 }

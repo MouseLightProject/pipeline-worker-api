@@ -63,8 +63,9 @@ type TaskExecution {
   execution_status_code: Int
   completion_status_code: Int
   last_process_status_code: Int
-  max_memory: Float
-  max_cpu: Float
+  cpu_time_seconds: Float
+  max_cpu_percent: Float
+  max_memory_mb: Float
   exit_code: Int
   submitted_at: Float
   started_at: Float

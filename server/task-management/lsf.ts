@@ -53,7 +53,11 @@ function parseJobInfoOutput(output: string): IJobUpdate[] {
                 id: null,
                 status: JobStatus.Unknown,
                 exitCode: null,
-                statistics: null
+                statistics: {
+                    cpuPercent: null,
+                    cpuTimeSeconds: null,
+                    memoryMB: null,
+                }
             };
 
             const parts = line.split(" ").map(c => c.trim()).filter(c => c.length > 0);
@@ -77,16 +81,39 @@ function parseJobInfoOutput(output: string): IJobUpdate[] {
                         break;
                     case JobAttributes.ExitCode:
                         jobInfo.exitCode = parseInt(parts[idx]);
+                        break;
+                    case JobAttributes.MemoryUsed:
+                        jobInfo.statistics.memoryMB = parseInt(parts[idx]);
+                        break;
+                    case JobAttributes.CpuUsed:
+                        jobInfo.statistics.cpuTimeSeconds = parseCpuUsed(parts[idx]);
+                        break;
                 }
             });
 
-            return jobInfo
+            return jobInfo;
         });
 
         return jobs.filter(j => !isNull(j.id));
     } catch (err) {
         debug(err);
         return [];
+    }
+}
+
+function parseCpuUsed(value: string) {
+    try {
+        // momentjs doesn't help with triple digit hours format: hhh:mm:ss.sss
+        const parts = value.split(":");
+        if (parts.length === 3) {
+            const hours = parseInt(parts[0]);
+            const minutes = parseInt(parts[1]);
+            const seconds = parseFloat(parts[2]);
+
+            return (hours * 3600) + (minutes * 60) + seconds;
+        }
+    } catch (ex) {
+        return null;
     }
 }
 

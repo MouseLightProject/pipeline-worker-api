@@ -49,8 +49,9 @@ export interface ITaskExecutionAttributes {
     execution_status_code: ExecutionStatus;
     completion_status_code: CompletionResult;
     last_process_status_code: number;
-    max_memory: number;
-    max_cpu: number;
+    cpu_time_seconds: number;
+    max_cpu_percent: number;
+    max_memory_mb: number;
     exit_code: number;
     submitted_at: Date;
     started_at: Date;
@@ -144,10 +145,13 @@ export function sequelizeImport(sequelize, DataTypes) {
         last_process_status_code: {
             type: DataTypes.INTEGER
         },
-        max_memory: {
+        cpu_time_seconds: {
             type: DataTypes.FLOAT
         },
-        max_cpu: {
+        max_cpu_percent: {
+            type: DataTypes.FLOAT
+        },
+        max_memory_mb: {
             type: DataTypes.FLOAT
         },
         exit_code: {
