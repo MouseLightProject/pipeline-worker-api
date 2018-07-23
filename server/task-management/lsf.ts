@@ -101,19 +101,22 @@ function parseJobInfoOutput(output: string): IJobUpdate[] {
     }
 }
 
-function parseCpuUsed(value: string) {
+function parseCpuUsed(value: string): number {
     try {
         // momentjs doesn't help with triple digit hours format: hhh:mm:ss.sss
         const parts = value.split(":");
+
         if (parts.length === 3) {
             const hours = parseInt(parts[0]);
             const minutes = parseInt(parts[1]);
             const seconds = parseFloat(parts[2]);
 
             return (hours * 3600) + (minutes * 60) + seconds;
+        } else {
+            return 0;
         }
     } catch (ex) {
-        return null;
+        return 0;
     }
 }
 

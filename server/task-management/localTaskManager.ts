@@ -133,6 +133,7 @@ export class LocalTaskManager implements ITaskUpdateSource, ITaskManager, Proces
             }
         } else {
             // TODO orphaned process.
+            debug("Orphaned task execution");
         }
     }
 
@@ -185,31 +186,34 @@ function readProcessStatistics(processId: number): Promise<IJobStatistics> {
                 stdout = stdout.split(/\n/).filter(Boolean);
 
                 let statsArray: Array<IJobStatistics> = stdout.map(obj => {
+                    console.log(obj);
                     try {
                         // Separate columns
                         let parts = obj.split(/[\s+]/).filter(Boolean);
-
-                        if (parts && parts.length === 4) {
+                        if (parts && parts.length === 5) {
                             return {
                                 cpuPercent: parseFloat(parts[3]),
-                                cpuTime: parseCpuUsed(parts[4]),
+                                cpuTimeSeconds: parseCpuUsed(parts[4]),
                                 memoryMB: parseInt(parts[2]) / 1024
                             };
                         } else {
                             return null;
                         }
-                    } catch (ex) {
+                    } catch (err) {
+                        console.log(err);
                         return null;
                     }
                 }).filter(Boolean);
 
                 stats = statsArray.reduce((prev, stats) => {
                     return {
-                        cpuPercent: isNullOrUndefined(prev.cpuPercent) ? stats.cpuPercent : prev.cpuPercent + stats.cpuPercent,
-                        cpuTimeSeconds: isNullOrUndefined(prev.cpuTimeSeconds) ? stats.cpuTimeSeconds : prev.cpuTimeSeconds + stats.cpuTimeSeconds,
-                        memoryMB: isNullOrUndefined(prev.memoryMB) ? stats.memoryMB : prev.memoryMB + stats.memoryMB
+                        cpuPercent: isNullOrUndefined(prev.cpuPercent) ? stats.cpuPercent : prev.cpuPercent + (isNullOrUndefined(stats.cpuPercent) ? 0 : stats.cpuPercent),
+                        cpuTimeSeconds: isNullOrUndefined(prev.cpuTimeSeconds) ? stats.cpuTimeSeconds : prev.cpuTimeSeconds + (isNullOrUndefined(stats.cpuTimeSeconds) ? 0 : stats.cpuTimeSeconds),
+                        memoryMB: isNullOrUndefined(prev.memoryMB) ? stats.memoryMB : prev.memoryMB + (isNullOrUndefined(stats.memoryMB) ? 0 : stats.memoryMB)
                     };
                 }, stats);
+
+                console.log(stats);
 
                 resolve(stats);
             }
@@ -217,7 +221,7 @@ function readProcessStatistics(processId: number): Promise<IJobStatistics> {
     });
 }
 
-function parseCpuUsed(value: string) {
+function parseCpuUsed(value: string): number {
     try {
         // does not handle D-HH:MM:SS when it has days.
         const parts = value.split(":");
@@ -227,8 +231,10 @@ function parseCpuUsed(value: string) {
             const seconds = parseInt(parts[2]);
 
             return (hours * 3600) + (minutes * 60) + seconds;
+        } else {
+            return 0
         }
     } catch (ex) {
-        return null;
+        return 0;
     }
 }
