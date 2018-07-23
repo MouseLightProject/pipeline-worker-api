@@ -93,8 +93,6 @@ function parseJobInfoOutput(output: string): IJobUpdate[] {
                 }
             });
 
-            console.log(jobInfo);
-
             return jobInfo;
         });
 
