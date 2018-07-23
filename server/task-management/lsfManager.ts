@@ -86,7 +86,7 @@ export class LSFTaskManager implements ITaskUpdateSource, ITaskManager {
                             id: processInfo.id,
                             status: processInfo.status,
                             exitCode: processInfo.exitCode,
-                            statistics: null
+                            statistics: processInfo.statistics
                         });
                     }
                 }));

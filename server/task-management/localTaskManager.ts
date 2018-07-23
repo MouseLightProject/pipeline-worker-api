@@ -186,7 +186,6 @@ function readProcessStatistics(processId: number): Promise<IJobStatistics> {
                 stdout = stdout.split(/\n/).filter(Boolean);
 
                 let statsArray: Array<IJobStatistics> = stdout.map(obj => {
-                    console.log(obj);
                     try {
                         // Separate columns
                         let parts = obj.split(/[\s+]/).filter(Boolean);
@@ -212,8 +211,6 @@ function readProcessStatistics(processId: number): Promise<IJobStatistics> {
                         memoryMB: isNullOrUndefined(prev.memoryMB) ? stats.memoryMB : prev.memoryMB + (isNullOrUndefined(stats.memoryMB) ? 0 : stats.memoryMB)
                     };
                 }, stats);
-
-                console.log(stats);
 
                 resolve(stats);
             }

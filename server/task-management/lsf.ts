@@ -67,8 +67,6 @@ function parseJobInfoOutput(output: string): IJobUpdate[] {
                 return jobInfo;
             }
 
-            console.log(columns);
-
             columns.map((c, idx) => {
                 switch (c) {
                     case JobAttributes.JobId:
