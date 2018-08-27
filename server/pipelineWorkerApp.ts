@@ -15,7 +15,7 @@ start().then().catch((err) => debug(err));
 async function start() {
     const worker = await LocalPersistentStorageManager.Instance().initialize();
 
-    await MainQueue.Instance.Connect();
+    await MainQueue.Instance.connect();
 
     const PORT = ServiceConfiguration.networkPort;
 

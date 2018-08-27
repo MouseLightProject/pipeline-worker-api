@@ -1,6 +1,6 @@
 {
   "name": "pipeline-worker-api",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "description": "Mouselight Pipeline Worker Service",
   "author": "Patrick Edson <pedson@leapscientific.com> (http://github.com/pedson)",
   "license": "LicenseRef-LICENSE",
@@ -28,6 +28,7 @@
     "mime": "^1.3.4",
     "momentjs": "^2.0.0",
     "pg": "^6.4.1",
+    "pm2": "2.10.4",
     "sequelize": "^4.8.2",
     "serve-static": "^1.11.1",
     "socket.io-client": "^1.5.1",

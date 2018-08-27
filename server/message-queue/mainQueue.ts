@@ -13,11 +13,13 @@ export class MainQueue {
     private connection: Connection = null;
     private channel: Channel = null;
 
+    private missingChannelBuffer: ITaskExecutionAttributes[];
+
     public static get Instance() {
         return this.instance;
     }
 
-    public async Connect(): Promise<void> {
+    public async connect(): Promise<void> {
         const url = `amqp://${MessageQueueService.host}:${MessageQueueService.port}`;
 
         debug(`main queue url: ${url}`);
@@ -25,9 +27,18 @@ export class MainQueue {
         try {
             this.connection = await amqp.connect(url);
 
+            this.connection.on("error", (err) => {
+                this.channel = null;
+                debug("connection error - reconnect in 5 seconds");
+                debug(err);
+                setInterval(() => this.connect(), 5000);
+            });
+
             this.channel = await this.connection.createChannel();
 
             await this.channel.assertQueue(TaskExecutionUpdateQueue, {durable: true});
+
+            this.sendBuffer();
         } catch (err) {
             debug("failed to connect");
             debug(err);
@@ -36,9 +47,24 @@ export class MainQueue {
         debug(`main queue ready`);
     }
 
-    public SendTaskExecutionUpdate(taskExecution: ITaskExecutionAttributes) {
-        if (this.channel) {
-            this.channel.sendToQueue(TaskExecutionUpdateQueue, new Buffer(JSON.stringify(taskExecution)), {persistent: true});
+    public sendTaskExecutionUpdate(taskExecution: ITaskExecutionAttributes) {
+        try {
+            if (this.channel) {
+                this.channel.sendToQueue(TaskExecutionUpdateQueue, new Buffer(JSON.stringify(taskExecution)), {persistent: true});
+            } else {
+                this.missingChannelBuffer.push(taskExecution);
+            }
+        }
+        catch (err) {
+            debug(err);
+            this.missingChannelBuffer.push(taskExecution);
+        }
+    }
+
+    private sendBuffer() {
+        if (this.missingChannelBuffer.length > 0) {
+            this.sendTaskExecutionUpdate(this.missingChannelBuffer.shift());
+            setTimeout(() => this.sendBuffer(), 250);
         }
     }
 }
