@@ -326,7 +326,6 @@ export class TaskSupervisor implements ITaskSupervisor, ITaskUpdateDelegate {
                     }
                 }
 
-                console.log(taskExecution.toJSON());
                 MainQueue.Instance.sendTaskExecutionUpdate(taskExecution);
             }
         }

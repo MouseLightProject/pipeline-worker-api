@@ -10,8 +10,9 @@ import {
     CompletionResult, ExecutionStatus, ITaskExecution,
     ITaskExecutionAttributes
 } from "../data-model/sequelize/taskExecution";
-import {IJobUpdate, ITaskManager, ITaskUpdateDelegate, ITaskUpdateSource, QueueType} from "./taskSupervisor";
+import {IJobUpdate, ITaskManager, ITaskUpdateDelegate, ITaskUpdateSource, JobStatus, QueueType} from "./taskSupervisor";
 import {updateJobInfo} from "./lsf";
+import {ServiceConfiguration} from "../options/serviceConfig";
 
 export class LSFTaskManager implements ITaskUpdateSource, ITaskManager {
     public static Instance = new LSFTaskManager();
@@ -22,6 +23,7 @@ export class LSFTaskManager implements ITaskUpdateSource, ITaskManager {
 
     public constructor() {
         // Periodically poll cluster job status.
+        debug(`Cluster command only set to ${ServiceConfiguration.cluster.generateCommandOnly}`);
 
         setTimeout(async () => {
             await this.refreshAllJobs();
@@ -56,6 +58,22 @@ export class LSFTaskManager implements ITaskUpdateSource, ITaskManager {
         }
 
         const ids = running.map(t => t.job_id).filter(j => j > 0).map(j => j.toString());
+
+        if (ServiceConfiguration.cluster.generateCommandOnly) {
+            if (this.TaskUpdateDelegate) {
+                await Promise.all(running.map(async (o) => {
+
+                    await this.TaskUpdateDelegate.update(o, {
+                        id: 0,
+                        status: JobStatus.Stopped,
+                        exitCode: 0,
+                        statistics: null
+                    });
+                }));
+            }
+
+            return;
+        }
 
         const jobInfo: IJobUpdate[] = await updateJobInfo(ids);
 
@@ -130,18 +148,18 @@ export class LSFTaskManager implements ITaskUpdateSource, ITaskManager {
 
         const clusterArgs = taskExecution.resolved_cluster_args.replace(/"/g, `\\"`).replace(/\(/g, `\\(`).replace(/\)/g, `\\)`);
 
-        // const clusterArgs = taskExecution.resolved_cluster_arg_array.join(" ");
-
-        // console.log(clusterArgs);
-
         const clusterCommand = ["bsub"].concat([clusterArgs]).concat(requiredBsubArgs).concat([, `'${programArgs}'`]).join(" ");
 
         const commandScript = taskExecution.resolved_log_path + "-cluster-command.sh";
 
-        fs.writeFileSync(commandScript, `#!/usr/bin/env bash\n${clusterCommand}\n`);
+        fs.writeFileSync(commandScript, `#!/usr/bin/env bash\n\n# Cluster submit file generated ${new Date().toLocaleString()}\n\n${clusterCommand}\n`);
         fs.chmodSync(commandScript, 0o775);
 
         const sshArgs = ["login1", `${commandScript}`];
+
+        if (ServiceConfiguration.cluster.generateCommandOnly) {
+            return;
+        }
 
         try {
             const submit = spawn(`ssh`, sshArgs);

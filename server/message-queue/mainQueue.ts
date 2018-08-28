@@ -13,6 +13,8 @@ export class MainQueue {
     private connection: Connection = null;
     private channel: Channel = null;
 
+    // TODO This should be handled with the sync status in the database, not by storing in memory and hoping the
+    // connection comes back before the process stops.
     private missingChannelBuffer: ITaskExecutionAttributes[] = [];
 
     public static get Instance() {

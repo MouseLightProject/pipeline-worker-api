@@ -9,6 +9,9 @@ export interface IApiService {
     networkPort: number;
     graphQlEndpoint: string;
     graphiQlEndpoint: string;
+    cluster: {
+        generateCommandOnly: boolean;
+    }
 }
 
 const ApiService: IApiService = {
@@ -17,7 +20,10 @@ const ApiService: IApiService = {
     networkAddress: "",
     networkPort: 6201,
     graphQlEndpoint: "/graphql",
-    graphiQlEndpoint: "/graphiql"
+    graphiQlEndpoint: "/graphiql",
+    cluster: {
+        generateCommandOnly: false
+    }
 };
 
 function loadApiService(apiService: IApiService): IApiService {
@@ -34,14 +40,23 @@ interface INetworkProperties {
 }
 
 function readHostProperties(config: IApiService, networkProperties: INetworkProperties): IApiService {
-    return {
+    let generateCommandOnly = config.cluster.generateCommandOnly;
+
+    if (process.env.PIPELINE_WORKER_CLUSTER_COMMAND_ONLY !== undefined) {
+        generateCommandOnly = (process.env.PIPELINE_WORKER_CLUSTER_COMMAND_ONLY.toLowerCase() === "true") || (process.env.PIPELINE_WORKER_CLUSTER_COMMAND_ONLY === "1");
+    }
+
+    return Object.assign({}, config, {
         name: process.env.PIPELINE_WORKER_NAME || os.hostname(),
         networkInterface: networkProperties.interfaceName,
         networkAddress: networkProperties.networkAddress,
         networkPort: parseInt(process.env.PIPELINE_WORKER_API_PORT) || config.networkPort,
         graphQlEndpoint: config.graphQlEndpoint,
-        graphiQlEndpoint: config.graphiQlEndpoint
-    };
+        graphiQlEndpoint: config.graphiQlEndpoint,
+        cluster: {
+            generateCommandOnly
+        }
+    });
 }
 
 function findNetworkAddress(preferredNetworkInterface: string): INetworkProperties {
