@@ -13,7 +13,7 @@ export class MainQueue {
     private connection: Connection = null;
     private channel: Channel = null;
 
-    private missingChannelBuffer: ITaskExecutionAttributes[];
+    private missingChannelBuffer: ITaskExecutionAttributes[] = [];
 
     public static get Instance() {
         return this.instance;
