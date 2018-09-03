@@ -11,6 +11,7 @@ export interface IApiService {
     graphiQlEndpoint: string;
     cluster: {
         generateCommandOnly: boolean;
+        submitHost: string;
     }
 }
 
@@ -22,7 +23,8 @@ const ApiService: IApiService = {
     graphQlEndpoint: "/graphql",
     graphiQlEndpoint: "/graphiql",
     cluster: {
-        generateCommandOnly: false
+        generateCommandOnly: false,
+        submitHost: "login1"
     }
 };
 
@@ -54,7 +56,8 @@ function readHostProperties(config: IApiService, networkProperties: INetworkProp
         graphQlEndpoint: config.graphQlEndpoint,
         graphiQlEndpoint: config.graphiQlEndpoint,
         cluster: {
-            generateCommandOnly
+            generateCommandOnly,
+            submitHost: process.env.PIPELINE_WORKER_CLUSTER_HOST || config.cluster.submitHost
         }
     });
 }

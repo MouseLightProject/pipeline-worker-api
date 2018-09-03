@@ -14,6 +14,8 @@ import {IJobUpdate, ITaskManager, ITaskUpdateDelegate, ITaskUpdateSource, JobSta
 import {updateJobInfo} from "./lsf";
 import {ServiceConfiguration} from "../options/serviceConfig";
 
+const clusterHost = ServiceConfiguration.cluster.submitHost;
+
 export class LSFTaskManager implements ITaskUpdateSource, ITaskManager {
     public static Instance = new LSFTaskManager();
 
@@ -155,7 +157,7 @@ export class LSFTaskManager implements ITaskUpdateSource, ITaskManager {
         fs.writeFileSync(commandScript, `#!/usr/bin/env bash\n\n# Cluster submit file generated ${new Date().toLocaleString()}\n\n${clusterCommand}\n`);
         fs.chmodSync(commandScript, 0o775);
 
-        const sshArgs = ["login1", `${commandScript}`];
+        const sshArgs = [clusterHost, commandScript];
 
         if (ServiceConfiguration.cluster.generateCommandOnly) {
             return;

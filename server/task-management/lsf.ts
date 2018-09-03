@@ -4,6 +4,9 @@ const debug = require("debug")("pipeline:worker-api:lsf");
 
 import {JobStatus, IJobUpdate} from "./taskSupervisor";
 import {isNull} from "util";
+import {ServiceConfiguration} from "../options/serviceConfig";
+
+const clusterHost = ServiceConfiguration.cluster.submitHost;
 
 enum JobAttributes {
     JobId = "JOBID",
@@ -126,7 +129,7 @@ export function updateJobInfo(jobArray: string[]): Promise<IJobUpdate[]> {
             /*
             let response = "";
 
-            const queueStatus = spawn("ssh", ["login1", `"bjobs -d -W ${jobArray.join("")}"`]);
+            const queueStatus = spawn("ssh", [clusterHost, `"bjobs -d -W ${jobArray.join("")}"`]);
 
             queueStatus.stdout.on("data", (data) => {
                 response += data;
@@ -138,7 +141,7 @@ export function updateJobInfo(jobArray: string[]): Promise<IJobUpdate[]> {
             });
             */
 
-            exec(`ssh login1 "bjobs -a -W ${jobArray.join(" ")}"`, {maxBuffer: 10000 * 400}, (error, stdout, stderr) => {
+            exec(`ssh ${clusterHost} "bjobs -a -W ${jobArray.join(" ")}"`, {maxBuffer: 10000 * 400}, (error, stdout, stderr) => {
                 if (error) {
                     debug(error);
                     reject([]);
