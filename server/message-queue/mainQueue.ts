@@ -29,7 +29,9 @@ export class MainQueue {
         try {
             this.connection = await amqp.connect(url);
 
-            this.connection.on("error", (err) => {
+            this.connection.on("error", async (err) => {
+                await this.connection.close();
+                this.connection = null;
                 this.channel = null;
                 debug("connection error - reconnect in 5 seconds");
                 debug(err);
