@@ -326,7 +326,9 @@ export class TaskSupervisor implements ITaskSupervisor, ITaskUpdateDelegate {
                     }
                 }
 
-                MainQueue.Instance.sendTaskExecutionUpdate(taskExecution);
+                await MainQueue.Instance.sendTaskExecutionComplete(taskExecution);
+            } else {
+                await MainQueue.Instance.sendTaskExecutionUpdate(taskExecution);
             }
         }
 
