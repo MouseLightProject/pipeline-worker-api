@@ -76,7 +76,7 @@ export class MainQueue {
         }
     }
 
-    private async createConnection(): boolean {
+    private async createConnection(): Promise<boolean> {
         try {
             this._connection = await amqp.connect(this._url);
 
@@ -102,7 +102,7 @@ export class MainQueue {
         return false;
     }
 
-    private async createTaskCompleteChannel(): boolean {
+    private async createTaskCompleteChannel(): Promise<boolean> {
         try {
             this._channel = await this._connection.createChannel();
 
