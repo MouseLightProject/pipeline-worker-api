@@ -84,7 +84,7 @@ export function start(options): Promise<IProcessInfo> {
                 // debug(`start() returned ${processList.length} process description`);
 
                 if (processList.length > 0) {
-                    resolve(_mapProcessInfo(processList[0].pm2_env));
+                    resolve(_mapProcessInfo(processList[0].pm2_env, {memory: null, cpu: null}, processList[0].pid));
                 } else {
                     reject("start() returned empty process array");
                 }

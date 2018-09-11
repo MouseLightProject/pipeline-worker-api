@@ -9,7 +9,7 @@ import * as ProcessManager from "./pm2-async";
 const debug = require("debug")("pipeline:worker-api:local-manager");
 
 import {IProcessInfo} from "./pm2-async";
-import {ExecutionStatus, ITaskExecutionAttributes} from "../data-model/sequelize/taskExecution";
+import {ExecutionStatus, ITaskExecution, ITaskExecutionAttributes} from "../data-model/sequelize/taskExecution";
 import {LocalPersistentStorageManager} from "../data-access/local/databaseConnector";
 import {
     JobStatus, IJobStatistics, ITaskUpdateDelegate,
@@ -137,7 +137,7 @@ export class LocalTaskManager implements ITaskUpdateSource, ITaskManager, Proces
         }
     }
 
-    public async startTask(taskExecution: ITaskExecutionAttributes) {
+    public async startTask(taskExecution: ITaskExecution) {
         let opts = {
             name: taskExecution.id,
             script: taskExecution.resolved_script,
@@ -151,7 +151,12 @@ export class LocalTaskManager implements ITaskUpdateSource, ITaskManager, Proces
             error: taskExecution.resolved_log_path + ".local.err.log"
         };
 
-        await ProcessManager.start(opts);
+        const info: IProcessInfo = await ProcessManager.start(opts);
+
+        taskExecution.job_id = info.processId;
+        taskExecution.job_name = taskExecution.id;
+
+        await taskExecution.save();
     }
 
     public async stopTask(taskExecutionId: string) {
