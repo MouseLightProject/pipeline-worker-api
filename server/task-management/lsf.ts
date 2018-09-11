@@ -157,3 +157,23 @@ export function updateJobInfo(jobArray: string[]): Promise<IJobUpdate[]> {
         }
     });
 }
+
+export function killJob(jobId: number): Promise<void> {
+    return new Promise<void>((resolve, reject) => {
+        try {
+            exec(`ssh ${clusterHost} "bkill ${jobId}"`, {maxBuffer: 10000}, (err, stdout, stderr) => {
+                if (err) {
+                    debug(err);
+                    reject();
+                } else {
+                    console.log(stdout);
+                    resolve();
+                }
+            });
+
+        } catch (err) {
+            debug(err);
+            reject();
+        }
+    });
+}

@@ -11,7 +11,7 @@ import {
     ITaskExecutionAttributes
 } from "../data-model/sequelize/taskExecution";
 import {IJobUpdate, ITaskManager, ITaskUpdateDelegate, ITaskUpdateSource, JobStatus, QueueType} from "./taskSupervisor";
-import {updateJobInfo} from "./lsf";
+import {killJob, updateJobInfo} from "./lsf";
 import {ServiceConfiguration} from "../options/serviceConfig";
 
 const clusterHost = ServiceConfiguration.cluster.submitHost;
@@ -146,11 +146,13 @@ export class LSFTaskManager implements ITaskUpdateSource, ITaskManager {
         // TODO Need to escape \ and " in any script arguments?
         const programArgs = [taskExecution.resolved_script].concat(JSON.parse(taskExecution.resolved_script_args)).join(" ");
 
-        const requiredBsubArgs = ["-J", `ml-dg-${taskExecution.tile_id}`, "-g", `/mouselight/pipeline/${taskExecution.worker_id}`, "-oo", `${taskExecution.resolved_log_path + ".cluster.out.log"}`, "-eo", `${taskExecution.resolved_log_path + ".cluster.err.log"}`];
+        const jobName = `ml-${taskExecution.tile_id}`;
+
+        const requiredBsubArgs = ["-J", jobName, "-g", `/mouselight/pipeline/${taskExecution.pipeline_stage_id}`, "-oo", `${taskExecution.resolved_log_path + ".cluster.out.log"}`, "-eo", `${taskExecution.resolved_log_path + ".cluster.err.log"}`];
 
         const clusterArgs = taskExecution.resolved_cluster_args.replace(/"/g, `\\"`).replace(/\(/g, `\\(`).replace(/\)/g, `\\)`);
 
-        const clusterCommand = ["bsub"].concat([clusterArgs]).concat(requiredBsubArgs).concat([, `'${programArgs}'`]).join(" ");
+        const clusterCommand = ["bsub"].concat([clusterArgs]).concat(requiredBsubArgs).concat([`'${programArgs}'`]).join(" ");
 
         const commandScript = taskExecution.resolved_log_path + "-cluster-command.sh";
 
@@ -173,6 +175,7 @@ export class LSFTaskManager implements ITaskUpdateSource, ITaskManager {
                     const r = str.match(/\d+/);
 
                     taskExecution.job_id = parseInt(r[0]);
+                    taskExecution.job_name = jobName;
 
                     taskExecution.save().then();
 
@@ -219,6 +222,8 @@ export class LSFTaskManager implements ITaskUpdateSource, ITaskManager {
     }
 
     public async stopTask(taskExecutionId: string) {
-        // TODO bkill
+        const taskExecution = await this._localStorageManager.TaskExecutions.findById(taskExecutionId);
+
+        await killJob(taskExecution.job_id);
     }
 }
